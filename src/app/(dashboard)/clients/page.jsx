@@ -6,6 +6,9 @@ const ClientsPage = () => {
         <div>
             <ClientsTable/>
         </div>
+
+
+
     )
 }
 
