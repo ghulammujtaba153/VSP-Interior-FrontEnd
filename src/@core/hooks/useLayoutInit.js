@@ -17,14 +17,14 @@ const useLayoutInit = colorSchemeFallback => {
   const { setMode } = useColorScheme()
 
   const [_, updateCookieColorPref] = useCookie('colorPref')
-  const isDark = useMedia('(prefers-color-scheme: dark)', colorSchemeFallback === 'dark')
+  const isDark = useMedia('(prefers-color-scheme: light)', colorSchemeFallback === 'light')
 
   useEffect(() => {
     const appMode = isDark ? 'dark' : 'light'
 
     updateCookieColorPref(appMode)
 
-    if (settings.mode === 'system') {
+    if (settings.mode === 'light') {
       // We need to change the mode in settings context to apply the mode change to MUI components
       setMode(appMode)
     }

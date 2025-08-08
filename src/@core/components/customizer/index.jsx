@@ -91,7 +91,7 @@ const Customizer = ({ breakpoint = 'lg', dir = 'ltr', disableDirection = false }
   const theme = useTheme()
   const pathName = usePathname()
   const { settings, updateSettings, resetSettings, isSettingsChanged } = useSettings()
-  const isSystemDark = useMedia('(prefers-color-scheme: dark)', false)
+  const isSystemDark = useMedia('(prefers-color-scheme: light)', false)
 
   // Vars
   let breakpointValue
@@ -257,7 +257,7 @@ const Customizer = ({ breakpoint = 'lg', dir = 'ltr', disableDirection = false }
                       Light
                     </p>
                   </div>
-                  <div className='flex flex-col items-start gap-0.5'>
+                  {/* <div className='flex flex-col items-start gap-0.5'>
                     <div
                       className={classnames(styles.itemWrapper, styles.modeWrapper, {
                         [styles.active]: settings.mode === 'dark'
@@ -282,7 +282,7 @@ const Customizer = ({ breakpoint = 'lg', dir = 'ltr', disableDirection = false }
                     <p className={styles.itemLabel} onClick={() => handleChange('mode', 'system')}>
                       System
                     </p>
-                  </div>
+                  </div> */}
                 </div>
               </div>
               <div className='flex flex-col gap-2'>

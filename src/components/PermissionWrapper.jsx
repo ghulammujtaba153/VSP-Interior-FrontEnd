@@ -26,19 +26,41 @@ const PermissionWrapper = ({
   // If user doesn't have permission
   if (!userHasPermission) {
     // If we want to show a denied message when clicked
+    // if (showDeniedMessage && React.isValidElement(children)) {
+    //   return React.cloneElement(children, {
+    //     onClick: (e) => {
+    //       e.preventDefault();
+    //       e.stopPropagation();
+    //       const message = customDeniedMessage || `access ${resource}`;
+
+    //       showPermissionDenied(resource, action.replace('can', '').toLowerCase());
+
+    //       // Call original onClick if it exists
+    //       if (children.props.onClick) {
+    //         children.props.onClick(e);
+    //       }
+    //     },
+    //     style: {
+    //       ...children.props.style,
+    //       opacity: 0.6,
+    //       cursor: 'not-allowed'
+    //     }
+    //   });
+    // }
+
     if (showDeniedMessage && React.isValidElement(children)) {
       return React.cloneElement(children, {
         onClick: (e) => {
           e.preventDefault();
           e.stopPropagation();
+    
           const message = customDeniedMessage || `access ${resource}`;
-
           showPermissionDenied(resource, action.replace('can', '').toLowerCase());
-
-          // Call original onClick if it exists
-          if (children.props.onClick) {
-            children.props.onClick(e);
-          }
+    
+          // ❌ REMOVE this - it still runs the original handler
+          // if (children.props.onClick) {
+          //   children.props.onClick(e);
+          // }
         },
         style: {
           ...children.props.style,
@@ -47,6 +69,7 @@ const PermissionWrapper = ({
         }
       });
     }
+    
 
     // Return fallback component or null
     return fallback;

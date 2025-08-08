@@ -67,7 +67,7 @@ const VerticalMenu = ({ scrollMenu }) => {
         
 
         <SubMenu
-          label='Users'
+          label='User & Access Control'
           icon={<i className='tabler-brain' />}
 
         // suffix={<CustomChip label='5' size='small' color='error' round='true' />}
@@ -94,10 +94,80 @@ const VerticalMenu = ({ scrollMenu }) => {
 
 
         <PermissionWrapper resource="suppliers">
-          <MenuItem href='/suppliers' icon={<i className='tabler-users' />}>
+          <MenuItem href='/suppliers' icon={<i className='tabler-building-warehouse' />}>
             Suppliers
           </MenuItem>
         </PermissionWrapper>
+
+
+        <SubMenu
+          label='Inventory'
+          icon={<i className='tabler-file-text' />}
+
+        // suffix={<CustomChip label='5' size='small' color='error' round='true' />}
+        >
+
+        </SubMenu>
+
+        <SubMenu
+          label='Cabinet'
+          icon={<i className='tabler-door' />}
+        >
+        </SubMenu>
+
+        <SubMenu
+          label='Tender'
+          icon={<i className='tabler-file-text' />}
+        >
+        </SubMenu>
+
+        <SubMenu
+          label='Purchasing'
+          icon={<i className='tabler-shopping-cart' />}
+        >
+        </SubMenu>
+
+        <SubMenu
+          label='Job Schedule'
+          icon={<i className='tabler-calendar' />}
+        >
+        </SubMenu>
+
+        <SubMenu
+          label='VPS TrackBoard'
+          icon={<i className='tabler-chart-bar' />}
+        >
+        </SubMenu>
+
+        <SubMenu
+          label='Accounts'
+          icon={<i className='tabler-cash' />}
+        >
+        </SubMenu>
+
+        <SubMenu
+          label='Reports'
+          icon={<i className='tabler-file-text' />}
+        >
+        </SubMenu>
+
+        <SubMenu
+          label='HR & Documentation'
+          icon={<i className='tabler-file-text' />}
+        >
+        </SubMenu>
+
+        <SubMenu
+          label='User Management'
+          icon={<i className='tabler-users' />}
+        >
+        </SubMenu>
+
+        <SubMenu
+          label='Settings'
+          icon={<i className='tabler-settings' />}
+        >
+        </SubMenu>
 
       </Menu>
       
