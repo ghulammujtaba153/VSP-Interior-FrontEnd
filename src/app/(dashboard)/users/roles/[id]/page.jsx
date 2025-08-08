@@ -1,10 +1,10 @@
 "use client"
 
 import React, { useEffect, useState } from 'react'
-import axios from 'axios';
-import { BASE_URL } from '@/configs/url';
-import Loader from '@/components/loader/Loader';
+
 import { useParams } from 'next/navigation';
+
+import axios from 'axios';
 
 import {
   Box,
@@ -17,6 +17,10 @@ import {
   Chip,
 } from '@mui/material';
 
+import { BASE_URL } from '@/configs/url';
+import Loader from '@/components/loader/Loader';
+
+
 const RolePage = () => {
   const { id } = useParams();
   const [roleTitle, setRoleTitle] = useState('');
@@ -26,6 +30,7 @@ const RolePage = () => {
   const fetchData = async () => {
     try {
       const response = await axios.get(`${BASE_URL}/api/permission/get/by-role/${id}`);
+
       setRoleTitle(response.data.role);
       setPermissions(response.data.permissions);
     } catch (error) {
@@ -37,7 +42,7 @@ const RolePage = () => {
 
   useEffect(() => {
     fetchData();
-  }, [id]);
+  }, [id, fetchData]);
 
   const handlePermissionChange = async (permission, field, value) => {
     try {
@@ -45,6 +50,7 @@ const RolePage = () => {
       const updated = permissions.map((perm) =>
         perm.resourceId === permission.resourceId ? { ...perm, [field]: value } : perm
       );
+
       setPermissions(updated);
 
       // 2. Prepare data for backend
@@ -73,6 +79,7 @@ const RolePage = () => {
 
     } catch (error) {
       console.error("Error updating permission", error);
+
       // Revert local state on error
       fetchData();
     }

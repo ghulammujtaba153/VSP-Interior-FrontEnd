@@ -1,7 +1,8 @@
 "use client"
-import React, { useState } from 'react'
+import React, { useState , useEffect } from 'react'
+
 import axios from 'axios'
-import { useEffect } from 'react'
+
 import Loader from '@/components/loader/Loader'
 import { BASE_URL } from '@/configs/url'
 import UserTable from '@/components/users/UserTable'
@@ -16,6 +17,7 @@ const UsersPage = () => {
     const fetchUsers = async () => {
         try {
             const res = await axios.get(`${BASE_URL}/api/user/get`)
+
             console.log(res.data)
             setUsers(res.data)
         } catch (error) {

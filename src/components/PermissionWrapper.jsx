@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAuth } from '@/context/authContext'; // Assuming you have this
 
@@ -31,6 +32,7 @@ const PermissionWrapper = ({
           e.preventDefault();
           e.stopPropagation();
           const message = customDeniedMessage || `access ${resource}`;
+
           showPermissionDenied(resource, action.replace('can', '').toLowerCase());
 
           // Call original onClick if it exists

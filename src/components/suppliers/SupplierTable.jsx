@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useState } from "react";
+
 import axios from "axios";
 import { toast } from "react-toastify";
-import Loader from "../loader/Loader";
-import { BASE_URL } from "@/configs/url";
+
 
 import {
     Table,
@@ -25,6 +25,9 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import AddIcon from "@mui/icons-material/Add";
+
+import { BASE_URL } from "@/configs/url";
+import Loader from "../loader/Loader";
 
 import SupplierModal from "./SupplierModal";
 import ViewSupplier from "./ViewSupplier";
@@ -62,6 +65,7 @@ const SupplierTable = () => {
 
     const handleDelete = async (id) => {
         toast.loading("Deleting supplier...");
+
         try {
             await axios.delete(`${BASE_URL}/api/suppliers/delete/${id}`);
             toast.dismiss();
@@ -78,6 +82,7 @@ const SupplierTable = () => {
     const fetchSuppliers = async () => {
         try {
             const res = await axios.get(`${BASE_URL}/api/suppliers/get`);
+
             setSuppliers(res.data.data);
         } catch (error) {
             toast.error(error?.response?.data?.message || "Failed to fetch suppliers");
@@ -93,6 +98,7 @@ const SupplierTable = () => {
     const handleStatusChange = async (id, currentStatus) => {
         try {
             const newStatus = currentStatus === "active" ? "inactive" : "active";
+
             await axios.put(`${BASE_URL}/api/suppliers/update/${id}`, { status: newStatus });
             setSuppliers((prev) =>
                 prev.map((s) =>

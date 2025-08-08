@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+
 import { Box } from '@mui/material'
 
 const Loader = () => {
@@ -11,6 +12,7 @@ const Loader = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+
         // backgroundColor: 'background.default'
       }}
     >

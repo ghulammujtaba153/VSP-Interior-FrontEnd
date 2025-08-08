@@ -1,5 +1,6 @@
-import { useAuth } from '@/context/authContext';
 import { toast } from 'react-toastify';
+
+import { useAuth } from '@/context/authContext';
 
 export const usePermissions = () => {
   const { user } = useAuth();

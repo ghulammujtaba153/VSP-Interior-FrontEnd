@@ -2,6 +2,7 @@
 
 
 import React, { useState, useEffect } from 'react';
+
 import {
   Dialog,
   DialogTitle,
@@ -13,6 +14,7 @@ import {
 } from '@mui/material';
 import { toast } from 'react-toastify';
 import axios from 'axios';
+
 import { BASE_URL } from '@/configs/url';
 
 const initialClientState = {
@@ -38,12 +40,14 @@ const ClientsModal = ({ open, handleClose, editClient, refreshClients }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
     setClient({ ...client, [name]: value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+
     try {
       if (editClient) {
         await axios.put(`${BASE_URL}/api/client/update/${client.id}`, client);
@@ -52,6 +56,7 @@ const ClientsModal = ({ open, handleClose, editClient, refreshClients }) => {
         await axios.post(`${BASE_URL}/api/client/create`, client);
         toast.success('Client created successfully');
       }
+
       refreshClients();
       handleClose();
     } catch (error) {

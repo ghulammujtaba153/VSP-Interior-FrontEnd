@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+
 import { useSearchParams, useRouter } from 'next/navigation';
+
 import {
   Box,
   TextField,
@@ -11,6 +13,7 @@ import {
   Alert,
 } from '@mui/material';
 import axios from 'axios';
+
 import { BASE_URL } from '@/configs/url';
 
 const ResetPassword = () => {
@@ -37,6 +40,7 @@ const ResetPassword = () => {
 
     try {
       setLoading(true);
+
       const res = await axios.put(`${BASE_URL}/api/user/update-password/${token}`, {
         token,
         password,

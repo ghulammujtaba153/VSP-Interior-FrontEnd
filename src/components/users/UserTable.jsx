@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+
 import {
   Box, Button, IconButton, Typography, Paper, Switch
 } from '@mui/material';
@@ -8,10 +9,15 @@ import { DataGrid } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import UserModal from './UserModal';
+
 import axios from 'axios';
-import { BASE_URL } from '@/configs/url';
+
 import { toast } from 'react-toastify';
+
+import UserModal from './UserModal';
+import { BASE_URL } from '@/configs/url';
+
+
 import PermissionWrapper from '@/components/PermissionWrapper';
 import { usePermissions } from '@/hooks/usePermissions';
 
@@ -35,8 +41,10 @@ const UserTable = ({ users, fetchUsers }) => {
   const handleSaveUser = async (formData) => {
     if (modalMode === 'edit') {
       console.log('Updating user:', formData);
+
       try {
         const res = await axios.put(`${BASE_URL}/api/user/update/${formData.id}`, formData);
+
         console.log(res.data);
         toast.success("User updated successfully");
         fetchUsers(); // Refresh the users list
@@ -46,8 +54,10 @@ const UserTable = ({ users, fetchUsers }) => {
       }
     } else if (modalMode === 'create') {
       console.log('Creating user:', formData);
+
       try {
         const res = await axios.post(`${BASE_URL}/api/user/create`, formData);
+
         console.log(res.data);
         toast.success("User created successfully");
         fetchUsers(); // Refresh the users list
@@ -56,14 +66,18 @@ const UserTable = ({ users, fetchUsers }) => {
         toast.error("Error creating user");
       }
     }
+
     handleCloseModal();
   };
 
   const handleDeleteUser = async (id) => {
     console.log('Deleting user with id:', id);
+
+
     // Call your delete API here
     try {
       const res = await axios.delete(`${BASE_URL}/api/user/delete/${id}`);
+
       console.log(res.data);
       fetchUsers();
       toast.success("User deleted successfully");
@@ -76,6 +90,7 @@ const UserTable = ({ users, fetchUsers }) => {
   const handleStatusChange = async (id, checked) => {
     try {
       const res = await axios.put(`${BASE_URL}/api/user/update-status/${id}`, { status: checked ? 'active' : 'suspended' });
+
       console.log(res.data);
       toast.success("User status updated successfully");
       fetchUsers();
@@ -96,7 +111,9 @@ const UserTable = ({ users, fetchUsers }) => {
         console.log("params", params)
         
         const roleName = params?.name;
-        return roleName || 'N/A';
+
+        
+return roleName || 'N/A';
       },
     },
     {
@@ -105,6 +122,7 @@ const UserTable = ({ users, fetchUsers }) => {
       flex: 1,
       renderCell: (params) => {
         const row = params?.row;
+
         if (!row) return null;
 
         return (
@@ -123,7 +141,9 @@ const UserTable = ({ users, fetchUsers }) => {
       valueGetter: (params) => {
         console.log("params createdAt", params)
         const createdAt = params;
-        return createdAt ? new Date(createdAt).toLocaleString() : 'N/A';
+
+        
+return createdAt ? new Date(createdAt).toLocaleString() : 'N/A';
       },
     },
     {
@@ -134,6 +154,7 @@ const UserTable = ({ users, fetchUsers }) => {
       filterable: false,
       renderCell: (params) => {
         const row = params?.row;
+
         if (!row) return null;
 
         return (

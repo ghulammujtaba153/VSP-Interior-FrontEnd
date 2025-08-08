@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+
 import {
   Box,
   Button,
@@ -12,10 +13,14 @@ import { DataGrid } from '@mui/x-data-grid';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+
+import { toast } from 'react-toastify';
+
+import axios from 'axios';
+
 import RoleViewModal from './RoleViewModal';
 import RoleModal from './RoleModal';
-import { toast } from 'react-toastify';
-import axios from 'axios';
+
 import { BASE_URL } from '@/configs/url';
 import Loader from '@/components/loader/Loader';
 import Link from '@/components/Link';
@@ -32,6 +37,7 @@ const RolesTable = () => {
   const fetchRoles = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/api/role/get`)
+
       setRoles(res.data)
       console.log("roles", res.data)
     } catch (error) {
@@ -65,6 +71,7 @@ const RolesTable = () => {
 
   const handleSave = async (formData) => {
     toast.loading("Saving...");
+
     try {
       if (mode === 'edit') {
         console.log('Update Role:', formData);
@@ -117,7 +124,9 @@ const RolesTable = () => {
       flex: 1,
       renderCell: (params) => {
         const row = params.row; // Fix: avoid direct usage of params.row inline
-        return (
+
+        
+return (
           <>
             <IconButton>
             <Link href={`/users/roles/${row.id}`} sx={{color: 'inherit', mt: 4, textDecoration: 'none'}}>

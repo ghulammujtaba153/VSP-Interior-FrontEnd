@@ -7,6 +7,8 @@ import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 // MUI Imports
+import Link from 'next/link'
+
 import { styled } from '@mui/material/styles'
 import Badge from '@mui/material/Badge'
 import Avatar from '@mui/material/Avatar'
@@ -23,7 +25,6 @@ import Button from '@mui/material/Button'
 // Hook Imports
 import { useSettings } from '@core/hooks/useSettings'
 import { useAuth } from '@/context/authContext'
-import Link from 'next/link'
 
 // Styled component for badge content
 const BadgeContentSpan = styled('span')({

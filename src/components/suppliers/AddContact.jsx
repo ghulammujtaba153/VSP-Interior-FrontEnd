@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import {
   Dialog,
   DialogTitle,
@@ -9,10 +11,11 @@ import {
   TextField,
   Stack,
 } from "@mui/material";
-import { useEffect, useState } from "react";
 import axios from "axios";
-import { BASE_URL } from "@/configs/url";
+
 import { toast } from "react-toastify";
+
+import { BASE_URL } from "@/configs/url";
 
 const AddContact = ({ open, onClose, supplierId, onContactAdded }) => {
   const [data, setData] = useState({
@@ -33,6 +36,7 @@ const AddContact = ({ open, onClose, supplierId, onContactAdded }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
     setData((prev) => ({ ...prev, [name]: value }));
   };
 

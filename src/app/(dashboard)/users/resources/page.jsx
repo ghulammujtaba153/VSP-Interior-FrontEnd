@@ -1,6 +1,7 @@
 
-import ResourceTable from '@/components/users/resource/ResourceTable'
 import React from 'react'
+
+import ResourceTable from '@/components/users/resource/ResourceTable'
 
 
 const ResourcesPage = () => {

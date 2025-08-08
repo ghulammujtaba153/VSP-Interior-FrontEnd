@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+
 import {
     Dialog,
     DialogTitle,
@@ -15,8 +16,10 @@ import {
 } from '@mui/material';
 import { toast } from 'react-toastify';
 import axios from 'axios';
-import { BASE_URL } from '@/configs/url';
+
 import SaveIcon from '@mui/icons-material/Save';
+
+import { BASE_URL } from '@/configs/url';
 
 const ViewClient = ({ open, onClose, client }) => {
     const [contacts, setContacts] = useState([]);
@@ -29,14 +32,17 @@ const ViewClient = ({ open, onClose, client }) => {
 
     const handleContactChange = (index, field, value) => {
         const updatedContacts = [...contacts];
+
         updatedContacts[index][field] = value;
         setContacts(updatedContacts);
     };
 
     const handleUpdateContact = async (contactId, updatedData) => {
         toast.loading("Updating contact...");
+
         try {
             const response = await axios.put(`${BASE_URL}/api/contact/update/${contactId}`, updatedData);
+
             toast.dismiss();
             toast.success("Contact updated successfully");
         } catch (error) {

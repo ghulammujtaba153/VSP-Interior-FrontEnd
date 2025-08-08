@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import {
     Dialog,
     DialogTitle,
@@ -12,6 +13,7 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import { toast } from "react-toastify";
+
 import { BASE_URL } from "@/configs/url";
 
 const defaultData = {
@@ -37,11 +39,13 @@ const SupplierModal = ({ open, onClose, fetchSuppliers, selectedSupplier }) => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
+
         setData((prev) => ({ ...prev, [name]: value }));
     };
 
     const handleSubmit = async () => {
         setLoading(true);
+
         try {
             toast.loading(selectedSupplier ? "Updating supplier..." : "Creating supplier...");
 

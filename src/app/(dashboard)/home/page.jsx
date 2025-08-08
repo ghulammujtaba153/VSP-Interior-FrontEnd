@@ -1,9 +1,9 @@
 'use client'
 
-import { useAuth } from '@/context/authContext'
-import ProtectedRoute from '@/components/ProtectedRoute'
-import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
+
+import { useSearchParams } from 'next/navigation'
+
 import axios from 'axios'
 import { toast } from 'react-toastify'
 import {
@@ -17,6 +17,9 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
+
+import ProtectedRoute from '@/components/ProtectedRoute'
+import { useAuth } from '@/context/authContext'
 import { BASE_URL } from '@/configs/url'
 
 export default function HomePage() {
@@ -26,9 +29,11 @@ export default function HomePage() {
 
   useEffect(() => {
     const token = searchParams.get('token')
+
     if (token) {
       googleLogin(token)
     }
+
     setTokenHandled(true)
   }, [searchParams, googleLogin])
 

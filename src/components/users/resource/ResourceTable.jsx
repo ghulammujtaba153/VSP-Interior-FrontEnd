@@ -1,7 +1,7 @@
 "use client";
 
-import Loader from '@/components/loader/Loader';
-import { BASE_URL } from '@/configs/url';
+import { useState, useEffect } from 'react';
+
 import {
   Box,
   Paper,
@@ -15,12 +15,15 @@ import {
   IconButton,
   Button,
 } from '@mui/material';
-import { useState, useEffect } from 'react';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import ResourceModal from './ResourceModel';
+
 import axios from 'axios';
+
+import ResourceModal from './ResourceModel';
+import { BASE_URL } from '@/configs/url';
+import Loader from '@/components/loader/Loader';
 
 const ResourceTable = () => {
   const [loading, setLoading] = useState(false);
@@ -48,6 +51,7 @@ const handleEdit = (resource) => {
       } else {
         await axios.put(`${BASE_URL}/api/resource/update/${resource.id}`, resource);
       }
+
       fetchData();
     } catch (error) {
       console.error('Error saving resource', error);
@@ -58,6 +62,7 @@ const handleEdit = (resource) => {
     try {
       setLoading(true);
       const res = await axios.get(`${BASE_URL}/api/resource/get`);
+
       setResources(res.data);
     } catch (error) {
       console.error("Error fetching resources", error);
@@ -72,6 +77,7 @@ const handleEdit = (resource) => {
 
   const handleView = (resource) => {
     console.log('Viewing resource:', resource);
+
     // open view modal
   };
 

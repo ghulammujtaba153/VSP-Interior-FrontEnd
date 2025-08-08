@@ -69,6 +69,7 @@ const VerticalMenu = ({ scrollMenu }) => {
         <SubMenu
           label='Users'
           icon={<i className='tabler-brain' />}
+
         // suffix={<CustomChip label='5' size='small' color='error' round='true' />}
         >
           <PermissionWrapper resource="users">

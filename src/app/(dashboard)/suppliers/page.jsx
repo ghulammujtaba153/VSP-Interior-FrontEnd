@@ -1,4 +1,5 @@
 import React from 'react'
+
 import SupplierTable from '@/components/suppliers/SupplierTable'
 
 const SuppliersPage = () => {

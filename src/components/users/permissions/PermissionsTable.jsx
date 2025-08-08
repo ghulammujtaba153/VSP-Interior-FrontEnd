@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from 'react';
+
 import {
   Table,
   TableHead,
@@ -18,6 +19,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import axios from 'axios';
+
 import Loader from '@/components/loader/Loader';
 import { BASE_URL } from '@/configs/url';
 import ViewPermissions from './ViewPermissions';
@@ -35,6 +37,7 @@ const PermissionsTable = () => {
     try {
       setLoading(true);
       const res = await axios.get(`${BASE_URL}/api/permission/get`);
+
       setData(res.data);
     } catch (error) {
       console.error('Error fetching permissions', error);
@@ -54,6 +57,7 @@ const PermissionsTable = () => {
       } else {
         await axios.post(`${BASE_URL}/api/permission/create`, permission);
       }
+
       setOpenModal(false);
       setSelectedPermission(null);
       setIsEditMode(false);

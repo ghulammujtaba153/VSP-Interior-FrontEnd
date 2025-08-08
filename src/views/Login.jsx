@@ -20,6 +20,10 @@ import classnames from 'classnames'
 import axios from 'axios'
 
 // Component Imports
+import { toast } from 'react-toastify'
+
+import { Alert, AlertTitle } from '@mui/material'
+
 import Link from '@components/Link'
 import Logo from '@components/layout/shared/Logo'
 import CustomTextField from '@core/components/mui/TextField'
@@ -31,9 +35,8 @@ import themeConfig from '@configs/themeConfig'
 import { useImageVariant } from '@core/hooks/useImageVariant'
 import { useSettings } from '@core/hooks/useSettings'
 import { BASE_URL } from '@/configs/url'
-import { toast } from 'react-toastify'
 import { useAuth } from '@/context/authContext'
-import { Alert, AlertTitle } from '@mui/material'
+
 
 // Styled Components
 const LoginIllustration = styled('img')(({ theme }) => ({
@@ -71,6 +74,7 @@ const LoginV2 = ({ mode }) => {
   const hidden = useMediaQuery(theme.breakpoints.down('md'))
 
   const authBackground = useImageVariant(mode, '/images/pages/auth-mask-light.png', '/images/pages/auth-mask-dark.png')
+
   const characterIllustration = useImageVariant(
     mode,
     '/images/illustrations/auth/v2-login-light.png',
@@ -89,6 +93,7 @@ const LoginV2 = ({ mode }) => {
 
     try {
       const res = await axios.post(`${BASE_URL}/api/user/login`, { email, password })
+
       console.log(res.data)
       setAuth(res.data.token)
       setSuccess(true)

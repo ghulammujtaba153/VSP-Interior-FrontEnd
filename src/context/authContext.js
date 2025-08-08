@@ -1,9 +1,11 @@
 'use client'
 
-import { BASE_URL } from '@/configs/url'
-import axios from 'axios'
 import { createContext, useContext, useEffect, useState } from 'react'
+
+import axios from 'axios'
 import { toast } from 'react-toastify'
+
+import { BASE_URL } from '@/configs/url'
 
 
 const AuthContext = createContext(undefined)
@@ -16,19 +18,7 @@ export const AuthProvider = ({ children }) => {
   const [config, setConfig] = useState(null)
 
 
-  const fetchConfig = async () => {
-      try {
-        const res = await axios.get(`${BASE_URL}/api/config`)
-        setConfig(res.data)
-      } catch (error) {
-        toast.error(error?.response?.data?.message || error.message)
-      }
-    }
-
-    useEffect(() => {
-      fetchConfig()
-    }, [])
-
+  
   const fetchUser = async () => {
     // const token = localStorage.getItem('token')
     // if (!token) return
@@ -45,6 +35,7 @@ export const AuthProvider = ({ children }) => {
           Authorization: `Bearer ${token}`
         }
       })
+
       console.log("user fetched is here", res.data)
       setUser(res.data)
     } catch (error) {
@@ -57,6 +48,7 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const savedToken = localStorage.getItem('token')
+
     if (savedToken) {
       setToken(savedToken)
     }
@@ -96,8 +88,11 @@ export const AuthProvider = ({ children }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext)
+
   if (!context) {
     throw new Error('useAuth must be used within AuthProvider')
   }
-  return context
+
+  
+return context
 }

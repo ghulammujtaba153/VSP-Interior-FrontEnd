@@ -1,7 +1,7 @@
 'use client'
 
-import { BASE_URL } from '@/configs/url'
-import { useAuth } from '@/context/authContext'
+import React, { useState } from 'react'
+
 import {
   Box,
   Button,
@@ -13,10 +13,15 @@ import {
   IconButton,
   InputAdornment,
 } from '@mui/material'
+
 import { Visibility, VisibilityOff } from '@mui/icons-material'
 import axios from 'axios'
-import React, { useState } from 'react'
+
+
 import { toast } from 'react-toastify'
+
+import { useAuth } from '@/context/authContext'
+import { BASE_URL } from '@/configs/url'
 
 const ProfilePage = () => {
   const { user, setUser } = useAuth()
@@ -34,12 +39,15 @@ const ProfilePage = () => {
   const handleUpdate = async () => {
     try {
       const formData = new FormData()
+
       formData.append('name', name)
       formData.append('email', email)
       formData.append('phone', phone)
+
       if (password.trim() !== '') {
         formData.append('password', password)
       }
+
       if (avatar) {
         formData.append('avatar', avatar)
       }

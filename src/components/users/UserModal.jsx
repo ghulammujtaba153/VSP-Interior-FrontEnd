@@ -1,4 +1,5 @@
 import React from 'react';
+
 import {
   Dialog,
   DialogTitle,
@@ -9,6 +10,7 @@ import {
   MenuItem
 } from '@mui/material';
 import axios from 'axios';
+
 import { BASE_URL } from '@/configs/url';
 
 const UserModal = ({ open, mode, user, onClose, onSave }) => {
@@ -25,6 +27,7 @@ const UserModal = ({ open, mode, user, onClose, onSave }) => {
   const fetchRoles = async () => {
     try {
       const roleRes = await axios.get(`${BASE_URL}/api/role/get`);
+
       setRoles(roleRes.data); // expecting an array of roles
     } catch (error) {
       console.log(error);

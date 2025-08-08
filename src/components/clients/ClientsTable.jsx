@@ -1,10 +1,10 @@
 "use client";
 
-import { BASE_URL } from '@/configs/url';
 import React, { useState, useEffect } from 'react';
+
 import axios from 'axios';
 import { toast } from 'react-toastify';
-import Loader from '../loader/Loader';
+
 
 import {
     Box,
@@ -27,6 +27,9 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 
+import Loader from '../loader/Loader';
+import { BASE_URL } from '@/configs/url';
+
 import ClientsModal from './ClientsModal';
 import ContactModal from './ContactModal';
 import ViewClient from './ViewClient';
@@ -46,6 +49,7 @@ const ClientsTable = () => {
     const fetchClients = async () => {
         try {
             const response = await axios.get(`${BASE_URL}/api/client/get`);
+
             setClients(response.data);
         } catch (error) {
             toast.error("Error fetching clients");

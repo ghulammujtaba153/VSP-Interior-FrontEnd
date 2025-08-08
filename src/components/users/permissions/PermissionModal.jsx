@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+
 import {
   Dialog,
   DialogTitle,
@@ -49,6 +50,7 @@ const PermissionModal = ({ open, onClose, mode = 'create', permission = null, on
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+
     setFormData((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,

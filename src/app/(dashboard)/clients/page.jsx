@@ -1,4 +1,5 @@
 import React from 'react'
+
 import ClientsTable from '@/components/clients/ClientsTable';
 
 const ClientsPage = () => {

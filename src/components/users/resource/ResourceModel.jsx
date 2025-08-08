@@ -1,4 +1,7 @@
+"use client"
+
 import React, { useEffect, useState } from 'react';
+
 import {
   Dialog,
   DialogTitle,
@@ -21,7 +24,7 @@ const ResourceModal = ({ open, onClose, onSave, resource, mode }) => {
     } else {
       setFormData({ name: '' });
     }
-  }, [resource, open, mode]);
+  }, [resource, open, mode, isEditMode]);
 
   const handleChange = (e) => {
     setFormData({ name: e.target.value });
@@ -31,8 +34,10 @@ const ResourceModal = ({ open, onClose, onSave, resource, mode }) => {
   const handleSubmit = () => {
     if (!formData.name.trim()) {
       setError('Resource name is required');
-      return;
+      
+return;
     }
+
     onSave({ ...resource, name: formData.name });
   };
 
