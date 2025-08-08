@@ -35,7 +35,7 @@ export default function HomePage() {
   if (!tokenHandled) return <Box p={4}>Checking token...</Box>
 
   return (
-    <ProtectedRoute requiredResource="home" requiredAction="canView">
+    <ProtectedRoute>
       <MainHome />
     </ProtectedRoute>
   )

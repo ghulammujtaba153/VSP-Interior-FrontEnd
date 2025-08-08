@@ -1,9 +1,10 @@
 import React from 'react'
+import SupplierTable from '@/components/suppliers/SupplierTable'
 
 const SuppliersPage = () => {
     return (
         <div>
-            <h1>Suppliers</h1>
+                        <SupplierTable/>
         </div>
     )
 }

@@ -6,17 +6,24 @@ export const usePermissions = () => {
 
   // Check if user has permission for a specific resource and action
   const hasPermission = (resourceName, action = 'canView') => {
+    console.log("user in usePermissions", user);
+  
+    // ✅ Always allow superadmin early
+    if (user?.Role?.name === 'superadmin') {
+      return true;
+    }
+  
     if (!user || !user.Role || !user.Role.Permissions) {
       return false;
     }
-
+  
     const permission = user.Role.Permissions.find(
       (perm) => perm.Resource.name.toLowerCase() === resourceName.toLowerCase()
     );
-
+  
     return permission ? permission[action] : false;
   };
-
+  
   // Check if user can view a resource
   const canView = (resourceName) => hasPermission(resourceName, 'canView');
 

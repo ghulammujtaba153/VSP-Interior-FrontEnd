@@ -13,12 +13,14 @@ const PermissionWrapper = ({
   const { hasPermission, showPermissionDenied } = usePermissions();
   const { user } = useAuth(); // Add this to get user role
 
+  console.log("user in permission wrapper", user);
+
+  console.log("hasPermission in permission wrapper", user?.Role);
+
 
 
   // ✅ Always allow superadmin
-  const userHasPermission = user?.Role.name === 'superadmin' 
-    ? true 
-    : hasPermission(resource, action);
+  const userHasPermission = hasPermission(resource, action);
 
   // If user doesn't have permission
   if (!userHasPermission) {
