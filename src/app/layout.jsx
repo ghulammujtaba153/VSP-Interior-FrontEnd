@@ -17,9 +17,9 @@ import '@assets/iconify-icons/generated-icons.css'
 import { AuthProvider, config } from '@/context/authContext'
 
 export const metadata = {
-  title: `VPS Interior`,
+  title: `VSP  Interior`,
   description:
-    'VPS Interior - is the most developer friendly & highly customizable Admin Dashboard Template based on MUI v5.'
+    'VSP Interior - is the most developer friendly & highly customizable Admin Dashboard Template based on MUI v5.'
 }
 
 const RootLayout = async props => {

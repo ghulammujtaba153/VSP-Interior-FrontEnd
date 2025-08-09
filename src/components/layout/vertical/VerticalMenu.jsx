@@ -134,7 +134,7 @@ const VerticalMenu = ({ scrollMenu }) => {
         </SubMenu>
 
         <SubMenu
-          label='VPS TrackBoard'
+          label='VSP TrackBoard'
           icon={<i className='tabler-chart-bar' />}
         >
         </SubMenu>
