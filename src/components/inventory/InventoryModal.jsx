@@ -1,0 +1,249 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import {
+  Modal,
+  Box,
+  Typography,
+  TextField,
+  Button,
+  MenuItem,
+  Grid,
+} from "@mui/material";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { BASE_URL } from "@/configs/url";
+import Loader from "../loader/Loader";
+
+
+const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
+  const [isSubmit, setIsSubmit] = useState(false);
+  const [suppliers, setSuppliers] = useState([]);
+  const [formData, setFormData] = useState({
+    itemCode: "",
+    name: "",
+    description: "",
+    category: "",
+    unit: "",
+    supplierId: "",
+    costPrice: "",
+    quantity: "",
+  });
+  const [loading, setLoading] = useState(true);
+
+  // Pre-fill form in edit mode
+  useEffect(() => {
+    if (editData) {
+      setFormData({
+        itemCode: editData.itemCode || "",
+        name: editData.name || "",
+        description: editData.description || "",
+        category: editData.category || "",
+        unit: editData.unit || "",
+        supplierId: editData.supplierId || "",
+        costPrice: editData.costPrice || "",
+        quantity: editData.quantity || "",
+      });
+    } else {
+      setFormData({
+        itemCode: "",
+        name: "",
+        description: "",
+        category: "",
+        unit: "",
+        supplierId: "",
+        costPrice: "",
+        quantity: "",
+      });
+    }
+  }, [editData]);
+
+  // Fetch suppliers
+  const fetchSuppliers = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${BASE_URL}/api/suppliers/get`);
+      setSuppliers(res.data.data || []);
+    } catch (error) {
+      console.error("Error fetching suppliers:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSuppliers();
+  }, []);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmit(true);
+    toast.loading(editData ? "Updating Inventory..." : "Creating Inventory...");
+
+    try {
+      if (editData) {
+        // Edit Mode
+        await axios.put(`${BASE_URL}/api/inventory/update/${editData.id}`, formData);
+        toast.dismiss();
+        toast.success("Inventory updated successfully");
+      } else {
+        // Add Mode
+        await axios.post(`${BASE_URL}/api/inventory/create`, formData);
+        toast.dismiss();
+        toast.success("Inventory created successfully");
+      }
+
+      setOpen(false);
+      onSuccess?.(); // Refresh table after save
+    } catch (error) {
+      toast.dismiss();
+      toast.error("Something went wrong");
+      console.error(error);
+    } finally {
+      setIsSubmit(false);
+    }
+  };
+
+
+  if(loading) return <Loader/>
+
+  return (
+    <Modal open={open} onClose={() => setOpen(false)}>
+      <Box
+        sx={{
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          bgcolor: "background.paper",
+          boxShadow: 24,
+          p: 4,
+          width: 500,
+          borderRadius: 2,
+        }}
+      >
+        <Typography variant="h6" mb={2}>
+          {editData ? "Edit Inventory Item" : "Add Inventory Item"}
+        </Typography>
+
+        <form onSubmit={handleSubmit}>
+          <Grid container spacing={2}>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="Item Code"
+                name="itemCode"
+                value={formData.itemCode}
+                onChange={handleChange}
+                required
+              />
+            </Grid>
+
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="Name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+              />
+            </Grid>
+
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="Category"
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+              />
+            </Grid>
+
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="Unit"
+                name="unit"
+                value={formData.unit}
+                onChange={handleChange}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                select
+                fullWidth
+                label="Supplier"
+                name="supplierId"
+                value={formData.supplierId}
+                onChange={handleChange}
+                required
+              >
+                {suppliers.map((supplier) => (
+                  <MenuItem key={supplier.id} value={supplier.id}>
+                    {supplier.companyName}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="Cost Price"
+                name="costPrice"
+                type="number"
+                value={formData.costPrice}
+                onChange={handleChange}
+                required
+              />
+            </Grid>
+
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="Quantity"
+                name="quantity"
+                type="number"
+                value={formData.quantity}
+                onChange={handleChange}
+                required
+              />
+            </Grid>
+          </Grid>
+
+          <Box mt={3} display="flex" justifyContent="flex-end" gap={1}>
+            <Button onClick={() => setOpen(false)} color="secondary">
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              disabled={isSubmit}
+            >
+              {editData ? "Update" : "Create"}
+            </Button>
+          </Box>
+        </form>
+      </Box>
+    </Modal>
+  );
+};
+
+export default InventoryModal;
