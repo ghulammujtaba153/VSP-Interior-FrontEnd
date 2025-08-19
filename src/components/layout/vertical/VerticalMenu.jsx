@@ -106,9 +106,12 @@ const VerticalMenu = ({ scrollMenu }) => {
 
         // suffix={<CustomChip label='5' size='small' color='error' round='true' />}
         >
-          <MenuItem href='/inventory'>
-            Inventory
-          </MenuItem>
+
+          <PermissionWrapper resource="inventory">
+            <MenuItem href='/inventory'>
+              Inventory
+            </MenuItem>
+          </PermissionWrapper>
 
         </SubMenu>
 
@@ -116,9 +119,11 @@ const VerticalMenu = ({ scrollMenu }) => {
           label='Cabinet'
           icon={<i className='tabler-door' />}
         >
-          <MenuItem href='/cabinet'>
-            Cabinet
-          </MenuItem>
+          <PermissionWrapper resource="cabinet">
+            <MenuItem href='/cabinet'>
+              Cabinet
+            </MenuItem>
+          </PermissionWrapper>
         </SubMenu>
 
         <SubMenu

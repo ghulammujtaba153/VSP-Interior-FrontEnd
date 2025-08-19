@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   Modal,
   Box,
@@ -14,6 +14,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { BASE_URL } from "@/configs/url";
 import Loader from "../loader/Loader";
+import { useAuth } from "@/context/authContext";
 
 
 const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
@@ -28,8 +29,11 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
     supplierId: "",
     costPrice: "",
     quantity: "",
+    minThreshold: "",
+    maxThreshold: "",
   });
   const [loading, setLoading] = useState(true);
+  const {user} = useAuth();
 
   // Pre-fill form in edit mode
   useEffect(() => {
@@ -43,6 +47,8 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
         supplierId: editData.supplierId || "",
         costPrice: editData.costPrice || "",
         quantity: editData.quantity || "",
+        minThreshold: editData.minThreshold || "",
+        maxThreshold: editData.maxThreshold || "",
       });
     } else {
       setFormData({
@@ -54,6 +60,8 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
         supplierId: "",
         costPrice: "",
         quantity: "",
+        minThreshold: "",
+        maxThreshold: "",
       });
     }
   }, [editData]);
@@ -62,6 +70,7 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
   const fetchSuppliers = async () => {
     setLoading(true);
     try {
+
       const res = await axios.get(`${BASE_URL}/api/suppliers/get`);
       setSuppliers(res.data.data || []);
     } catch (error) {
@@ -87,11 +96,21 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
     try {
       if (editData) {
         // Edit Mode
+        formData.minThreshold = parseInt(formData.minThreshold) || 0;
+        formData.maxThreshold = parseInt(formData.maxThreshold) || 0;
+        formData.costPrice = parseInt(formData.costPrice) || 0;
+        formData.quantity = parseInt(formData.quantity) || 0;
+        formData.userId = user.id;
         await axios.put(`${BASE_URL}/api/inventory/update/${editData.id}`, formData);
         toast.dismiss();
         toast.success("Inventory updated successfully");
       } else {
         // Add Mode
+        formData.minThreshold = parseInt(formData.minThreshold) || 0;
+        formData.maxThreshold = parseInt(formData.maxThreshold) || 0;
+        formData.costPrice = parseInt(formData.costPrice) || 0;
+        formData.quantity = parseInt(formData.quantity) || 0;
+        formData.userId = user.id;
         await axios.post(`${BASE_URL}/api/inventory/create`, formData);
         toast.dismiss();
         toast.success("Inventory created successfully");
@@ -223,6 +242,28 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
                 value={formData.quantity}
                 onChange={handleChange}
                 required
+              />
+            </Grid>
+
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="Min Threshold"
+                name="minThreshold"
+                type="number"
+                value={formData.minThreshold}
+                onChange={handleChange}
+              />
+            </Grid>
+
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label="Max Threshold"
+                name="maxThreshold"
+                type="number"
+                value={formData.maxThreshold}
+                onChange={handleChange}
               />
             </Grid>
           </Grid>

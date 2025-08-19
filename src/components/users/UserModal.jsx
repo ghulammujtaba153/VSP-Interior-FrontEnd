@@ -12,8 +12,9 @@ import {
 import axios from 'axios';
 
 import { BASE_URL } from '@/configs/url';
+import { useAuth } from '@/context/authContext';
 
-const UserModal = ({ open, mode, user, onClose, onSave }) => {
+const UserModal = ({ open, mode, userProfile, onClose, onSave }) => {
   const [formData, setFormData] = React.useState({
     id: null,
     name: '',
@@ -23,6 +24,7 @@ const UserModal = ({ open, mode, user, onClose, onSave }) => {
   });
 
   const [roles, setRoles] = React.useState([]);
+  const {user} = useAuth();
 
   const fetchRoles = async () => {
     try {
@@ -39,18 +41,18 @@ const UserModal = ({ open, mode, user, onClose, onSave }) => {
   }, []);
 
   React.useEffect(() => {
-    if (user) {
+    if (userProfile) {
       setFormData({
-        id: user.id || null,
-        name: user.name || '',
-        email: user.email || '',
-        role: user.Role?.name || '',
+        id: userProfile.id || null,
+        name: userProfile.name || '',
+        email: userProfile.email || '',
+        role: userProfile.Role?.name || '',
         password: '', // do not prefill password
       });
     } else {
       setFormData({ id: null, name: '', email: '', role: '', password: '' });
     }
-  }, [user, open]);
+  }, [userProfile, open]);
 
   const handleChange = (e) => {
     setFormData((prev) => ({

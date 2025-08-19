@@ -20,12 +20,14 @@ import { BASE_URL } from '@/configs/url';
 
 import PermissionWrapper from '@/components/PermissionWrapper';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useAuth } from '@/context/authContext';
 
 const UserTable = ({ users, fetchUsers }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('view');
   const [selectedUser, setSelectedUser] = useState(null);
   const { canView, canCreate, canEdit, canDelete } = usePermissions();
+  const {user} = useAuth();
 
   const handleOpenModal = (mode, user = null) => {
     setModalMode(mode);
@@ -43,6 +45,7 @@ const UserTable = ({ users, fetchUsers }) => {
       console.log('Updating user:', formData);
 
       try {
+        formData.userId = user.id;
         const res = await axios.put(`${BASE_URL}/api/user/update/${formData.id}`, formData);
 
         console.log(res.data);
@@ -56,6 +59,7 @@ const UserTable = ({ users, fetchUsers }) => {
       console.log('Creating user:', formData);
 
       try {
+        formData.userId = user.id;
         const res = await axios.post(`${BASE_URL}/api/user/create`, formData);
 
         console.log(res.data);
@@ -76,7 +80,11 @@ const UserTable = ({ users, fetchUsers }) => {
 
     // Call your delete API here
     try {
-      const res = await axios.delete(`${BASE_URL}/api/user/delete/${id}`);
+      const res = await axios.delete(`${BASE_URL}/api/user/delete/${id}`, {
+        data: {
+          userId: user.id
+        }
+      });
 
       console.log(res.data);
       fetchUsers();
@@ -89,7 +97,8 @@ const UserTable = ({ users, fetchUsers }) => {
 
   const handleStatusChange = async (id, checked) => {
     try {
-      const res = await axios.put(`${BASE_URL}/api/user/update-status/${id}`, { status: checked ? 'active' : 'suspended' });
+      
+      const res = await axios.put(`${BASE_URL}/api/user/update-status/${id}`, { status: checked ? 'active' : 'suspended', userId: user.id });
 
       console.log(res.data);
       toast.success("User status updated successfully");

@@ -29,10 +29,11 @@ import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 
 import Loader from '../loader/Loader';
 import { BASE_URL } from '@/configs/url';
-
+import { useAuth } from '@/context/authContext';
 import ClientsModal from './ClientsModal';
 import ContactModal from './ContactModal';
 import ViewClient from './ViewClient';
+import PermissionWrapper from '../PermissionWrapper';
 
 const ClientsTable = () => {
     const [clients, setClients] = useState([]);
@@ -45,6 +46,8 @@ const ClientsTable = () => {
 
     const [openViewClient, setOpenViewClient] = useState(false);
     const [selectedClient, setSelectedClient] = useState(null);
+    const { user } = useAuth();
+
 
     const fetchClients = async () => {
         try {
@@ -76,7 +79,9 @@ const ClientsTable = () => {
 
     const handleDelete = async (id) => {
         try {
-            await axios.delete(`${BASE_URL}/api/client/delete/${id}`);
+            await axios.delete(`${BASE_URL}/api/client/delete/${id}`, {
+                userId: user.id
+            });
             toast.success("Client deleted successfully");
             fetchClients();
         } catch (err) {
@@ -92,7 +97,7 @@ const ClientsTable = () => {
 
     const handleStatusUpdate = async (id, status) => {
         try {
-            await axios.put(`${BASE_URL}/api/client/status/${id}`, { status });
+            await axios.put(`${BASE_URL}/api/client/status/${id}`, { status, userId: user.id });
             toast.success("Status updated successfully");
             fetchClients();
         } catch (error) {
@@ -160,26 +165,37 @@ const ClientsTable = () => {
                                     />
                                 </TableCell>
                                 <TableCell align="right">
+                                    <PermissionWrapper resource="clients" action="canView">
                                     <Tooltip title="Add Contact">
                                         <IconButton color="success" onClick={() => handleAddContact(client.id)}>
                                             <PersonAddAlt1Icon />
                                         </IconButton>
                                     </Tooltip>
+                                    </PermissionWrapper>
+
+                                    <PermissionWrapper resource="clients" action="canView">
                                     <Tooltip title="View">
                                         <IconButton onClick={() => handleView(client)} color="info">
                                             <VisibilityIcon />
                                         </IconButton>
                                     </Tooltip>
+                                    </PermissionWrapper>
+
+                                    <PermissionWrapper resource="clients" action="canEdit">
                                     <Tooltip title="Edit">
                                         <IconButton onClick={() => handleEdit(client)} color="primary">
                                             <EditIcon />
                                         </IconButton>
                                     </Tooltip>
+                                    </PermissionWrapper>
+
+                                    <PermissionWrapper resource="clients" action="canDelete">
                                     <Tooltip title="Delete">
                                         <IconButton onClick={() => handleDelete(client.id)} color="error">
                                             <DeleteIcon />
                                         </IconButton>
                                     </Tooltip>
+                                    </PermissionWrapper>
                                 </TableCell>
                             </TableRow>
                         ))}

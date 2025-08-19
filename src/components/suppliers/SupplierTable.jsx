@@ -33,6 +33,7 @@ import SupplierModal from "./SupplierModal";
 import ViewSupplier from "./ViewSupplier";
 import AddContact from "./AddContact";
 import PermissionWrapper from "../PermissionWrapper";
+import { useAuth } from "@/context/authContext";
 
 const SupplierTable = () => {
     const [suppliers, setSuppliers] = useState([]);
@@ -42,6 +43,9 @@ const SupplierTable = () => {
     const [openView, setOpenView] = useState(false);
     const [openAddContact, setOpenAddContact] = useState(false);
     const [selectedContactSupplier, setSelectedContactSupplier] = useState(null);
+    const { user } = useAuth();
+
+
 
     const handleEdit = (supplier) => {
         setSelectedSupplier(supplier);
@@ -67,7 +71,11 @@ const SupplierTable = () => {
         toast.loading("Deleting supplier...");
 
         try {
-            await axios.delete(`${BASE_URL}/api/suppliers/delete/${id}`);
+            await axios.delete(`${BASE_URL}/api/suppliers/delete/${id}`, {
+                data: {
+                    userId: user.id
+                }
+            });
             toast.dismiss();
             toast.success("Supplier deleted successfully");
             fetchSuppliers();
@@ -99,7 +107,7 @@ const SupplierTable = () => {
         try {
             const newStatus = currentStatus === "active" ? "inactive" : "active";
 
-            await axios.put(`${BASE_URL}/api/suppliers/update/${id}`, { status: newStatus });
+            await axios.put(`${BASE_URL}/api/suppliers/update/${id}`, { status: newStatus, userId: user.id });
             setSuppliers((prev) =>
                 prev.map((s) =>
                     s.id === id ? { ...s, status: newStatus } : s
@@ -181,15 +189,23 @@ const SupplierTable = () => {
                                     </PermissionWrapper>
 
 
+                                    <PermissionWrapper resource="suppliers" action="canView">
                                     <IconButton color="primary" onClick={() => handleView(supplier)}>
                                         <VisibilityIcon />
                                     </IconButton>
+                                    </PermissionWrapper>
+
+                                    <PermissionWrapper resource="suppliers" action="canEdit">
                                     <IconButton color="secondary" onClick={() => handleEdit(supplier)}>
                                         <EditIcon />
                                     </IconButton>
+                                    </PermissionWrapper>
+
+                                    <PermissionWrapper resource="suppliers" action="canDelete">
                                     <IconButton color="error" onClick={() => handleDelete(supplier.id)}>
                                         <DeleteIcon />
                                     </IconButton>
+                                    </PermissionWrapper>
                                 </TableCell>
                             </TableRow>
                         ))}

@@ -24,6 +24,8 @@ import RoleModal from './RoleModal';
 import { BASE_URL } from '@/configs/url';
 import Loader from '@/components/loader/Loader';
 import Link from '@/components/Link';
+import PermissionWrapper from '@/components/PermissionWrapper';
+import { useAuth } from '@/context/authContext';
 
 
 const RolesTable = () => {
@@ -33,6 +35,9 @@ const RolesTable = () => {
   const [selectedRole, setSelectedRole] = useState(null);
   const [mode, setMode] = useState('create');
   const [loading, setLoading] = useState(true)
+  const {user} = useAuth();
+
+
 
   const fetchRoles = async () => {
     try {
@@ -73,6 +78,7 @@ const RolesTable = () => {
     toast.loading("Saving...");
 
     try {
+      formData.userId = user.id;
       if (mode === 'edit') {
         console.log('Update Role:', formData);
         await axios.put(`${BASE_URL}/api/role/update/${selectedRole.id}`, formData);
@@ -99,7 +105,9 @@ const RolesTable = () => {
     if (confirm("Are you sure you want to delete this role?")) {
       try {
         toast.loading("Deleting...");
-        await axios.delete(`${BASE_URL}/api/role/delete/${id}`);
+        await axios.delete(`${BASE_URL}/api/role/delete/${id}`, {
+            userId: user.id
+        });
         toast.dismiss();
         toast.success("Role deleted successfully");
         fetchRoles(); // Refresh roles after deletion
@@ -128,17 +136,25 @@ const RolesTable = () => {
         
 return (
           <>
+          <PermissionWrapper resource="roles" action="canView">
             <IconButton>
             <Link href={`/users/roles/${row.id}`} sx={{color: 'inherit', mt: 4, textDecoration: 'none'}}>
               <VisibilityIcon />
             </Link>
             </IconButton>
+            </PermissionWrapper>
+
+            <PermissionWrapper resource="roles" action="canEdit">
             <IconButton onClick={() => handleOpen('edit', row)}>
               <EditIcon />
             </IconButton>
+            </PermissionWrapper>
+
+            <PermissionWrapper resource="roles" action="canDelete">
             <IconButton onClick={() => handleDelete(row.id)}>
               <DeleteIcon color="error" />
             </IconButton>
+            </PermissionWrapper>
           </>
         );
       },

@@ -21,6 +21,7 @@ import { Visibility, Edit, Delete } from "@mui/icons-material";
 import CabinetModal from "./CabinetModal";
 import ViewCabinet from "./ViewCabinet";
 import { toast } from "react-toastify";
+import { useAuth } from "@/context/authContext";
 
 const CabinetTable = () => {
   const [loading, setLoading] = useState(true);
@@ -29,7 +30,9 @@ const CabinetTable = () => {
   const [editData, setEditData] = useState(null);
   const [viewOpen, setViewOpen] = useState(false);
   const [viewData, setViewData] = useState(null);
+  const {user} = useAuth()
 
+  
   const fetchCabinets = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/api/cabinet/get`);
@@ -44,7 +47,11 @@ const CabinetTable = () => {
   const handleDelete = async (id) => {
     toast.loading("Deleting Cabinet...")
     try {
-      await axios.delete(`${BASE_URL}/api/cabinet/delete/${id}`)
+      await axios.delete(`${BASE_URL}/api/cabinet/delete/${id}`, {
+        data: {
+          userId: user.id
+        }
+      })
       fetchCabinets()
       toast.dismiss()
       toast.success("Cabinet deleted successfully")

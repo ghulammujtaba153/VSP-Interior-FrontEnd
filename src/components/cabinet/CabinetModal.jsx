@@ -13,6 +13,7 @@ import {
 import axios from "axios";
 import { BASE_URL } from "@/configs/url";
 import { toast } from "react-toastify";
+import { useAuth } from "@/context/authContext";
 
 const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -24,6 +25,7 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
     basePrice: "",
     pricePerSqft: "",
   });
+  const {user} = useAuth()
 
   useEffect(() => {
     if (editData) {
@@ -59,6 +61,9 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
   const handleSubmit = async () => {
     try {
       toast.loading(editData ? "Updating cabinet..." : "Adding cabinet...");
+      formData.userId = user.id
+      formData.depth = parseInt(formData.depth) || 0
+      
       if (editData) {
         await axios.put(`${BASE_URL}/api/cabinet/update/${editData.id}`, formData);
         toast.dismiss();

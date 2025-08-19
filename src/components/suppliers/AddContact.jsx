@@ -16,6 +16,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 import { BASE_URL } from "@/configs/url";
+import { useAuth } from "@/context/authContext";
 
 const AddContact = ({ open, onClose, supplierId, onContactAdded }) => {
   const [data, setData] = useState({
@@ -26,6 +27,7 @@ const AddContact = ({ open, onClose, supplierId, onContactAdded }) => {
     emailAddress: "",
     phoneNumber: "",
   });
+  const {user} = useAuth()
 
   // Update supplierId when the prop is received
   useEffect(() => {
@@ -48,6 +50,7 @@ const AddContact = ({ open, onClose, supplierId, onContactAdded }) => {
         ...data,
         phoneNumber: parseInt(data.phoneNumber),
         supplierId: parseInt(data.supplierId),
+        userId: user.id,
       });
 
       toast.dismiss();

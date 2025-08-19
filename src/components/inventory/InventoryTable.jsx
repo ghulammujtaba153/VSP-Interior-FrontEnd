@@ -21,6 +21,8 @@ import { Visibility, Edit, Delete } from "@mui/icons-material";
 import InventoryModal from "./InventoryModal";
 import { toast } from "react-toastify";
 import ViewInventoryModal from "./ViewInventoryModal";
+import PermissionWrapper from "../PermissionWrapper";
+import { useAuth } from "@/context/authContext";
 
 const InventoryTable = () => {
   const [loading, setLoading] = useState(true);
@@ -29,7 +31,7 @@ const InventoryTable = () => {
   const [editData, setEditData] = useState(null);
   const [viewOpen, setViewOpen] = useState(false);
 const [viewData, setViewData] = useState(null);
-
+const { user } = useAuth();
 
   const fetchData = async () => {
     try {
@@ -50,7 +52,11 @@ const [viewData, setViewData] = useState(null);
   const handleDelete = async (id) => {
     try {
         toast.loading("Deleting Inventory...");
-      await axios.delete(`${BASE_URL}/api/inventory/delete/${id}`);
+      await axios.delete(`${BASE_URL}/api/inventory/delete/${id}`, {
+        data: {
+          userId: user.id
+        }
+      });
       toast.dismiss();
       toast.success("Inventory deleted successfully");
       fetchData();
@@ -113,12 +119,16 @@ const [viewData, setViewData] = useState(null);
                 <TableCell>{item.supplier?.companyName || "N/A"}</TableCell>
                 <TableCell>{formatDate(item.createdAt)}</TableCell>
                 <TableCell>
+                  <PermissionWrapper resource="inventory" action="canView">
                   <IconButton color="primary" onClick={() => {
                     setViewData(item);
                     setViewOpen(true);
                   }}>
                     <Visibility />
                   </IconButton>
+                  </PermissionWrapper>
+
+                  <PermissionWrapper resource="inventory" action="canEdit">
                   <IconButton
                     color="secondary"
                     onClick={() => {
@@ -128,9 +138,13 @@ const [viewData, setViewData] = useState(null);
                   >
                     <Edit />
                   </IconButton>
+                  </PermissionWrapper>
+
+                  <PermissionWrapper resource="inventory" action="canDelete">
                   <IconButton color="error" onClick={() => handleDelete(item.id)}>
                     <Delete />
                   </IconButton>
+                  </PermissionWrapper>
                 </TableCell>
               </TableRow>
             ))}

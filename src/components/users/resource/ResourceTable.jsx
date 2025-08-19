@@ -24,6 +24,8 @@ import axios from 'axios';
 import ResourceModal from './ResourceModel';
 import { BASE_URL } from '@/configs/url';
 import Loader from '@/components/loader/Loader';
+import PermissionWrapper from '@/components/PermissionWrapper';
+import { useAuth } from '@/context/authContext';
 
 const ResourceTable = () => {
   const [loading, setLoading] = useState(false);
@@ -31,6 +33,7 @@ const ResourceTable = () => {
   const [openModal, setOpenModal] = useState(false);
 const [selectedResource, setSelectedResource] = useState(null);
 const [mode, setMode] = useState('create');
+const { user } = useAuth();
 
 const handleAdd = () => {
   setSelectedResource(null);
@@ -47,9 +50,13 @@ const handleEdit = (resource) => {
   const handleSave = async (resource) => {
     try {
       if (mode === 'create') {
-        await axios.post(`${BASE_URL}/api/resource/create`, resource);
+        await axios.post(`${BASE_URL}/api/resource/create`, resource, {
+          userId: user.id
+        });
       } else {
-        await axios.put(`${BASE_URL}/api/resource/update/${resource.id}`, resource);
+        await axios.put(`${BASE_URL}/api/resource/update/${resource.id}`, resource, {
+          userId: user.id
+        });
       }
 
       fetchData();
@@ -85,7 +92,9 @@ const handleEdit = (resource) => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`${BASE_URL}/api/resource/delete/${id}`);
+      await axios.delete(`${BASE_URL}/api/resource/delete/${id}`, {
+        userId: user.id
+      });
       fetchData(); // refresh
     } catch (err) {
       console.error('Error deleting resource', err);
@@ -118,13 +127,17 @@ const handleEdit = (resource) => {
                 <TableCell>{resource.id}</TableCell>
                 <TableCell>{resource.name}</TableCell>
                 <TableCell align="center">
-                  
+                  <PermissionWrapper resource="resources" action="canEdit">
                   <IconButton color="secondary" onClick={() => handleEdit(resource)}>
                     <EditIcon />
                   </IconButton>
+                  </PermissionWrapper>
+
+                  <PermissionWrapper resource="resources" action="canDelete">
                   <IconButton color="error" onClick={() => handleDelete(resource.id)}>
                     <DeleteIcon />
                   </IconButton>
+                  </PermissionWrapper>
                 </TableCell>
               </TableRow>
             ))}

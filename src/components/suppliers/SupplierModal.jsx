@@ -15,6 +15,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 import { BASE_URL } from "@/configs/url";
+import { useAuth } from "@/context/authContext";
 
 const defaultData = {
     companyName: "",
@@ -28,6 +29,7 @@ const defaultData = {
 const SupplierModal = ({ open, onClose, fetchSuppliers, selectedSupplier }) => {
     const [data, setData] = useState(defaultData);
     const [loading, setLoading] = useState(false);
+    const {user} = useAuth()
 
     useEffect(() => {
         if (selectedSupplier) {
@@ -48,6 +50,9 @@ const SupplierModal = ({ open, onClose, fetchSuppliers, selectedSupplier }) => {
 
         try {
             toast.loading(selectedSupplier ? "Updating supplier..." : "Creating supplier...");
+
+            
+            data.userId = user.id
 
             if (selectedSupplier) {
                 await axios.put(`${BASE_URL}/api/suppliers/update/${selectedSupplier.id}`, data);

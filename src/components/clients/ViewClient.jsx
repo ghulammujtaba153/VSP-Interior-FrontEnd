@@ -20,9 +20,11 @@ import axios from 'axios';
 import SaveIcon from '@mui/icons-material/Save';
 
 import { BASE_URL } from '@/configs/url';
+import { useAuth } from '@/context/authContext';
 
 const ViewClient = ({ open, onClose, client }) => {
     const [contacts, setContacts] = useState([]);
+    const {user} = useAuth()
 
     useEffect(() => {
         if (client && client.contacts) {
@@ -41,7 +43,10 @@ const ViewClient = ({ open, onClose, client }) => {
         toast.loading("Updating contact...");
 
         try {
-            const response = await axios.put(`${BASE_URL}/api/contact/update/${contactId}`, updatedData);
+            const response = await axios.put(`${BASE_URL}/api/contact/update/${contactId}`, {
+                ...updatedData,
+                userId: user.id,
+            });
 
             toast.dismiss();
             toast.success("Contact updated successfully");

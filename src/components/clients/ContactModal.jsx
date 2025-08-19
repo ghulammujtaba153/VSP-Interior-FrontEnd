@@ -14,6 +14,7 @@ import { toast } from "react-toastify";
 import axios from "axios";
 
 import { BASE_URL } from "@/configs/url";
+import { useAuth } from "@/context/authContext";
 
 const modalStyle = {
   position: "absolute",
@@ -37,6 +38,7 @@ const ContactModal = ({ open, onClose, clientId, refreshContacts }) => {
   });
 
   const [loading, setLoading] = useState(false);
+  const {user} = useAuth()
 
   // Reset form and update clientId when modal opens or clientId changes
   useEffect(() => {
@@ -61,7 +63,10 @@ const ContactModal = ({ open, onClose, clientId, refreshContacts }) => {
     setLoading(true);
 
     try {
-      await axios.post(`${BASE_URL}/api/contact/create`, contact);
+      await axios.post(`${BASE_URL}/api/contact/create`, {
+        ...contact,
+        userId: user.id,
+      });
       toast.success("Contact created successfully");
       refreshContacts && refreshContacts();
       onClose(); // ✅ Close the modal

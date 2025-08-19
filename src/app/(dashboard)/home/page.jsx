@@ -21,6 +21,8 @@ import {
 import ProtectedRoute from '@/components/ProtectedRoute'
 import { useAuth } from '@/context/authContext'
 import { BASE_URL } from '@/configs/url'
+import AuditSection from '@/components/home/AuditSection'
+import NotificationSection from '@/components/home/NotificationSection'
 
 export default function HomePage() {
   const { googleLogin } = useAuth()
@@ -61,6 +63,10 @@ const MainHome = () => {
       <Typography variant="subtitle1" gutterBottom>
         This is your protected home page. Submit site configuration below.
       </Typography>
+
+      <NotificationSection/>
+
+      <AuditSection/>
 
       
     </Container>

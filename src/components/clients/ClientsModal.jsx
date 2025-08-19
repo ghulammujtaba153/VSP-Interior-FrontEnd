@@ -16,6 +16,7 @@ import { toast } from 'react-toastify';
 import axios from 'axios';
 
 import { BASE_URL } from '@/configs/url';
+import { useAuth } from '@/context/authContext';
 
 const initialClientState = {
   companyName: '',
@@ -29,6 +30,7 @@ const initialClientState = {
 const ClientsModal = ({ open, handleClose, editClient, refreshClients }) => {
   const [client, setClient] = useState(initialClientState);
   const [loading, setLoading] = useState(false);
+  const {user} = useAuth()
 
   useEffect(() => {
     if (editClient) {
@@ -50,10 +52,16 @@ const ClientsModal = ({ open, handleClose, editClient, refreshClients }) => {
 
     try {
       if (editClient) {
-        await axios.put(`${BASE_URL}/api/client/update/${client.id}`, client);
+        await axios.put(`${BASE_URL}/api/client/update/${client.id}`, {
+          ...client,
+          userId: user.id,
+        });
         toast.success('Client updated successfully');
       } else {
-        await axios.post(`${BASE_URL}/api/client/create`, client);
+        await axios.post(`${BASE_URL}/api/client/create`, {
+          ...client,
+          userId: user.id,
+        });
         toast.success('Client created successfully');
       }
 
