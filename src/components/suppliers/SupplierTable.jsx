@@ -1,34 +1,24 @@
 'use client'
 
 import { useEffect, useState } from "react";
-
 import axios from "axios";
 import { toast } from "react-toastify";
-
-
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Paper,
-    IconButton,
-    Switch,
-    Typography,
     Box,
-    Button
+    Button,
+    IconButton,
+    Typography,
+    Paper,
+    Switch,
+    Tooltip,
 } from "@mui/material";
-
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import AddIcon from "@mui/icons-material/Add";
-
+import { DataGrid } from "@mui/x-data-grid";
 import { BASE_URL } from "@/configs/url";
 import Loader from "../loader/Loader";
-
 import SupplierModal from "./SupplierModal";
 import ViewSupplier from "./ViewSupplier";
 import AddContact from "./AddContact";
@@ -44,8 +34,6 @@ const SupplierTable = () => {
     const [openAddContact, setOpenAddContact] = useState(false);
     const [selectedContactSupplier, setSelectedContactSupplier] = useState(null);
     const { user } = useAuth();
-
-
 
     const handleEdit = (supplier) => {
         setSelectedSupplier(supplier);
@@ -69,7 +57,6 @@ const SupplierTable = () => {
 
     const handleDelete = async (id) => {
         toast.loading("Deleting supplier...");
-
         try {
             await axios.delete(`${BASE_URL}/api/suppliers/delete/${id}`, {
                 data: {
@@ -90,7 +77,6 @@ const SupplierTable = () => {
     const fetchSuppliers = async () => {
         try {
             const res = await axios.get(`${BASE_URL}/api/suppliers/get`);
-
             setSuppliers(res.data.data);
         } catch (error) {
             toast.error(error?.response?.data?.message || "Failed to fetch suppliers");
@@ -106,7 +92,6 @@ const SupplierTable = () => {
     const handleStatusChange = async (id, currentStatus) => {
         try {
             const newStatus = currentStatus === "active" ? "inactive" : "active";
-
             await axios.put(`${BASE_URL}/api/suppliers/update/${id}`, { status: newStatus, userId: user.id });
             setSuppliers((prev) =>
                 prev.map((s) =>
@@ -123,8 +108,66 @@ const SupplierTable = () => {
         return <Loader />;
     }
 
+    const columns = [
+        { field: "companyName", headerName: "Company Name", flex: 1.5 },
+        { field: "email", headerName: "Email", flex: 1.5 },
+        { field: "phone", headerName: "Phone", flex: 1 },
+        { field: "address", headerName: "Address", flex: 1.5 },
+        {
+            field: "status",
+            headerName: "Status",
+            flex: 1,
+            renderCell: (params) => (
+                <Switch
+                    checked={params.value === "active"}
+                    onChange={() => handleStatusChange(params.row.id, params.value)}
+                    color="primary"
+                />
+            ),
+        },
+        {
+            field: "actions",
+            headerName: "Actions",
+            flex: 2,
+            sortable: false,
+            filterable: false,
+            renderCell: (params) => (
+                <Box>
+                    <PermissionWrapper resource="supplier-contacts" action="canCreate">
+                        <Tooltip title="Add Contact">
+                            <IconButton color="primary" onClick={() => handleAddContact(params.row)}>
+                                <AddIcon />
+                            </IconButton>
+                        </Tooltip>
+                    </PermissionWrapper>
+                    <PermissionWrapper resource="suppliers" action="canView">
+                        <Tooltip title="View">
+                            <IconButton color="primary" onClick={() => handleView(params.row)}>
+                                <VisibilityIcon />
+                            </IconButton>
+                        </Tooltip>
+                    </PermissionWrapper>
+                    <PermissionWrapper resource="suppliers" action="canEdit">
+                        <Tooltip title="Edit">
+                            <IconButton color="secondary" onClick={() => handleEdit(params.row)}>
+                                <EditIcon />
+                            </IconButton>
+                        </Tooltip>
+                    </PermissionWrapper>
+                    <PermissionWrapper resource="suppliers" action="canDelete">
+                        <Tooltip title="Delete">
+                            <IconButton color="error" onClick={() => handleDelete(params.row.id)}>
+                                <DeleteIcon />
+                            </IconButton>
+                        </Tooltip>
+                    </PermissionWrapper>
+                </Box>
+            ),
+        },
+    ];
+
     return (
-        <Box p={2}>
+        <Paper p={2} sx={{p:2}}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                 <Typography variant="h5" gutterBottom>Suppliers</Typography>
                 <Button variant="contained" color="primary" onClick={handleAdd}>Add Supplier</Button>
@@ -154,72 +197,20 @@ const SupplierTable = () => {
                 }}
             />
 
-            <TableContainer component={Paper}>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Company Name</TableCell>
-                            <TableCell>Email</TableCell>
-                            <TableCell>Phone</TableCell>
-                            <TableCell>Address</TableCell>
-                            <TableCell>Status</TableCell>
-                            <TableCell>Actions</TableCell>
-                        </TableRow>
-                    </TableHead>
-
-                    <TableBody>
-                        {suppliers.map((supplier) => (
-                            <TableRow key={supplier.id}>
-                                <TableCell>{supplier.companyName}</TableCell>
-                                <TableCell>{supplier.email}</TableCell>
-                                <TableCell>{supplier.phone}</TableCell>
-                                <TableCell>{supplier.address}</TableCell>
-                                <TableCell>
-                                    <Switch
-                                        checked={supplier.status === "active"}
-                                        onChange={() => handleStatusChange(supplier.id, supplier.status)}
-                                        color="primary"
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <PermissionWrapper resource="supplier-contacts" action="canCreate">
-                                        <IconButton color="primary" onClick={() => handleAddContact(supplier)}>
-                                            <AddIcon />
-                                        </IconButton>
-                                    </PermissionWrapper>
-
-
-                                    <PermissionWrapper resource="suppliers" action="canView">
-                                    <IconButton color="primary" onClick={() => handleView(supplier)}>
-                                        <VisibilityIcon />
-                                    </IconButton>
-                                    </PermissionWrapper>
-
-                                    <PermissionWrapper resource="suppliers" action="canEdit">
-                                    <IconButton color="secondary" onClick={() => handleEdit(supplier)}>
-                                        <EditIcon />
-                                    </IconButton>
-                                    </PermissionWrapper>
-
-                                    <PermissionWrapper resource="suppliers" action="canDelete">
-                                    <IconButton color="error" onClick={() => handleDelete(supplier.id)}>
-                                        <DeleteIcon />
-                                    </IconButton>
-                                    </PermissionWrapper>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                        {suppliers.length === 0 && (
-                            <TableRow>
-                                <TableCell colSpan={6} align="center">
-                                    No suppliers found
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </TableContainer>
-        </Box>
+            <Paper>
+                <DataGrid
+                    rows={suppliers.map((supplier) => ({
+                        ...supplier,
+                        id: supplier.id, // DataGrid expects a unique 'id' field
+                    }))}
+                    columns={columns}
+                    autoHeight
+                    pageSize={10}
+                    rowsPerPageOptions={[5, 10, 20]}
+                    disableRowSelectionOnClick
+                />
+            </Paper>
+        </Paper>
     );
 };
 

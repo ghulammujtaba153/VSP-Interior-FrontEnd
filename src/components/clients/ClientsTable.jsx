@@ -1,32 +1,22 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-
 import axios from 'axios';
 import { toast } from 'react-toastify';
-
-
 import {
-    Box,
-    Button,
-    IconButton,
-    Typography,
-    Table,
-    TableHead,
-    TableRow,
-    TableCell,
-    TableBody,
-    Paper,
-    Tooltip,
-    Switch,
+  Box,
+  Button,
+  IconButton,
+  Typography,
+  Paper,
+  Tooltip,
+  Switch,
 } from '@mui/material';
-
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
-
 import Loader from '../loader/Loader';
 import { BASE_URL } from '@/configs/url';
 import { useAuth } from '@/context/authContext';
@@ -34,183 +24,188 @@ import ClientsModal from './ClientsModal';
 import ContactModal from './ContactModal';
 import ViewClient from './ViewClient';
 import PermissionWrapper from '../PermissionWrapper';
+import { DataGrid } from '@mui/x-data-grid';
 
 const ClientsTable = () => {
-    const [clients, setClients] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [openModal, setOpenModal] = useState(false);
-    const [editClient, setEditClient] = useState(null);
+  const [clients, setClients] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [openModal, setOpenModal] = useState(false);
+  const [editClient, setEditClient] = useState(null);
 
-    const [openContactModal, setOpenContactModal] = useState(false);
-    const [selectedClientId, setSelectedClientId] = useState(null);
+  const [openContactModal, setOpenContactModal] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState(null);
 
-    const [openViewClient, setOpenViewClient] = useState(false);
-    const [selectedClient, setSelectedClient] = useState(null);
-    const { user } = useAuth();
+  const [openViewClient, setOpenViewClient] = useState(false);
+  const [selectedClient, setSelectedClient] = useState(null);
+  const { user } = useAuth();
 
+  const fetchClients = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/client/get`);
+      setClients(response.data);
+    } catch (error) {
+      toast.error("Error fetching clients");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const fetchClients = async () => {
-        try {
-            const response = await axios.get(`${BASE_URL}/api/client/get`);
+  const handleView = (client) => {
+    toast.info(`Viewing ${client.companyName}`);
+    setSelectedClient(client);
+    setOpenViewClient(true);
+  };
 
-            setClients(response.data);
-        } catch (error) {
-            toast.error("Error fetching clients");
-        } finally {
-            setLoading(false);
-        }
-    };
+  const handleAdd = () => {
+    setEditClient(null);
+    setOpenModal(true);
+  };
 
-    const handleView = (client) => {
-        toast.info(`Viewing ${client.companyName}`);
-        setSelectedClient(client);
-        setOpenViewClient(true);
-    };
+  const handleEdit = (client) => {
+    setEditClient(client);
+    setOpenModal(true);
+  };
 
-    const handleAdd = () => {
-        setEditClient(null);
-        setOpenModal(true);
-    };
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`${BASE_URL}/api/client/delete/${id}`, {
+        data: { userId: user.id }
+      });
+      toast.success("Client deleted successfully");
+      fetchClients();
+    } catch (err) {
+      toast.error("Error deleting client");
+    }
+  };
 
-    const handleEdit = (client) => {
-        setEditClient(client);
-        setOpenModal(true);
-    };
+  const handleAddContact = (clientId) => {
+    setSelectedClientId(clientId);
+    setOpenContactModal(true);
+  };
 
-    const handleDelete = async (id) => {
-        try {
-            await axios.delete(`${BASE_URL}/api/client/delete/${id}`, {
-                userId: user.id
-            });
-            toast.success("Client deleted successfully");
-            fetchClients();
-        } catch (err) {
-            toast.error("Error deleting client");
-        }
-    };
+  const handleStatusUpdate = async (id, status) => {
+    try {
+      await axios.put(`${BASE_URL}/api/client/status/${id}`, { status, userId: user.id });
+      toast.success("Status updated successfully");
+      fetchClients();
+    } catch (error) {
+      toast.error("Error updating status");
+    }
+  };
 
-    const handleAddContact = (clientId) => {
-        setSelectedClientId(clientId);
-        setOpenContactModal(true);
-    };
+  useEffect(() => {
+    fetchClients();
+  }, []);
 
+  if (loading) return <Loader />;
 
-    const handleStatusUpdate = async (id, status) => {
-        try {
-            await axios.put(`${BASE_URL}/api/client/status/${id}`, { status, userId: user.id });
-            toast.success("Status updated successfully");
-            fetchClients();
-        } catch (error) {
-            toast.error("Error updating status");
-        }
-    };
-
-    useEffect(() => {
-        fetchClients();
-    }, []);
-
-    if (loading) return <Loader />;
-
-    return (
-        <Box p={2}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                <Typography variant="h5">Clients</Typography>
-                <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={handleAdd}>
-                    Add Client
-                </Button>
-            </Box>
-
-            <ClientsModal
-                open={openModal}
-                handleClose={() => setOpenModal(false)}
-                editClient={editClient}
-                refreshClients={fetchClients}
-            />
-
-            {openContactModal && <ContactModal
-                open={openContactModal}
-                onClose={() => setOpenContactModal(false)}
-                clientId={selectedClientId}
-                refreshContacts={fetchClients}
-            />}
-
-            {openViewClient && <ViewClient
-                open={openViewClient}
-                onClose={() => setOpenViewClient(false)}
-                client={selectedClient}
-            />}
-
-            <Paper elevation={3}>
-                <Table>
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Company Name</TableCell>
-                            <TableCell>Email</TableCell>
-                            <TableCell>Phone</TableCell>
-                            <TableCell>Status</TableCell>
-                            <TableCell align="right">Actions</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {clients.map((client) => (
-                            <TableRow key={client.id}>
-                                <TableCell>{client.companyName}</TableCell>
-                                <TableCell>{client.emailAddress}</TableCell>
-                                <TableCell>{client.phoneNumber}</TableCell>
-                                <TableCell>
-                                    <Switch
-                                        checked={client.accountStatus === "active"}
-                                        onChange={() => handleStatusUpdate(client.id, client.accountStatus === "active" ? "inactive" : "active")}
-                                        color="success"
-                                    />
-                                </TableCell>
-                                <TableCell align="right">
-                                    <PermissionWrapper resource="clients" action="canView">
-                                    <Tooltip title="Add Contact">
-                                        <IconButton color="success" onClick={() => handleAddContact(client.id)}>
-                                            <PersonAddAlt1Icon />
-                                        </IconButton>
-                                    </Tooltip>
-                                    </PermissionWrapper>
-
-                                    <PermissionWrapper resource="clients" action="canView">
-                                    <Tooltip title="View">
-                                        <IconButton onClick={() => handleView(client)} color="info">
-                                            <VisibilityIcon />
-                                        </IconButton>
-                                    </Tooltip>
-                                    </PermissionWrapper>
-
-                                    <PermissionWrapper resource="clients" action="canEdit">
-                                    <Tooltip title="Edit">
-                                        <IconButton onClick={() => handleEdit(client)} color="primary">
-                                            <EditIcon />
-                                        </IconButton>
-                                    </Tooltip>
-                                    </PermissionWrapper>
-
-                                    <PermissionWrapper resource="clients" action="canDelete">
-                                    <Tooltip title="Delete">
-                                        <IconButton onClick={() => handleDelete(client.id)} color="error">
-                                            <DeleteIcon />
-                                        </IconButton>
-                                    </Tooltip>
-                                    </PermissionWrapper>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                        {clients.length === 0 && (
-                            <TableRow>
-                                <TableCell colSpan={5} align="center">
-                                    No clients found.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </Paper>
+  const columns = [
+    { field: "companyName", headerName: "Company Name", flex: 1.5 },
+    { field: "emailAddress", headerName: "Email", flex: 1.5 },
+    { field: "phoneNumber", headerName: "Phone", flex: 1 },
+    {
+      field: "accountStatus",
+      headerName: "Status",
+      flex: 1,
+      renderCell: (params) => (
+        <Switch
+          checked={params.value === "active"}
+          onChange={() =>
+            handleStatusUpdate(params.row.id, params.value === "active" ? "inactive" : "active")
+          }
+          color="success"
+        />
+      ),
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      flex: 2,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => (
+        <Box>
+          <PermissionWrapper resource="clients" action="canView">
+            <Tooltip title="Add Contact">
+              <IconButton color="success" onClick={() => handleAddContact(params.row.id)}>
+                <PersonAddAlt1Icon />
+              </IconButton>
+            </Tooltip>
+          </PermissionWrapper>
+          <PermissionWrapper resource="clients" action="canView">
+            <Tooltip title="View">
+              <IconButton onClick={() => handleView(params.row)} color="info">
+                <VisibilityIcon />
+              </IconButton>
+            </Tooltip>
+          </PermissionWrapper>
+          <PermissionWrapper resource="clients" action="canEdit">
+            <Tooltip title="Edit">
+              <IconButton onClick={() => handleEdit(params.row)} color="primary">
+                <EditIcon />
+              </IconButton>
+            </Tooltip>
+          </PermissionWrapper>
+          <PermissionWrapper resource="clients" action="canDelete">
+            <Tooltip title="Delete">
+              <IconButton onClick={() => handleDelete(params.row.id)} color="error">
+                <DeleteIcon />
+              </IconButton>
+            </Tooltip>
+          </PermissionWrapper>
         </Box>
-    );
+      ),
+    },
+  ];
+
+  return (
+    <Paper p={2} sx={{ padding: 2 }}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <Typography variant="h5">Clients</Typography>
+        <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={handleAdd}>
+          Add Client
+        </Button>
+      </Box>
+
+      <ClientsModal
+        open={openModal}
+        handleClose={() => setOpenModal(false)}
+        editClient={editClient}
+        refreshClients={fetchClients}
+      />
+
+      {openContactModal && (
+        <ContactModal
+          open={openContactModal}
+          onClose={() => setOpenContactModal(false)}
+          clientId={selectedClientId}
+          refreshContacts={fetchClients}
+        />
+      )}
+
+      {openViewClient && (
+        <ViewClient
+          open={openViewClient}
+          onClose={() => setOpenViewClient(false)}
+          client={selectedClient}
+        />
+      )}
+
+      <Paper elevation={3}>
+        <DataGrid
+          rows={clients.map((client) => ({
+            ...client,
+            id: client.id, // DataGrid expects a unique 'id' field
+          }))}
+          columns={columns}
+          autoHeight
+          pageSize={10}
+          rowsPerPageOptions={[5, 10, 20]}
+          disableRowSelectionOnClick
+        />
+      </Paper>
+    </Paper>
+  );
 };
 
 export default ClientsTable;

@@ -1,24 +1,17 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-
 import {
   Box,
   Paper,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
   Button,
+  IconButton,
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-
+import { DataGrid } from '@mui/x-data-grid';
 import axios from 'axios';
 
 import ResourceModal from './ResourceModel';
@@ -27,25 +20,28 @@ import Loader from '@/components/loader/Loader';
 import PermissionWrapper from '@/components/PermissionWrapper';
 import { useAuth } from '@/context/authContext';
 
+
+
+
 const ResourceTable = () => {
   const [loading, setLoading] = useState(false);
   const [resources, setResources] = useState([]);
   const [openModal, setOpenModal] = useState(false);
-const [selectedResource, setSelectedResource] = useState(null);
-const [mode, setMode] = useState('create');
-const { user } = useAuth();
+  const [selectedResource, setSelectedResource] = useState(null);
+  const [mode, setMode] = useState('create');
+  const { user } = useAuth();
 
-const handleAdd = () => {
-  setSelectedResource(null);
-  setMode('create');
-  setOpenModal(true);
-};
+  const handleAdd = () => {
+    setSelectedResource(null);
+    setMode('create');
+    setOpenModal(true);
+  };
 
-const handleEdit = (resource) => {
-  setSelectedResource(resource);
-  setMode('edit');
-  setOpenModal(true);
-};
+  const handleEdit = (resource) => {
+    setSelectedResource(resource);
+    setMode('edit');
+    setOpenModal(true);
+  };
 
   const handleSave = async (resource) => {
     try {
@@ -58,7 +54,6 @@ const handleEdit = (resource) => {
           userId: user.id
         });
       }
-
       fetchData();
     } catch (error) {
       console.error('Error saving resource', error);
@@ -69,7 +64,6 @@ const handleEdit = (resource) => {
     try {
       setLoading(true);
       const res = await axios.get(`${BASE_URL}/api/resource/get`);
-
       setResources(res.data);
     } catch (error) {
       console.error("Error fetching resources", error);
@@ -81,14 +75,6 @@ const handleEdit = (resource) => {
   useEffect(() => {
     fetchData();
   }, []);
-
-  const handleView = (resource) => {
-    console.log('Viewing resource:', resource);
-
-    // open view modal
-  };
-
-
 
   const handleDelete = async (id) => {
     try {
@@ -103,55 +89,55 @@ const handleEdit = (resource) => {
 
   if (loading) return <Loader />;
 
+  const columns = [
+    { field: "id", headerName: "ID", flex: 1 },
+    { field: "name", headerName: "Name", flex: 2 },
+    {
+      field: "actions",
+      headerName: "Actions",
+      flex: 1.5,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => (
+        <Box>
+          <PermissionWrapper resource="resources" action="canEdit">
+            <IconButton color="secondary" onClick={() => handleEdit(params.row)}>
+              <EditIcon />
+            </IconButton>
+          </PermissionWrapper>
+          <PermissionWrapper resource="resources" action="canDelete">
+            <IconButton color="error" onClick={() => handleDelete(params.row.id)}>
+              <DeleteIcon />
+            </IconButton>
+          </PermissionWrapper>
+        </Box>
+      ),
+    },
+  ];
+
   return (
-    <Box p={2}>
+    <Paper p={2} sx={{ p:4}}>
       <Box display="flex" justifyContent="space-between" mb={2}>
-      <Typography variant="h5" mb={2}>
-        Resources
-      </Typography>
-      <Button variant="contained" color="primary" onClick={handleAdd}>Add Resource</Button>
+        <Typography variant="h5" mb={2}>
+          Resources
+        </Typography>
+        <Button variant="contained" color="primary" onClick={handleAdd}>Add Resource</Button>
       </Box>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell align="center">Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {resources.map((resource) => (
-              <TableRow key={resource.id}>
-                <TableCell>{resource.id}</TableCell>
-                <TableCell>{resource.name}</TableCell>
-                <TableCell align="center">
-                  <PermissionWrapper resource="resources" action="canEdit">
-                  <IconButton color="secondary" onClick={() => handleEdit(resource)}>
-                    <EditIcon />
-                  </IconButton>
-                  </PermissionWrapper>
+      <Paper>
+        <DataGrid
+          rows={resources.map((resource) => ({
+            ...resource,
+            id: resource.id, // DataGrid expects a unique 'id' field
+          }))}
+          columns={columns}
+          autoHeight
+          pageSize={10}
+          rowsPerPageOptions={[5, 10, 20]}
+          disableRowSelectionOnClick
+        />
+      </Paper>
 
-                  <PermissionWrapper resource="resources" action="canDelete">
-                  <IconButton color="error" onClick={() => handleDelete(resource.id)}>
-                    <DeleteIcon />
-                  </IconButton>
-                  </PermissionWrapper>
-                </TableCell>
-              </TableRow>
-            ))}
-
-            {resources.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={3} align="center">
-                  No resources found.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
       <ResourceModal
         open={openModal}
         onClose={() => setOpenModal(false)}
@@ -159,7 +145,7 @@ const handleEdit = (resource) => {
         resource={selectedResource}
         mode={mode}
       />
-    </Box>
+    </Paper>
   );
 };
 

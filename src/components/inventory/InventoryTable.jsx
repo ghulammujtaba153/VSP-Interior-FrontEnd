@@ -7,15 +7,9 @@ import {
   Box,
   Button,
   IconButton,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
+  Typography,
   Paper,
   CircularProgress,
-  Typography,
 } from "@mui/material";
 import { Visibility, Edit, Delete } from "@mui/icons-material";
 import InventoryModal from "./InventoryModal";
@@ -23,6 +17,7 @@ import { toast } from "react-toastify";
 import ViewInventoryModal from "./ViewInventoryModal";
 import PermissionWrapper from "../PermissionWrapper";
 import { useAuth } from "@/context/authContext";
+import { DataGrid } from "@mui/x-data-grid";
 
 const InventoryTable = () => {
   const [loading, setLoading] = useState(true);
@@ -30,8 +25,8 @@ const InventoryTable = () => {
   const [open, setOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const [viewOpen, setViewOpen] = useState(false);
-const [viewData, setViewData] = useState(null);
-const { user } = useAuth();
+  const [viewData, setViewData] = useState(null);
+  const { user } = useAuth();
 
   const fetchData = async () => {
     try {
@@ -48,14 +43,13 @@ const { user } = useAuth();
     fetchData();
   }, []);
 
-
   const handleDelete = async (id) => {
     try {
-        toast.loading("Deleting Inventory...");
+      toast.loading("Deleting Inventory...");
       await axios.delete(`${BASE_URL}/api/inventory/delete/${id}`, {
         data: {
-          userId: user.id
-        }
+          userId: user.id,
+        },
       });
       toast.dismiss();
       toast.success("Inventory deleted successfully");
@@ -68,7 +62,8 @@ const { user } = useAuth();
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString();
+    // Use ISO format for hydration safety
+    return new Date(dateString).toISOString().slice(0, 10);
   };
 
   if (loading) {
@@ -79,8 +74,59 @@ const { user } = useAuth();
     );
   }
 
+  const columns = [
+    { field: "id", headerName: "ID", flex: 1 },
+    { field: "itemCode", headerName: "Item Code", flex: 1.2 },
+    { field: "name", headerName: "Name", flex: 1.5 },
+    
+    {
+      field: "createdAt",
+      headerName: "Date",
+      flex: 1,
+      renderCell: (params) => formatDate(params.value),
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      flex: 1.2,
+      sortable: false,
+      filterable: false,
+      renderCell: (params) => (
+        <Box>
+          <PermissionWrapper resource="inventory" action="canView">
+            <IconButton
+              color="primary"
+              onClick={() => {
+                setViewData(params.row);
+                setViewOpen(true);
+              }}
+            >
+              <Visibility />
+            </IconButton>
+          </PermissionWrapper>
+          <PermissionWrapper resource="inventory" action="canEdit">
+            <IconButton
+              color="secondary"
+              onClick={() => {
+                setEditData(params.row);
+                setOpen(true);
+              }}
+            >
+              <Edit />
+            </IconButton>
+          </PermissionWrapper>
+          <PermissionWrapper resource="inventory" action="canDelete">
+            <IconButton color="error" onClick={() => handleDelete(params.row.id)}>
+              <Delete />
+            </IconButton>
+          </PermissionWrapper>
+        </Box>
+      ),
+    },
+  ];
+
   return (
-    <Box p={3}>
+    <Paper p={3} sx={{p: 4}}>
       {/* Header with Add Item Button */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h5" fontWeight="bold">
@@ -90,7 +136,7 @@ const { user } = useAuth();
           variant="contained"
           color="primary"
           onClick={() => {
-            setEditData(null); // ✅ reset edit data for add mode
+            setEditData(null); // reset edit data for add mode
             setOpen(true);
           }}
         >
@@ -98,59 +144,20 @@ const { user } = useAuth();
         </Button>
       </Box>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell><strong>ID</strong></TableCell>
-              <TableCell><strong>Item Code</strong></TableCell>
-              <TableCell><strong>Name</strong></TableCell>
-              <TableCell><strong>Supplier Name</strong></TableCell>
-              <TableCell><strong>Date</strong></TableCell>
-              <TableCell><strong>Actions</strong></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {data.map((item) => (
-              <TableRow key={item.id}>
-                <TableCell>{item.id}</TableCell>
-                <TableCell>{item.itemCode}</TableCell>
-                <TableCell>{item.name}</TableCell>
-                <TableCell>{item.supplier?.companyName || "N/A"}</TableCell>
-                <TableCell>{formatDate(item.createdAt)}</TableCell>
-                <TableCell>
-                  <PermissionWrapper resource="inventory" action="canView">
-                  <IconButton color="primary" onClick={() => {
-                    setViewData(item);
-                    setViewOpen(true);
-                  }}>
-                    <Visibility />
-                  </IconButton>
-                  </PermissionWrapper>
-
-                  <PermissionWrapper resource="inventory" action="canEdit">
-                  <IconButton
-                    color="secondary"
-                    onClick={() => {
-                      setEditData(item); // ✅ set for edit
-                      setOpen(true);
-                    }}
-                  >
-                    <Edit />
-                  </IconButton>
-                  </PermissionWrapper>
-
-                  <PermissionWrapper resource="inventory" action="canDelete">
-                  <IconButton color="error" onClick={() => handleDelete(item.id)}>
-                    <Delete />
-                  </IconButton>
-                  </PermissionWrapper>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <Paper>
+        <DataGrid
+          rows={data.map((item) => ({
+            ...item,
+            supplierName: item.supplier?.companyName || "N/A",
+            id: item.id, // DataGrid expects a unique 'id' field
+          }))}
+          columns={columns}
+          autoHeight
+          pageSize={10}
+          rowsPerPageOptions={[5, 10, 20]}
+          disableRowSelectionOnClick
+        />
+      </Paper>
 
       {/* Modal for Add/Edit */}
       <InventoryModal
@@ -166,7 +173,7 @@ const { user } = useAuth();
         setOpen={setViewOpen}
         inventory={viewData}
       />
-    </Box>
+    </Paper>
   );
 };
 
