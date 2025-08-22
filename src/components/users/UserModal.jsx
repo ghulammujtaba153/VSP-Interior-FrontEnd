@@ -1,5 +1,4 @@
 import React from 'react';
-
 import {
   Dialog,
   DialogTitle,
@@ -19,18 +18,17 @@ const UserModal = ({ open, mode, userProfile, onClose, onSave }) => {
     id: null,
     name: '',
     email: '',
-    role: '',
+    roleId: '',   // ✅ use roleId instead of role name
     password: '',
   });
 
   const [roles, setRoles] = React.useState([]);
-  const {user} = useAuth();
+  const { user } = useAuth();
 
   const fetchRoles = async () => {
     try {
       const roleRes = await axios.get(`${BASE_URL}/api/role/get`);
-
-      setRoles(roleRes.data); // expecting an array of roles
+      setRoles(roleRes.data);
     } catch (error) {
       console.log(error);
     }
@@ -46,11 +44,11 @@ const UserModal = ({ open, mode, userProfile, onClose, onSave }) => {
         id: userProfile.id || null,
         name: userProfile.name || '',
         email: userProfile.email || '',
-        role: userProfile.Role?.name || '',
-        password: '', // do not prefill password
+        roleId: userProfile.roleId || '', // ✅ use roleId from backend
+        password: '',
       });
     } else {
-      setFormData({ id: null, name: '', email: '', role: '', password: '' });
+      setFormData({ id: null, name: '', email: '', roleId: '', password: '' });
     }
   }, [userProfile, open]);
 
@@ -99,14 +97,14 @@ const UserModal = ({ open, mode, userProfile, onClose, onSave }) => {
           fullWidth
           select
           label="Role"
-          name="role"
-          value={formData.role}
+          name="roleId"   // ✅ bind to roleId
+          value={formData.roleId}
           onChange={handleChange}
           margin="normal"
           disabled={isViewMode}
         >
           {roles.map((role) => (
-            <MenuItem key={role.id} value={role.name}>
+            <MenuItem key={role.id} value={role.id}>
               {role.name}
             </MenuItem>
           ))}

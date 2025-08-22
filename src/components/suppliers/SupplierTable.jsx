@@ -24,6 +24,10 @@ import ViewSupplier from "./ViewSupplier";
 import AddContact from "./AddContact";
 import PermissionWrapper from "../PermissionWrapper";
 import { useAuth } from "@/context/authContext";
+import ImportCSV from "./ImportCSV";
+
+// ✅ Import XLSX for exporting
+import * as XLSX from "xlsx";
 
 const SupplierTable = () => {
     const [suppliers, setSuppliers] = useState([]);
@@ -34,6 +38,12 @@ const SupplierTable = () => {
     const [openAddContact, setOpenAddContact] = useState(false);
     const [selectedContactSupplier, setSelectedContactSupplier] = useState(null);
     const { user } = useAuth();
+    const [importCSV, setImportCSV] = useState(false);
+
+
+    const handleImportCSV = () => {
+        setImportCSV(true);
+    };
 
     const handleEdit = (supplier) => {
         setSelectedSupplier(supplier);
@@ -104,15 +114,36 @@ const SupplierTable = () => {
         }
     };
 
+    // ✅ Export to Excel
+    const handleExportExcel = () => {
+        const exportData = suppliers.map((s) => ({
+            "Supplier ID": s.id,
+            "Company Name": s.companyName,
+            "Email": s.email,
+            "Phone": s.phone,
+            "Address": s.address,
+            "Post Code": s.postCode,
+            "Status": s.status,
+            "Created At": s.createdAt ? new Date(s.createdAt).toLocaleString() : "N/A",
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Suppliers");
+        XLSX.writeFile(workbook, "suppliers.xlsx");
+    };
+
     if (loading) {
         return <Loader />;
     }
 
     const columns = [
+        { field: "id", headerName: "ID", flex: 1 },
         { field: "companyName", headerName: "Company Name", flex: 1.5 },
         { field: "email", headerName: "Email", flex: 1.5 },
         { field: "phone", headerName: "Phone", flex: 1 },
         { field: "address", headerName: "Address", flex: 1.5 },
+        { field: "postCode", headerName: "Post Code", flex: 1 },
         {
             field: "status",
             headerName: "Status",
@@ -170,7 +201,15 @@ const SupplierTable = () => {
         <Paper p={2} sx={{p:2}}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                 <Typography variant="h5" gutterBottom>Suppliers</Typography>
-                <Button variant="contained" color="primary" onClick={handleAdd}>Add Supplier</Button>
+                <Box display="flex" gap={1}>
+                    <Button variant="outlined" color="primary" onClick={handleImportCSV}>Import CSV</Button>
+                    <Button variant="outlined" color="success" onClick={handleExportExcel}>
+                        Export Excel
+                    </Button>
+                    <Button variant="contained" color="primary" onClick={handleAdd}>
+                        Add Supplier
+                    </Button>
+                </Box>
             </Box>
 
             {/* Modals */}
@@ -195,6 +234,12 @@ const SupplierTable = () => {
                     setOpenAddContact(false);
                     fetchSuppliers();
                 }}
+            />
+
+            <ImportCSV
+                open={importCSV} // This can be controlled by a state if you want to show/hide it
+                onClose={() => setImportCSV(false)} // Implement close logic if needed
+                fetchSuppliers={fetchSuppliers}
             />
 
             <Paper>

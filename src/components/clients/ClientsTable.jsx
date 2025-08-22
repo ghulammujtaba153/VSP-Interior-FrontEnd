@@ -25,6 +25,10 @@ import ContactModal from './ContactModal';
 import ViewClient from './ViewClient';
 import PermissionWrapper from '../PermissionWrapper';
 import { DataGrid } from '@mui/x-data-grid';
+import ImportModal from './ImportModal';
+
+// ✅ Import XLSX for export
+import * as XLSX from "xlsx";
 
 const ClientsTable = () => {
   const [clients, setClients] = useState([]);
@@ -34,6 +38,9 @@ const ClientsTable = () => {
 
   const [openContactModal, setOpenContactModal] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState(null);
+
+  const [openImportModal, setOpenImportModal] = useState(false);
+  
 
   const [openViewClient, setOpenViewClient] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
@@ -48,6 +55,11 @@ const ClientsTable = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+
+  const handleImportModalOpen = () => {
+    setOpenImportModal(true);
   };
 
   const handleView = (client) => {
@@ -93,6 +105,25 @@ const ClientsTable = () => {
     }
   };
 
+  // ✅ Export to Excel
+  const handleExportExcel = () => {
+    const exportData = clients.map(c => ({
+      "Client ID": c.id,
+      "Company Name": c.companyName,
+      "Email": c.emailAddress,
+      "Phone": c.phoneNumber,
+      "Address": c.address,
+      "City": c.postCode,
+      "Status": c.accountStatus,
+      "Created At": c.createdAt ? new Date(c.createdAt).toLocaleString() : "N/A"
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Clients");
+    XLSX.writeFile(workbook, "clients.xlsx");
+  };
+
   useEffect(() => {
     fetchClients();
   }, []);
@@ -100,9 +131,12 @@ const ClientsTable = () => {
   if (loading) return <Loader />;
 
   const columns = [
+    { field: "id", headerName: "Client Id", flex: 0.5 },
     { field: "companyName", headerName: "Company Name", flex: 1.5 },
     { field: "emailAddress", headerName: "Email", flex: 1.5 },
     { field: "phoneNumber", headerName: "Phone", flex: 1 },
+    { field: "address", headerName: "Address", flex: 2 },
+    { field: "postCode", headerName: "City", flex: 1 },
     {
       field: "accountStatus",
       headerName: "Status",
@@ -162,9 +196,18 @@ const ClientsTable = () => {
     <Paper p={2} sx={{ padding: 2 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h5">Clients</Typography>
-        <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={handleAdd}>
-          Add Client
-        </Button>
+        <Box display="flex" gap={1}>
+          <Button variant="outlined" color="success" onClick={handleImportModalOpen}>
+            Import Clients
+          </Button>
+
+          <Button variant="outlined" color="success" onClick={handleExportExcel}>
+            Export Excel
+          </Button>
+          <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={handleAdd}>
+            Add Client
+          </Button>
+        </Box>
       </Box>
 
       <ClientsModal
@@ -190,6 +233,17 @@ const ClientsTable = () => {
           client={selectedClient}
         />
       )}
+
+
+      {
+        openImportModal && (
+          <ImportModal
+            open={openImportModal}
+            onClose={() => setOpenImportModal(false)}
+            refreshClients={fetchClients}
+          />
+        )
+      }
 
       <Paper elevation={3}>
         <DataGrid

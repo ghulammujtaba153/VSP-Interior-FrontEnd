@@ -18,6 +18,10 @@ import ViewInventoryModal from "./ViewInventoryModal";
 import PermissionWrapper from "../PermissionWrapper";
 import { useAuth } from "@/context/authContext";
 import { DataGrid } from "@mui/x-data-grid";
+import ImportCSV from "./ImportCSV";
+
+// ✅ Import XLSX
+import * as XLSX from "xlsx";
 
 const InventoryTable = () => {
   const [loading, setLoading] = useState(true);
@@ -27,6 +31,13 @@ const InventoryTable = () => {
   const [viewOpen, setViewOpen] = useState(false);
   const [viewData, setViewData] = useState(null);
   const { user } = useAuth();
+  const [importCSV, setImportCSV] = useState(false);
+
+
+
+  const handleImportCSV = () => {
+    setImportCSV(true);
+  }
 
   const fetchData = async () => {
     try {
@@ -62,8 +73,29 @@ const InventoryTable = () => {
   };
 
   const formatDate = (dateString) => {
-    // Use ISO format for hydration safety
     return new Date(dateString).toISOString().slice(0, 10);
+  };
+
+  // ✅ Export to Excel
+  const handleExportExcel = () => {
+    const exportData = data.map((item) => ({
+      "ID": item.id,
+      "Item Code": item.itemCode,
+      "Name": item.name,
+      "Category": item.category,
+      "Unit": item.unit,
+      "Quantity": item.quantity,
+      "Price": item.costPrice,
+      "Minimun Threshold": item.minThreshold,
+      "Maximum Threshold": item.maxThreshold,
+      "Supplier": item.supplier?.companyName || "N/A",
+      "Date": item.createdAt ? formatDate(item.createdAt) : "N/A",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
+    XLSX.writeFile(workbook, "inventory.xlsx");
   };
 
   if (loading) {
@@ -78,7 +110,10 @@ const InventoryTable = () => {
     { field: "id", headerName: "ID", flex: 1 },
     { field: "itemCode", headerName: "Item Code", flex: 1.2 },
     { field: "name", headerName: "Name", flex: 1.5 },
-    
+    { field: "category", headerName: "Category", flex: 1 },
+    { field: "unit", headerName: "Unit", flex: 1 },
+    { field: "quantity", headerName: "Quantity", flex: 1 },
+    { field: "costPrice", headerName: "Price", flex: 1 },
     {
       field: "createdAt",
       headerName: "Date",
@@ -126,22 +161,31 @@ const InventoryTable = () => {
   ];
 
   return (
-    <Paper p={3} sx={{p: 4}}>
-      {/* Header with Add Item Button */}
+    <Paper p={3} sx={{ p: 4 }}>
+      {/* Header with Add + Export Buttons */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h5" fontWeight="bold">
           Inventory Table
         </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => {
-            setEditData(null); // reset edit data for add mode
-            setOpen(true);
-          }}
-        >
-          Add Item
-        </Button>
+        <Box display="flex" gap={1}>
+          <Button variant="outlined" color="primary" onClick={handleImportCSV}>
+            Import Excel
+          </Button>
+
+          <Button variant="outlined" color="success" onClick={handleExportExcel}>
+            Export Excel
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              setEditData(null);
+              setOpen(true);
+            }}
+          >
+            Add Item
+          </Button>
+        </Box>
       </Box>
 
       <Paper>
@@ -149,7 +193,7 @@ const InventoryTable = () => {
           rows={data.map((item) => ({
             ...item,
             supplierName: item.supplier?.companyName || "N/A",
-            id: item.id, // DataGrid expects a unique 'id' field
+            id: item.id,
           }))}
           columns={columns}
           autoHeight
@@ -158,6 +202,13 @@ const InventoryTable = () => {
           disableRowSelectionOnClick
         />
       </Paper>
+
+
+      <ImportCSV
+        open={importCSV}
+        onClose={() => setImportCSV(false)}
+        fetchData={fetchData}
+      />
 
       {/* Modal for Add/Edit */}
       <InventoryModal

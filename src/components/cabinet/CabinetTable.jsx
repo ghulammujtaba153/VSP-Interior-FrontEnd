@@ -13,6 +13,9 @@ import { useAuth } from '@/context/authContext'
 import { DataGrid } from '@mui/x-data-grid'
 import CSVFileModal from './CSVFileModal'
 
+// ✅ Import XLSX
+import * as XLSX from 'xlsx'
+
 const CabinetTable = () => {
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState([])
@@ -57,8 +60,28 @@ const CabinetTable = () => {
   }, [])
 
   const formatDate = dateString => {
-    // Use ISO format for hydration safety
     return new Date(dateString).toISOString().slice(0, 10)
+  }
+
+  // ✅ Export to Excel
+  const handleExportExcel = () => {
+    const exportData = data.map(cabinet => ({
+      ID: cabinet.id,
+      'Model Name': cabinet.modelName,
+      Material: cabinet.material,
+      Height: cabinet.height,
+      Width: cabinet.width,
+      Depth: cabinet.depth,
+      'Base Price': cabinet.basePrice,
+      'Price Per Sqft': cabinet.pricePerSqft,
+      Status: cabinet.status,
+      Date: cabinet.createdAt ? formatDate(cabinet.createdAt) : 'N/A'
+    }))
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Cabinets')
+    XLSX.writeFile(workbook, 'cabinets.xlsx')
   }
 
   if (loading) return <Loader />
@@ -130,6 +153,14 @@ const CabinetTable = () => {
         </Typography>
         <Box display='flex' gap={2}>
           <Button
+            variant='outlined'
+            color='success'
+            onClick={handleExportExcel}
+          >
+            Export Excel
+          </Button>
+
+          <Button
             variant='contained'
             color='primary'
             onClick={() => {
@@ -157,7 +188,7 @@ const CabinetTable = () => {
         <DataGrid
           rows={data.map(cabinet => ({
             ...cabinet,
-            id: cabinet.id // DataGrid expects a unique 'id' field
+            id: cabinet.id
           }))}
           columns={columns}
           autoHeight
@@ -176,7 +207,11 @@ const CabinetTable = () => {
       />
       <ViewCabinet open={viewOpen} setOpen={setViewOpen} data={viewData} />
 
-      <CSVFileModal open={csvModalOpen} onClose={() => setCsvModalOpen(false)} onSuccess={fetchCabinets} />
+      <CSVFileModal
+        open={csvModalOpen}
+        onClose={() => setCsvModalOpen(false)}
+        onSuccess={fetchCabinets}
+      />
     </Paper>
   )
 }

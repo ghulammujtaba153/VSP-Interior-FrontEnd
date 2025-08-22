@@ -3,7 +3,8 @@
 import React, { useState } from 'react';
 
 import {
-  Box, Button, IconButton, Typography, Paper, Switch
+  Box, Button, IconButton, Typography, Paper, Switch,
+  Chip
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import EditIcon from '@mui/icons-material/Edit';
@@ -17,17 +18,18 @@ import { toast } from 'react-toastify';
 import UserModal from './UserModal';
 import { BASE_URL } from '@/configs/url';
 
-
 import PermissionWrapper from '@/components/PermissionWrapper';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAuth } from '@/context/authContext';
+
+import * as XLSX from "xlsx";   // ✅ Import XLSX
 
 const UserTable = ({ users, fetchUsers }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('view');
   const [selectedUser, setSelectedUser] = useState(null);
   const { canView, canCreate, canEdit, canDelete } = usePermissions();
-  const {user} = useAuth();
+  const { user } = useAuth();
 
   const handleOpenModal = (mode, user = null) => {
     setModalMode(mode);
@@ -42,51 +44,32 @@ const UserTable = ({ users, fetchUsers }) => {
 
   const handleSaveUser = async (formData) => {
     if (modalMode === 'edit') {
-      console.log('Updating user:', formData);
-
       try {
         formData.userId = user.id;
         const res = await axios.put(`${BASE_URL}/api/user/update/${formData.id}`, formData);
-
-        console.log(res.data);
         toast.success("User updated successfully");
-        fetchUsers(); // Refresh the users list
+        fetchUsers();
       } catch (error) {
-        console.error("Error updating user", error);
         toast.error("Error updating user");
       }
     } else if (modalMode === 'create') {
-      console.log('Creating user:', formData);
-
       try {
         formData.userId = user.id;
         const res = await axios.post(`${BASE_URL}/api/user/create`, formData);
-
-        console.log(res.data);
         toast.success("User created successfully");
-        fetchUsers(); // Refresh the users list
+        fetchUsers();
       } catch (error) {
-        console.error("Error creating user", error);
         toast.error("Error creating user");
       }
     }
-
     handleCloseModal();
   };
 
   const handleDeleteUser = async (id) => {
-    console.log('Deleting user with id:', id);
-
-
-    // Call your delete API here
     try {
-      const res = await axios.delete(`${BASE_URL}/api/user/delete/${id}`, {
-        data: {
-          userId: user.id
-        }
+      await axios.delete(`${BASE_URL}/api/user/delete/${id}`, {
+        data: { userId: user.id }
       });
-
-      console.log(res.data);
       fetchUsers();
       toast.success("User deleted successfully");
     } catch (error) {
@@ -94,19 +77,33 @@ const UserTable = ({ users, fetchUsers }) => {
     }
   };
 
-
   const handleStatusChange = async (id, checked) => {
     try {
-      
-      const res = await axios.put(`${BASE_URL}/api/user/update-status/${id}`, { status: checked ? 'active' : 'suspended', userId: user.id });
-
-      console.log(res.data);
+      await axios.put(`${BASE_URL}/api/user/update-status/${id}`, { 
+        status: checked ? 'active' : 'suspended', 
+        userId: user.id 
+      });
       toast.success("User status updated successfully");
       fetchUsers();
     } catch (error) {
       toast.error("Error updating user status");
-      console.error("Error updating user status", error);
     }
+  };
+
+  // ✅ Export to Excel
+  const handleExportExcel = () => {
+    const exportData = users.map(u => ({
+      Name: u.name,
+      Email: u.email,
+      Role: u.Role.name || "N/A",
+      Status: u.status,
+      "Created At": u.createdAt ? new Date(u.createdAt).toLocaleString() : "N/A"
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Users");
+    XLSX.writeFile(workbook, "users.xlsx");
   };
 
   const columns = [
@@ -116,14 +113,13 @@ const UserTable = ({ users, fetchUsers }) => {
       field: 'Role',
       headerName: 'Role',
       flex: 1,
-      valueGetter: (params) => {
-        console.log("params", params)
-        
-        const roleName = params?.name;
-
-        
-return roleName || 'N/A';
-      },
+      renderCell: (params) => {
+        const row = params?.row;
+        if (!row) return null;
+        return (
+          <Chip label={row.Role.name} />
+        );
+      }
     },
     {
       field: 'status',
@@ -131,9 +127,7 @@ return roleName || 'N/A';
       flex: 1,
       renderCell: (params) => {
         const row = params?.row;
-
         if (!row) return null;
-
         return (
           <Switch
             checked={row.status === 'active'}
@@ -147,13 +141,11 @@ return roleName || 'N/A';
       field: 'createdAt',
       headerName: 'Created At',
       flex: 1.5,
-      valueGetter: (params) => {
-        console.log("params createdAt", params)
-        const createdAt = params;
-
-        
-return createdAt ? new Date(createdAt).toLocaleString() : 'N/A';
-      },
+      renderCell: (params) => {
+        const row = params?.row;
+        if (!row || !row.createdAt) return 'N/A';
+        return new Date(row.createdAt).toLocaleString();
+      }
     },
     {
       field: 'actions',
@@ -163,9 +155,7 @@ return createdAt ? new Date(createdAt).toLocaleString() : 'N/A';
       filterable: false,
       renderCell: (params) => {
         const row = params?.row;
-
         if (!row) return null;
-
         return (
           <>
             <PermissionWrapper resource="users" action="canView">
@@ -173,13 +163,11 @@ return createdAt ? new Date(createdAt).toLocaleString() : 'N/A';
                 <VisibilityIcon />
               </IconButton>
             </PermissionWrapper>
-            
             <PermissionWrapper resource="users" action="canEdit">
               <IconButton onClick={() => handleOpenModal('edit', row)}>
                 <EditIcon />
               </IconButton>
             </PermissionWrapper>
-            
             <PermissionWrapper resource="users" action="canDelete">
               <IconButton onClick={() => handleDeleteUser(row.id)}>
                 <DeleteIcon color="error" />
@@ -202,11 +190,16 @@ return createdAt ? new Date(createdAt).toLocaleString() : 'N/A';
         }}
       >
         <Typography variant="h6">User Table</Typography>
-        <PermissionWrapper resource="users" action="canCreate">
-          <Button variant="contained" color="primary" onClick={() => handleOpenModal('create')}>
-            Add User
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <PermissionWrapper resource="users" action="canCreate">
+            <Button variant="contained" color="primary" onClick={() => handleOpenModal('create')}>
+              Add User
+            </Button>
+          </PermissionWrapper>
+          <Button variant="outlined" color="success" onClick={handleExportExcel}>
+            Export Excel
           </Button>
-        </PermissionWrapper>
+        </Box>
       </Box>
 
       <DataGrid
@@ -221,7 +214,7 @@ return createdAt ? new Date(createdAt).toLocaleString() : 'N/A';
       <UserModal
         open={modalOpen}
         mode={modalMode}
-        user={selectedUser}
+        userProfile={selectedUser}
         onClose={handleCloseModal}
         onSave={handleSaveUser}
       />

@@ -17,6 +17,7 @@ import axios from 'axios';
 
 import { BASE_URL } from '@/configs/url';
 import { useAuth } from '@/context/authContext';
+import ImportModal from './ImportModal';
 
 const initialClientState = {
   companyName: '',
