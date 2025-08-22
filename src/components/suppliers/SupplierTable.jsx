@@ -25,6 +25,7 @@ import AddContact from "./AddContact";
 import PermissionWrapper from "../PermissionWrapper";
 import { useAuth } from "@/context/authContext";
 import ImportCSV from "./ImportCSV";
+import ConfirmationDialog from '../ConfirmationDialog';
 
 // ✅ Import XLSX for exporting
 import * as XLSX from "xlsx";
@@ -40,9 +41,33 @@ const SupplierTable = () => {
     const { user } = useAuth();
     const [importCSV, setImportCSV] = useState(false);
 
+    // Confirmation dialog states
+    const [confirmationOpen, setConfirmationOpen] = useState(false);
+    const [confirmationConfig, setConfirmationConfig] = useState({
+        title: '',
+        message: '',
+        action: null,
+        severity: 'warning'
+    });
+
+
+    const showConfirmation = (config) => {
+        setConfirmationConfig(config);
+        setConfirmationOpen(true);
+    };
+
+    const handleConfirmationClose = () => {
+        setConfirmationOpen(false);
+        setConfirmationConfig({ title: '', message: '', action: null, severity: 'warning' });
+    };
 
     const handleImportCSV = () => {
-        setImportCSV(true);
+        showConfirmation({
+            title: 'Import Suppliers',
+            message: 'Are you sure you want to import suppliers from CSV? This will add new supplier records to your database.',
+            action: () => setImportCSV(true),
+            severity: 'info'
+        });
     };
 
     const handleEdit = (supplier) => {
@@ -65,7 +90,16 @@ const SupplierTable = () => {
         setOpenAddContact(true);
     };
 
-    const handleDelete = async (id) => {
+    const handleDelete = (supplierRow) => {
+        showConfirmation({
+            title: 'Delete Supplier',
+            message: `Are you sure you want to delete supplier "${supplierRow.companyName}"? This action cannot be undone and will remove all associated data.`,
+            action: () => confirmDeleteSupplier(supplierRow.id),
+            severity: 'error'
+        });
+    };
+
+    const confirmDeleteSupplier = async (id) => {
         toast.loading("Deleting supplier...");
         try {
             await axios.delete(`${BASE_URL}/api/suppliers/delete/${id}`, {
@@ -116,6 +150,15 @@ const SupplierTable = () => {
 
     // ✅ Export to Excel
     const handleExportExcel = () => {
+        showConfirmation({
+            title: 'Export Suppliers to Excel',
+            message: `Are you sure you want to export ${suppliers.length} supplier records to Excel? This will download a file with all supplier data.`,
+            action: () => confirmExportExcel(),
+            severity: 'info'
+        });
+    };
+
+    const confirmExportExcel = () => {
         const exportData = suppliers.map((s) => ({
             "Supplier ID": s.id,
             "Company Name": s.companyName,
@@ -131,6 +174,7 @@ const SupplierTable = () => {
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Suppliers");
         XLSX.writeFile(workbook, "suppliers.xlsx");
+        toast.success("Supplier data exported successfully");
     };
 
     if (loading) {
@@ -187,7 +231,7 @@ const SupplierTable = () => {
                     </PermissionWrapper>
                     <PermissionWrapper resource="suppliers" action="canDelete">
                         <Tooltip title="Delete">
-                            <IconButton color="error" onClick={() => handleDelete(params.row.id)}>
+                            <IconButton color="error" onClick={() => handleDelete(params.row)}>
                                 <DeleteIcon />
                             </IconButton>
                         </Tooltip>
@@ -255,6 +299,17 @@ const SupplierTable = () => {
                     disableRowSelectionOnClick
                 />
             </Paper>
+
+            <ConfirmationDialog
+                open={confirmationOpen}
+                onClose={handleConfirmationClose}
+                onConfirm={confirmationConfig.action}
+                title={confirmationConfig.title}
+                message={confirmationConfig.message}
+                severity={confirmationConfig.severity}
+                confirmText={confirmationConfig.severity === 'error' ? 'Delete' : 'Confirm'}
+                cancelText="Cancel"
+            />
         </Paper>
     );
 };

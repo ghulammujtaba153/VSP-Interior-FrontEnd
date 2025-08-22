@@ -11,12 +11,22 @@ import {
   Paper,
   Tooltip,
   Switch,
+  Collapse,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import Loader from '../loader/Loader';
 import { BASE_URL } from '@/configs/url';
 import { useAuth } from '@/context/authContext';
@@ -24,7 +34,7 @@ import ClientsModal from './ClientsModal';
 import ContactModal from './ContactModal';
 import ViewClient from './ViewClient';
 import PermissionWrapper from '../PermissionWrapper';
-import { DataGrid } from '@mui/x-data-grid';
+import ConfirmationDialog from '../ConfirmationDialog';
 import ImportModal from './ImportModal';
 
 // ✅ Import XLSX for export
@@ -38,12 +48,25 @@ const ClientsTable = () => {
 
   const [openContactModal, setOpenContactModal] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState(null);
+  const [selectedContactForEdit, setSelectedContactForEdit] = useState(null);
 
   const [openImportModal, setOpenImportModal] = useState(false);
-  
 
   const [openViewClient, setOpenViewClient] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
+
+  // Expanded rows state for nested table
+  const [expandedRows, setExpandedRows] = useState(new Set());
+
+  // Confirmation dialog states
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [confirmationConfig, setConfirmationConfig] = useState({
+    title: '',
+    message: '',
+    action: null,
+    severity: 'warning'
+  });
+
   const { user } = useAuth();
 
   const fetchClients = async () => {
@@ -58,8 +81,23 @@ const ClientsTable = () => {
   };
 
 
+  const showConfirmation = (config) => {
+    setConfirmationConfig(config);
+    setConfirmationOpen(true);
+  };
+
+  const handleConfirmationClose = () => {
+    setConfirmationOpen(false);
+    setConfirmationConfig({ title: '', message: '', action: null, severity: 'warning' });
+  };
+
   const handleImportModalOpen = () => {
-    setOpenImportModal(true);
+    showConfirmation({
+      title: 'Import Clients',
+      message: 'Are you sure you want to import clients? This will add new client records to your database.',
+      action: () => setOpenImportModal(true),
+      severity: 'info'
+    });
   };
 
   const handleView = (client) => {
@@ -78,7 +116,16 @@ const ClientsTable = () => {
     setOpenModal(true);
   };
 
-  const handleDelete = async (id) => {
+  const handleDelete = (clientRow) => {
+    showConfirmation({
+      title: 'Delete Client',
+      message: `Are you sure you want to delete client "${clientRow.companyName}"? This action cannot be undone and will remove all associated data.`,
+      action: () => confirmDeleteClient(clientRow.id),
+      severity: 'error'
+    });
+  };
+
+  const confirmDeleteClient = async (id) => {
     try {
       await axios.delete(`${BASE_URL}/api/client/delete/${id}`, {
         data: { userId: user.id }
@@ -91,6 +138,7 @@ const ClientsTable = () => {
   };
 
   const handleAddContact = (clientId) => {
+    setSelectedContactForEdit(null); // Clear any existing edit data
     setSelectedClientId(clientId);
     setOpenContactModal(true);
   };
@@ -105,8 +153,27 @@ const ClientsTable = () => {
     }
   };
 
+  const toggleRowExpansion = (clientId) => {
+    const newExpandedRows = new Set(expandedRows);
+    if (newExpandedRows.has(clientId)) {
+      newExpandedRows.delete(clientId);
+    } else {
+      newExpandedRows.add(clientId);
+    }
+    setExpandedRows(newExpandedRows);
+  };
+
   // ✅ Export to Excel
   const handleExportExcel = () => {
+    showConfirmation({
+      title: 'Export Clients to Excel',
+      message: `Are you sure you want to export ${clients.length} client records to Excel? This will download a file with all client data.`,
+      action: () => confirmExportExcel(),
+      severity: 'info'
+    });
+  };
+
+  const confirmExportExcel = () => {
     const exportData = clients.map(c => ({
       "Client ID": c.id,
       "Company Name": c.companyName,
@@ -122,75 +189,133 @@ const ClientsTable = () => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Clients");
     XLSX.writeFile(workbook, "clients.xlsx");
+    toast.success("Client data exported successfully");
+  };
+
+
+  const handleDeleteContact = (contact) => {
+    showConfirmation({
+      title: 'Delete Contact',
+      message: `Are you sure you want to delete contact "${contact.firstName} ${contact.lastName}" (${contact.role})? This action cannot be undone.`,
+      action: () => confirmDeleteContact(contact.id),
+      severity: 'error'
+    });
+  };
+
+  const confirmDeleteContact = async (contactId) => {
+    try {
+      await axios.delete(`${BASE_URL}/api/contact/delete/${contactId}`, {
+        data: { userId: user.id }
+      });
+      toast.success("Contact deleted successfully");
+      fetchClients();
+    } catch (error) {
+      console.error(error);
+      toast.error("Error deleting contact");
+    }
+  };
+
+  const handleEditContact = (contact) => {
+    // Set the contact data for editing and open the contact modal
+    setSelectedContactForEdit(contact);
+    setSelectedClientId(contact.clientId);
+    setOpenContactModal(true);
   };
 
   useEffect(() => {
     fetchClients();
   }, []);
 
-  if (loading) return <Loader />;
+  // ContactsTable component for nested table
+  const ContactsTable = ({ contacts, clientId }) => {
+    if (!contacts || contacts.length === 0) {
+      return (
+        <Box p={2}>
+          <Typography variant="body2" color="textSecondary" align="center">
+            No contacts found for this client.
+          </Typography>
+        </Box>
+      );
+    }
 
-  const columns = [
-    { field: "id", headerName: "Client Id", flex: 0.5 },
-    { field: "companyName", headerName: "Company Name", flex: 1.5 },
-    { field: "emailAddress", headerName: "Email", flex: 1.5 },
-    { field: "phoneNumber", headerName: "Phone", flex: 1 },
-    { field: "address", headerName: "Address", flex: 2 },
-    { field: "postCode", headerName: "City", flex: 1 },
-    {
-      field: "accountStatus",
-      headerName: "Status",
-      flex: 1,
-      renderCell: (params) => (
-        <Switch
-          checked={params.value === "active"}
-          onChange={() =>
-            handleStatusUpdate(params.row.id, params.value === "active" ? "inactive" : "active")
-          }
-          color="success"
-        />
-      ),
-    },
-    {
-      field: "actions",
-      headerName: "Actions",
-      flex: 2,
-      sortable: false,
-      filterable: false,
-      renderCell: (params) => (
-        <Box>
-          <PermissionWrapper resource="clients" action="canView">
-            <Tooltip title="Add Contact">
-              <IconButton color="success" onClick={() => handleAddContact(params.row.id)}>
-                <PersonAddAlt1Icon />
-              </IconButton>
-            </Tooltip>
-          </PermissionWrapper>
-          <PermissionWrapper resource="clients" action="canView">
-            <Tooltip title="View">
-              <IconButton onClick={() => handleView(params.row)} color="info">
-                <VisibilityIcon />
-              </IconButton>
-            </Tooltip>
-          </PermissionWrapper>
+    return (
+      <Box sx={{ margin: 1 }}>
+        <Typography variant="h6" gutterBottom sx={{ marginLeft: 1 }}>
+          Contacts ({contacts.length})
+        </Typography>
+        <TableContainer component={Paper} elevation={1}>
+          <Table size="small">
+            <TableHead>
+              <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                <TableCell><strong>Contact ID</strong></TableCell>
+                <TableCell><strong>Name</strong></TableCell>
+                <TableCell><strong>Role</strong></TableCell>
+                <TableCell><strong>Email</strong></TableCell>
+                <TableCell><strong>Phone</strong></TableCell>
+                <TableCell><strong>Created Date</strong></TableCell>
+                <TableCell><strong>Actions</strong></TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {contacts.map((contact) => (
+                <TableRow key={contact.id} hover>
+                  <TableCell>{contact.id}</TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {contact.firstName} {contact.lastName}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Chip 
+                      label={contact.role} 
+                      size="small" 
+                      color="primary" 
+                      variant="outlined"
+                    />
+                  </TableCell>
+                  <TableCell>{contact.emailAddress || 'N/A'}</TableCell>
+                  <TableCell>{contact.phoneNumber || 'N/A'}</TableCell>
+                  <TableCell>
+                    {contact.createdAt ? new Date(contact.createdAt).toLocaleDateString() : 'N/A'}
+                  </TableCell>
+                  <TableCell>
+                    <Box display="flex" gap={0.5}>
           <PermissionWrapper resource="clients" action="canEdit">
-            <Tooltip title="Edit">
-              <IconButton onClick={() => handleEdit(params.row)} color="primary">
+                        <Tooltip title="Edit Contact">
+                          <IconButton 
+                            size="small" 
+                            color="primary" 
+                            onClick={() => handleEditContact(contact)}
+                          >
                 <EditIcon />
               </IconButton>
             </Tooltip>
           </PermissionWrapper>
           <PermissionWrapper resource="clients" action="canDelete">
-            <Tooltip title="Delete">
-              <IconButton onClick={() => handleDelete(params.row.id)} color="error">
+                        <Tooltip title="Delete Contact">
+                          <IconButton 
+                            size="small" 
+                            color="error" 
+                            onClick={() => handleDeleteContact(contact)}
+                          >
                 <DeleteIcon />
               </IconButton>
             </Tooltip>
           </PermissionWrapper>
         </Box>
-      ),
-    },
-  ];
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
+    );
+  };
+
+  if (loading) return <Loader />;
+
+
 
   return (
     <Paper p={2} sx={{ padding: 2 }}>
@@ -220,8 +345,12 @@ const ClientsTable = () => {
       {openContactModal && (
         <ContactModal
           open={openContactModal}
-          onClose={() => setOpenContactModal(false)}
+          onClose={() => {
+            setOpenContactModal(false);
+            setSelectedContactForEdit(null);
+          }}
           clientId={selectedClientId}
+          editContact={selectedContactForEdit}
           refreshContacts={fetchClients}
         />
       )}
@@ -246,18 +375,123 @@ const ClientsTable = () => {
       }
 
       <Paper elevation={3}>
-        <DataGrid
-          rows={clients.map((client) => ({
-            ...client,
-            id: client.id, // DataGrid expects a unique 'id' field
-          }))}
-          columns={columns}
-          autoHeight
-          pageSize={10}
-          rowsPerPageOptions={[5, 10, 20]}
-          disableRowSelectionOnClick
-        />
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                <TableCell width="50px"></TableCell>
+                <TableCell><strong>Client ID</strong></TableCell>
+                <TableCell><strong>Company Name</strong></TableCell>
+                <TableCell><strong>Email</strong></TableCell>
+                <TableCell><strong>Phone</strong></TableCell>
+                <TableCell><strong>Address</strong></TableCell>
+                <TableCell><strong>City</strong></TableCell>
+                <TableCell><strong>Contacts</strong></TableCell>
+                <TableCell><strong>Status</strong></TableCell>
+                <TableCell><strong>Actions</strong></TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {clients.map((client) => (
+                <React.Fragment key={client.id}>
+                  {/* Main client row */}
+                  <TableRow hover>
+                    <TableCell>
+                      <IconButton
+                        size="small"
+                        onClick={() => toggleRowExpansion(client.id)}
+                        color="primary"
+                      >
+                        {expandedRows.has(client.id) ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                      </IconButton>
+                    </TableCell>
+                    <TableCell>{client.id}</TableCell>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight="medium">
+                        {client.companyName}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>{client.emailAddress}</TableCell>
+                    <TableCell>{client.phoneNumber}</TableCell>
+                    <TableCell>{client.address}</TableCell>
+                    <TableCell>{client.postCode}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={client.contacts?.length || 0}
+                        size="small"
+                        color={client.contacts?.length > 0 ? "success" : "default"}
+                        variant="outlined"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={client.accountStatus === "active"}
+                        onChange={() =>
+                          handleStatusUpdate(client.id, client.accountStatus === "active" ? "inactive" : "active")
+                        }
+                        color="success"
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Box display="flex" gap={0.5}>
+                        <PermissionWrapper resource="clients" action="canView">
+                          <Tooltip title="Add Contact">
+                            <IconButton size="small" color="success" onClick={() => handleAddContact(client.id)}>
+                              <PersonAddAlt1Icon />
+                            </IconButton>
+                          </Tooltip>
+                        </PermissionWrapper>
+                        <PermissionWrapper resource="clients" action="canView">
+                          <Tooltip title="View">
+                            <IconButton size="small" onClick={() => handleView(client)} color="info">
+                              <VisibilityIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </PermissionWrapper>
+                        <PermissionWrapper resource="clients" action="canEdit">
+                          <Tooltip title="Edit">
+                            <IconButton size="small" onClick={() => handleEdit(client)} color="primary">
+                              <EditIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </PermissionWrapper>
+                        <PermissionWrapper resource="clients" action="canDelete">
+                          <Tooltip title="Delete">
+                            <IconButton size="small" onClick={() => handleDelete(client)} color="error">
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </PermissionWrapper>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                  
+                  {/* Expanded contacts row */}
+                  <TableRow>
+                    <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={10}>
+                      <Collapse in={expandedRows.has(client.id)} timeout="auto" unmountOnExit>
+                        <ContactsTable contacts={client.contacts} clientId={client.id} />
+                      </Collapse>
+                    </TableCell>
+                  </TableRow>
+                </React.Fragment>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Paper>
+
+      <ConfirmationDialog
+        open={confirmationOpen}
+        onClose={handleConfirmationClose}
+        onConfirm={confirmationConfig.action}
+        title={confirmationConfig.title}
+        message={confirmationConfig.message}
+        severity={confirmationConfig.severity}
+        confirmText={confirmationConfig.severity === 'error' ? 'Delete' : 'Confirm'}
+        cancelText="Cancel"
+      />
     </Paper>
   );
 };

@@ -12,6 +12,7 @@ import { toast } from 'react-toastify'
 import { useAuth } from '@/context/authContext'
 import { DataGrid } from '@mui/x-data-grid'
 import CSVFileModal from './CSVFileModal'
+import ConfirmationDialog from '../ConfirmationDialog'
 
 // ✅ Import XLSX
 import * as XLSX from 'xlsx'
@@ -26,6 +27,15 @@ const CabinetTable = () => {
   const { user } = useAuth()
   const [csvModalOpen, setCsvModalOpen] = useState(false)
 
+  // Confirmation dialog states
+  const [confirmationOpen, setConfirmationOpen] = useState(false)
+  const [confirmationConfig, setConfirmationConfig] = useState({
+    title: '',
+    message: '',
+    action: null,
+    severity: 'warning'
+  })
+
   const fetchCabinets = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/api/cabinet/get`)
@@ -37,7 +47,26 @@ const CabinetTable = () => {
     }
   }
 
-  const handleDelete = async id => {
+  const showConfirmation = (config) => {
+    setConfirmationConfig(config)
+    setConfirmationOpen(true)
+  }
+
+  const handleConfirmationClose = () => {
+    setConfirmationOpen(false)
+    setConfirmationConfig({ title: '', message: '', action: null, severity: 'warning' })
+  }
+
+  const handleDelete = (cabinetRow) => {
+    showConfirmation({
+      title: 'Delete Cabinet',
+      message: `Are you sure you want to delete cabinet "${cabinetRow.modelName}" (${cabinetRow.material})? This action cannot be undone and will remove all associated data.`,
+      action: () => confirmDeleteCabinet(cabinetRow.id),
+      severity: 'error'
+    })
+  }
+
+  const confirmDeleteCabinet = async (id) => {
     toast.loading('Deleting Cabinet...')
     try {
       await axios.delete(`${BASE_URL}/api/cabinet/delete/${id}`, {
@@ -65,6 +94,15 @@ const CabinetTable = () => {
 
   // ✅ Export to Excel
   const handleExportExcel = () => {
+    showConfirmation({
+      title: 'Export Cabinets to Excel',
+      message: `Are you sure you want to export ${data.length} cabinet records to Excel? This will download a file with all cabinet data.`,
+      action: () => confirmExportExcel(),
+      severity: 'info'
+    })
+  }
+
+  const confirmExportExcel = () => {
     const exportData = data.map(cabinet => ({
       ID: cabinet.id,
       'Model Name': cabinet.modelName,
@@ -82,6 +120,7 @@ const CabinetTable = () => {
     const workbook = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Cabinets')
     XLSX.writeFile(workbook, 'cabinets.xlsx')
+    toast.success('Cabinet data exported successfully')
   }
 
   if (loading) return <Loader />
@@ -134,7 +173,7 @@ const CabinetTable = () => {
           <IconButton
             color='error'
             onClick={() => {
-              handleDelete(params.row.id)
+              handleDelete(params.row)
             }}
           >
             <Delete />
@@ -164,7 +203,12 @@ const CabinetTable = () => {
             variant='contained'
             color='primary'
             onClick={() => {
-              setCsvModalOpen(true)
+              showConfirmation({
+                title: 'Upload CSV/XLSX',
+                message: 'Are you sure you want to upload cabinet data from CSV/XLSX? This will add new cabinet records to your database.',
+                action: () => setCsvModalOpen(true),
+                severity: 'info'
+              })
             }}
           >
             Upload CSV/XLSX
@@ -211,6 +255,17 @@ const CabinetTable = () => {
         open={csvModalOpen}
         onClose={() => setCsvModalOpen(false)}
         onSuccess={fetchCabinets}
+      />
+
+      <ConfirmationDialog
+        open={confirmationOpen}
+        onClose={handleConfirmationClose}
+        onConfirm={confirmationConfig.action}
+        title={confirmationConfig.title}
+        message={confirmationConfig.message}
+        severity={confirmationConfig.severity}
+        confirmText={confirmationConfig.severity === 'error' ? 'Delete' : 'Confirm'}
+        cancelText="Cancel"
       />
     </Paper>
   )

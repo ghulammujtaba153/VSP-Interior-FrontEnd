@@ -16,6 +16,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 
 import UserModal from './UserModal';
+import ConfirmationDialog from '../ConfirmationDialog';
 import { BASE_URL } from '@/configs/url';
 
 import PermissionWrapper from '@/components/PermissionWrapper';
@@ -28,6 +29,11 @@ const UserTable = ({ users, fetchUsers }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('view');
   const [selectedUser, setSelectedUser] = useState(null);
+  
+  // Confirmation dialog states (only for delete)
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  
   const { canView, canCreate, canEdit, canDelete } = usePermissions();
   const { user } = useAuth();
 
@@ -65,16 +71,30 @@ const UserTable = ({ users, fetchUsers }) => {
     handleCloseModal();
   };
 
-  const handleDeleteUser = async (id) => {
+  const handleDeleteUser = (userRow) => {
+    setUserToDelete(userRow);
+    setConfirmationOpen(true);
+  };
+
+  const confirmDeleteUser = async () => {
     try {
-      await axios.delete(`${BASE_URL}/api/user/delete/${id}`, {
+      await axios.delete(`${BASE_URL}/api/user/delete/${userToDelete.id}`, {
         data: { userId: user.id }
       });
       fetchUsers();
       toast.success("User deleted successfully");
     } catch (error) {
       console.error("Error deleting user", error);
+      toast.error("Error deleting user");
+    } finally {
+      setConfirmationOpen(false);
+      setUserToDelete(null);
     }
+  };
+
+  const handleConfirmationClose = () => {
+    setConfirmationOpen(false);
+    setUserToDelete(null);
   };
 
   const handleStatusChange = async (id, checked) => {
@@ -169,7 +189,7 @@ const UserTable = ({ users, fetchUsers }) => {
               </IconButton>
             </PermissionWrapper>
             <PermissionWrapper resource="users" action="canDelete">
-              <IconButton onClick={() => handleDeleteUser(row.id)}>
+              <IconButton onClick={() => handleDeleteUser(row)}>
                 <DeleteIcon color="error" />
               </IconButton>
             </PermissionWrapper>
@@ -217,6 +237,17 @@ const UserTable = ({ users, fetchUsers }) => {
         userProfile={selectedUser}
         onClose={handleCloseModal}
         onSave={handleSaveUser}
+      />
+
+      <ConfirmationDialog
+        open={confirmationOpen}
+        onClose={handleConfirmationClose}
+        onConfirm={confirmDeleteUser}
+        title="Delete User"
+        message={`Are you sure you want to delete user "${userToDelete?.name}"? This action cannot be undone.`}
+        severity="error"
+        confirmText="Delete"
+        cancelText="Cancel"
       />
     </Box>
   );

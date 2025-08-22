@@ -14,6 +14,7 @@ import {
 import axios from "axios";
 
 import { toast } from "react-toastify";
+import ConfirmationDialog from '../ConfirmationDialog';
 
 import { BASE_URL } from "@/configs/url";
 import { useAuth } from "@/context/authContext";
@@ -29,6 +30,15 @@ const AddContact = ({ open, onClose, supplierId, onContactAdded }) => {
   });
   const {user} = useAuth()
 
+  // Confirmation dialog states
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [confirmationConfig, setConfirmationConfig] = useState({
+    title: '',
+    message: '',
+    action: null,
+    severity: 'warning'
+  });
+
   // Update supplierId when the prop is received
   useEffect(() => {
     if (supplierId) {
@@ -42,7 +52,26 @@ const AddContact = ({ open, onClose, supplierId, onContactAdded }) => {
     setData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const showConfirmation = (config) => {
+    setConfirmationConfig(config);
+    setConfirmationOpen(true);
+  };
+
+  const handleConfirmationClose = () => {
+    setConfirmationOpen(false);
+    setConfirmationConfig({ title: '', message: '', action: null, severity: 'warning' });
+  };
+
   const handleSubmit = async () => {
+    showConfirmation({
+      title: 'Add New Contact',
+      message: `Are you sure you want to add a new contact "${data.firstName} ${data.lastName}" with role "${data.role}"?`,
+      action: () => submitContact(),
+      severity: 'info'
+    });
+  };
+
+  const submitContact = async () => {
     try {
       toast.loading("Adding contact...");
 
@@ -118,6 +147,17 @@ const AddContact = ({ open, onClose, supplierId, onContactAdded }) => {
           Add Contact
         </Button>
       </DialogActions>
+
+      <ConfirmationDialog
+        open={confirmationOpen}
+        onClose={handleConfirmationClose}
+        onConfirm={confirmationConfig.action}
+        title={confirmationConfig.title}
+        message={confirmationConfig.message}
+        severity={confirmationConfig.severity}
+        confirmText="Add Contact"
+        cancelText="Cancel"
+      />
     </Dialog>
   );
 };

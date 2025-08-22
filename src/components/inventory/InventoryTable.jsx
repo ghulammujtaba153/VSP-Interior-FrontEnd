@@ -19,6 +19,7 @@ import PermissionWrapper from "../PermissionWrapper";
 import { useAuth } from "@/context/authContext";
 import { DataGrid } from "@mui/x-data-grid";
 import ImportCSV from "./ImportCSV";
+import ConfirmationDialog from '../ConfirmationDialog';
 
 // ✅ Import XLSX
 import * as XLSX from "xlsx";
@@ -33,10 +34,34 @@ const InventoryTable = () => {
   const { user } = useAuth();
   const [importCSV, setImportCSV] = useState(false);
 
+  // Confirmation dialog states
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [confirmationConfig, setConfirmationConfig] = useState({
+    title: '',
+    message: '',
+    action: null,
+    severity: 'warning'
+  });
 
+
+
+  const showConfirmation = (config) => {
+    setConfirmationConfig(config);
+    setConfirmationOpen(true);
+  };
+
+  const handleConfirmationClose = () => {
+    setConfirmationOpen(false);
+    setConfirmationConfig({ title: '', message: '', action: null, severity: 'warning' });
+  };
 
   const handleImportCSV = () => {
-    setImportCSV(true);
+    showConfirmation({
+      title: 'Import Inventory',
+      message: 'Are you sure you want to import inventory items from Excel? This will add new inventory records to your database.',
+      action: () => setImportCSV(true),
+      severity: 'info'
+    });
   }
 
   const fetchData = async () => {
@@ -54,7 +79,16 @@ const InventoryTable = () => {
     fetchData();
   }, []);
 
-  const handleDelete = async (id) => {
+  const handleDelete = (inventoryRow) => {
+    showConfirmation({
+      title: 'Delete Inventory Item',
+      message: `Are you sure you want to delete inventory item "${inventoryRow.name}" (${inventoryRow.itemCode})? This action cannot be undone and will remove all associated data.`,
+      action: () => confirmDeleteInventory(inventoryRow.id),
+      severity: 'error'
+    });
+  };
+
+  const confirmDeleteInventory = async (id) => {
     try {
       toast.loading("Deleting Inventory...");
       await axios.delete(`${BASE_URL}/api/inventory/delete/${id}`, {
@@ -78,6 +112,15 @@ const InventoryTable = () => {
 
   // ✅ Export to Excel
   const handleExportExcel = () => {
+    showConfirmation({
+      title: 'Export Inventory to Excel',
+      message: `Are you sure you want to export ${data.length} inventory items to Excel? This will download a file with all inventory data.`,
+      action: () => confirmExportExcel(),
+      severity: 'info'
+    });
+  };
+
+  const confirmExportExcel = () => {
     const exportData = data.map((item) => ({
       "ID": item.id,
       "Item Code": item.itemCode,
@@ -96,6 +139,7 @@ const InventoryTable = () => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
     XLSX.writeFile(workbook, "inventory.xlsx");
+    toast.success("Inventory data exported successfully");
   };
 
   if (loading) {
@@ -151,7 +195,7 @@ const InventoryTable = () => {
             </IconButton>
           </PermissionWrapper>
           <PermissionWrapper resource="inventory" action="canDelete">
-            <IconButton color="error" onClick={() => handleDelete(params.row.id)}>
+            <IconButton color="error" onClick={() => handleDelete(params.row)}>
               <Delete />
             </IconButton>
           </PermissionWrapper>
@@ -223,6 +267,17 @@ const InventoryTable = () => {
         open={viewOpen}
         setOpen={setViewOpen}
         inventory={viewData}
+      />
+
+      <ConfirmationDialog
+        open={confirmationOpen}
+        onClose={handleConfirmationClose}
+        onConfirm={confirmationConfig.action}
+        title={confirmationConfig.title}
+        message={confirmationConfig.message}
+        severity={confirmationConfig.severity}
+        confirmText={confirmationConfig.severity === 'error' ? 'Delete' : 'Confirm'}
+        cancelText="Cancel"
       />
     </Paper>
   );

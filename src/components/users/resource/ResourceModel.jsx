@@ -10,10 +10,20 @@ import {
   TextField,
   Button
 } from '@mui/material';
+import ConfirmationDialog from '../../ConfirmationDialog';
 
 const ResourceModal = ({ open, onClose, onSave, resource, mode }) => {
   const [formData, setFormData] = useState({ name: '' });
   const [error, setError] = useState('');
+
+  // Confirmation dialog states
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [confirmationConfig, setConfirmationConfig] = useState({
+    title: '',
+    message: '',
+    action: null,
+    severity: 'warning'
+  });
 
   const isEditMode = mode === 'edit';
   const isCreateMode = mode === 'create';
@@ -31,14 +41,37 @@ const ResourceModal = ({ open, onClose, onSave, resource, mode }) => {
     setError('');
   };
 
+  const showConfirmation = (config) => {
+    setConfirmationConfig(config);
+    setConfirmationOpen(true);
+  };
+
+  const handleConfirmationClose = () => {
+    setConfirmationOpen(false);
+    setConfirmationConfig({ title: '', message: '', action: null, severity: 'warning' });
+  };
+
   const handleSubmit = () => {
     if (!formData.name.trim()) {
       setError('Resource name is required');
-      
-return;
+      return;
     }
 
-    onSave({ ...resource, name: formData.name });
+    if (isCreateMode) {
+      showConfirmation({
+        title: 'Create New Resource',
+        message: `Are you sure you want to create a new resource with name "${formData.name}"?`,
+        action: () => onSave({ ...resource, name: formData.name }),
+        severity: 'info'
+      });
+    } else if (isEditMode) {
+      showConfirmation({
+        title: 'Update Resource',
+        message: `Are you sure you want to update the resource name to "${formData.name}"? This will modify the existing resource information.`,
+        action: () => onSave({ ...resource, name: formData.name }),
+        severity: 'warning'
+      });
+    }
   };
 
   return (
@@ -63,6 +96,17 @@ return;
           {isEditMode ? 'Update' : 'Create'}
         </Button>
       </DialogActions>
+
+      <ConfirmationDialog
+        open={confirmationOpen}
+        onClose={handleConfirmationClose}
+        onConfirm={confirmationConfig.action}
+        title={confirmationConfig.title}
+        message={confirmationConfig.message}
+        severity={confirmationConfig.severity}
+        confirmText={isEditMode ? 'Update' : 'Create'}
+        cancelText="Cancel"
+      />
     </Dialog>
   );
 };

@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import { toast } from "react-toastify";
+import ConfirmationDialog from '../ConfirmationDialog';
 
 import { BASE_URL } from "@/configs/url";
 import { useAuth } from "@/context/authContext";
@@ -31,6 +32,15 @@ const SupplierModal = ({ open, onClose, fetchSuppliers, selectedSupplier }) => {
     const [loading, setLoading] = useState(false);
     const {user} = useAuth()
 
+    // Confirmation dialog states
+    const [confirmationOpen, setConfirmationOpen] = useState(false);
+    const [confirmationConfig, setConfirmationConfig] = useState({
+        title: '',
+        message: '',
+        action: null,
+        severity: 'warning'
+    });
+
     useEffect(() => {
         if (selectedSupplier) {
             setData(selectedSupplier);
@@ -45,7 +55,38 @@ const SupplierModal = ({ open, onClose, fetchSuppliers, selectedSupplier }) => {
         setData((prev) => ({ ...prev, [name]: value }));
     };
 
+    const showConfirmation = (config) => {
+        setConfirmationConfig(config);
+        setConfirmationOpen(true);
+    };
+
+    const handleConfirmationClose = () => {
+        setConfirmationOpen(false);
+        setConfirmationConfig({ title: '', message: '', action: null, severity: 'warning' });
+    };
+
     const handleSubmit = async () => {
+        const isCreateMode = !selectedSupplier;
+        const isEditMode = !!selectedSupplier;
+
+        if (isCreateMode) {
+            showConfirmation({
+                title: 'Create New Supplier',
+                message: `Are you sure you want to create a new supplier "${data.companyName}"?`,
+                action: () => submitSupplier(),
+                severity: 'info'
+            });
+        } else if (isEditMode) {
+            showConfirmation({
+                title: 'Update Supplier',
+                message: `Are you sure you want to update supplier "${data.companyName}"? This will modify the existing supplier information.`,
+                action: () => submitSupplier(),
+                severity: 'warning'
+            });
+        }
+    };
+
+    const submitSupplier = async () => {
         setLoading(true);
 
         try {
@@ -135,6 +176,17 @@ const SupplierModal = ({ open, onClose, fetchSuppliers, selectedSupplier }) => {
                     {loading ? <CircularProgress size={24} /> : selectedSupplier ? "Update" : "Create"}
                 </Button>
             </DialogActions>
+
+            <ConfirmationDialog
+                open={confirmationOpen}
+                onClose={handleConfirmationClose}
+                onConfirm={confirmationConfig.action}
+                title={confirmationConfig.title}
+                message={confirmationConfig.message}
+                severity={confirmationConfig.severity}
+                confirmText={selectedSupplier ? 'Update' : 'Create'}
+                cancelText="Cancel"
+            />
         </Dialog>
     );
 };

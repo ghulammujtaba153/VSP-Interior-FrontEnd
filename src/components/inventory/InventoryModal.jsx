@@ -15,6 +15,7 @@ import { toast } from "react-toastify";
 import { BASE_URL } from "@/configs/url";
 import Loader from "../loader/Loader";
 import { useAuth } from "@/context/authContext";
+import ConfirmationDialog from '../ConfirmationDialog';
 
 
 const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
@@ -34,6 +35,15 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
   });
   const [loading, setLoading] = useState(true);
   const {user} = useAuth();
+
+  // Confirmation dialog states
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [confirmationConfig, setConfirmationConfig] = useState({
+    title: '',
+    message: '',
+    action: null,
+    severity: 'warning'
+  });
 
   // Pre-fill form in edit mode
   useEffect(() => {
@@ -88,8 +98,40 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const showConfirmation = (config) => {
+    setConfirmationConfig(config);
+    setConfirmationOpen(true);
+  };
+
+  const handleConfirmationClose = () => {
+    setConfirmationOpen(false);
+    setConfirmationConfig({ title: '', message: '', action: null, severity: 'warning' });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const isCreateMode = !editData;
+    const isEditMode = !!editData;
+
+    if (isCreateMode) {
+      showConfirmation({
+        title: 'Create New Inventory Item',
+        message: `Are you sure you want to create a new inventory item "${formData.name}" with item code "${formData.itemCode}"?`,
+        action: () => submitInventory(),
+        severity: 'info'
+      });
+    } else if (isEditMode) {
+      showConfirmation({
+        title: 'Update Inventory Item',
+        message: `Are you sure you want to update inventory item "${formData.name}"? This will modify the existing inventory information.`,
+        action: () => submitInventory(),
+        severity: 'warning'
+      });
+    }
+  };
+
+  const submitInventory = async () => {
     setIsSubmit(true);
     toast.loading(editData ? "Updating Inventory..." : "Creating Inventory...");
 
@@ -282,6 +324,17 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
             </Button>
           </Box>
         </form>
+
+        <ConfirmationDialog
+          open={confirmationOpen}
+          onClose={handleConfirmationClose}
+          onConfirm={confirmationConfig.action}
+          title={confirmationConfig.title}
+          message={confirmationConfig.message}
+          severity={confirmationConfig.severity}
+          confirmText={editData ? 'Update' : 'Create'}
+          cancelText="Cancel"
+        />
       </Box>
     </Modal>
   );

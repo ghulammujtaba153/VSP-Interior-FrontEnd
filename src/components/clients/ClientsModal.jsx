@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import { toast } from 'react-toastify';
 import axios from 'axios';
+import ConfirmationDialog from '../ConfirmationDialog';
 
 import { BASE_URL } from '@/configs/url';
 import { useAuth } from '@/context/authContext';
@@ -33,6 +34,15 @@ const ClientsModal = ({ open, handleClose, editClient, refreshClients }) => {
   const [loading, setLoading] = useState(false);
   const {user} = useAuth()
 
+  // Confirmation dialog states
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [confirmationConfig, setConfirmationConfig] = useState({
+    title: '',
+    message: '',
+    action: null,
+    severity: 'warning'
+  });
+
   useEffect(() => {
     if (editClient) {
       setClient(editClient);
@@ -47,8 +57,40 @@ const ClientsModal = ({ open, handleClose, editClient, refreshClients }) => {
     setClient({ ...client, [name]: value });
   };
 
+  const showConfirmation = (config) => {
+    setConfirmationConfig(config);
+    setConfirmationOpen(true);
+  };
+
+  const handleConfirmationClose = () => {
+    setConfirmationOpen(false);
+    setConfirmationConfig({ title: '', message: '', action: null, severity: 'warning' });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const isCreateMode = !editClient;
+    const isEditMode = !!editClient;
+
+    if (isCreateMode) {
+      showConfirmation({
+        title: 'Create New Client',
+        message: `Are you sure you want to create a new client "${client.companyName}"?`,
+        action: () => submitClient(),
+        severity: 'info'
+      });
+    } else if (isEditMode) {
+      showConfirmation({
+        title: 'Update Client',
+        message: `Are you sure you want to update client "${client.companyName}"? This will modify the existing client information.`,
+        action: () => submitClient(),
+        severity: 'warning'
+      });
+    }
+  };
+
+  const submitClient = async () => {
     setLoading(true);
 
     try {
@@ -145,6 +187,17 @@ const ClientsModal = ({ open, handleClose, editClient, refreshClients }) => {
           </Button>
         </DialogActions>
       </form>
+
+      <ConfirmationDialog
+        open={confirmationOpen}
+        onClose={handleConfirmationClose}
+        onConfirm={confirmationConfig.action}
+        title={confirmationConfig.title}
+        message={confirmationConfig.message}
+        severity={confirmationConfig.severity}
+        confirmText={editClient ? 'Update' : 'Create'}
+        cancelText="Cancel"
+      />
     </Dialog>
   );
 };

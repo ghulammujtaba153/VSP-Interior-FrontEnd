@@ -20,6 +20,7 @@ import axios from 'axios';
 
 import RoleViewModal from './RoleViewModal';
 import RoleModal from './RoleModal';
+import ConfirmationDialog from '../../ConfirmationDialog';
 
 import { BASE_URL } from '@/configs/url';
 import Loader from '@/components/loader/Loader';
@@ -35,6 +36,11 @@ const RolesTable = () => {
   const [selectedRole, setSelectedRole] = useState(null);
   const [mode, setMode] = useState('create');
   const [loading, setLoading] = useState(true)
+  
+  // Confirmation dialog states (only for delete)
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [roleToDelete, setRoleToDelete] = useState(null);
+  
   const {user} = useAuth();
 
 
@@ -101,22 +107,33 @@ const RolesTable = () => {
   };
   
 
-  const handleDelete = async (id) => {
-    if (confirm("Are you sure you want to delete this role?")) {
-      try {
-        toast.loading("Deleting...");
-        await axios.delete(`${BASE_URL}/api/role/delete/${id}`, {
-            userId: user.id
-        });
-        toast.dismiss();
-        toast.success("Role deleted successfully");
-        fetchRoles(); // Refresh roles after deletion
-      } catch (error) {
-        toast.dismiss();
-        toast.error("Failed to delete role");
-        console.error(error);
-      }
+  const handleDelete = (roleRow) => {
+    setRoleToDelete(roleRow);
+    setConfirmationOpen(true);
+  };
+
+  const confirmDeleteRole = async () => {
+    try {
+      toast.loading("Deleting...");
+      await axios.delete(`${BASE_URL}/api/role/delete/${roleToDelete.id}`, {
+        data: { userId: user.id }
+      });
+      toast.dismiss();
+      toast.success("Role deleted successfully");
+      fetchRoles(); // Refresh roles after deletion
+    } catch (error) {
+      toast.dismiss();
+      toast.error("Failed to delete role");
+      console.error(error);
+    } finally {
+      setConfirmationOpen(false);
+      setRoleToDelete(null);
     }
+  };
+
+  const handleConfirmationClose = () => {
+    setConfirmationOpen(false);
+    setRoleToDelete(null);
   };
 
   
@@ -151,7 +168,7 @@ return (
             </PermissionWrapper>
 
             <PermissionWrapper resource="roles" action="canDelete">
-            <IconButton onClick={() => handleDelete(row.id)}>
+            <IconButton onClick={() => handleDelete(row)}>
               <DeleteIcon color="error" />
             </IconButton>
             </PermissionWrapper>
@@ -200,6 +217,17 @@ return (
         open={viewModalOpen}
         role={selectedRole}
         onClose={handleClose}
+      />
+
+      <ConfirmationDialog
+        open={confirmationOpen}
+        onClose={handleConfirmationClose}
+        onConfirm={confirmDeleteRole}
+        title="Delete Role"
+        message={`Are you sure you want to delete role "${roleToDelete?.name}"? This action cannot be undone.`}
+        severity="error"
+        confirmText="Delete"
+        cancelText="Cancel"
       />
     </Box>
   );

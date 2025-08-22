@@ -15,6 +15,7 @@ import { DataGrid } from '@mui/x-data-grid';
 import axios from 'axios';
 
 import ResourceModal from './ResourceModel';
+import ConfirmationDialog from '../../ConfirmationDialog';
 import { BASE_URL } from '@/configs/url';
 import Loader from '@/components/loader/Loader';
 import PermissionWrapper from '@/components/PermissionWrapper';
@@ -29,6 +30,11 @@ const ResourceTable = () => {
   const [openModal, setOpenModal] = useState(false);
   const [selectedResource, setSelectedResource] = useState(null);
   const [mode, setMode] = useState('create');
+  
+  // Confirmation dialog states (only for delete)
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [resourceToDelete, setResourceToDelete] = useState(null);
+  
   const { user } = useAuth();
 
   const handleAdd = () => {
@@ -46,11 +52,13 @@ const ResourceTable = () => {
   const handleSave = async (resource) => {
     try {
       if (mode === 'create') {
-        await axios.post(`${BASE_URL}/api/resource/create`, resource, {
+        await axios.post(`${BASE_URL}/api/resource/create`, {
+          resource,
           userId: user.id
         });
       } else {
-        await axios.put(`${BASE_URL}/api/resource/update/${resource.id}`, resource, {
+        await axios.put(`${BASE_URL}/api/resource/update/${resource.id}`, {
+          resource,
           userId: user.id
         });
       }
@@ -76,15 +84,29 @@ const ResourceTable = () => {
     fetchData();
   }, []);
 
-  const handleDelete = async (id) => {
+  const handleDelete = (resourceRow) => {
+    setResourceToDelete(resourceRow);
+    setConfirmationOpen(true);
+  };
+
+  const confirmDeleteResource = async () => {
     try {
-      await axios.delete(`${BASE_URL}/api/resource/delete/${id}`, {
-        userId: user.id
+      await axios.post(`${BASE_URL}/api/resource/delete`, {
+        id: resourceToDelete.id,
+        userId: user.id 
       });
       fetchData(); // refresh
     } catch (err) {
       console.error('Error deleting resource', err);
+    } finally {
+      setConfirmationOpen(false);
+      setResourceToDelete(null);
     }
+  };
+
+  const handleConfirmationClose = () => {
+    setConfirmationOpen(false);
+    setResourceToDelete(null);
   };
 
   if (loading) return <Loader />;
@@ -106,7 +128,7 @@ const ResourceTable = () => {
             </IconButton>
           </PermissionWrapper>
           <PermissionWrapper resource="resources" action="canDelete">
-            <IconButton color="error" onClick={() => handleDelete(params.row.id)}>
+            <IconButton color="error" onClick={() => handleDelete(params.row)}>
               <DeleteIcon />
             </IconButton>
           </PermissionWrapper>
@@ -144,6 +166,17 @@ const ResourceTable = () => {
         onSave={handleSave}
         resource={selectedResource}
         mode={mode}
+      />
+
+      <ConfirmationDialog
+        open={confirmationOpen}
+        onClose={handleConfirmationClose}
+        onConfirm={confirmDeleteResource}
+        title="Delete Resource"
+        message={`Are you sure you want to delete resource "${resourceToDelete?.name}"? This action cannot be undone.`}
+        severity="error"
+        confirmText="Delete"
+        cancelText="Cancel"
       />
     </Paper>
   );

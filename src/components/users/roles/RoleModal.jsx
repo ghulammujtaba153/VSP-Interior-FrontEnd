@@ -10,9 +10,19 @@ import {
   TextField,
   Button
 } from '@mui/material';
+import ConfirmationDialog from '../../ConfirmationDialog';
 
 const RoleModal = ({ open, mode, role, onClose, onSave }) => {
   const [formData, setFormData] = useState({ name: '' });
+
+  // Confirmation dialog states
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [confirmationConfig, setConfirmationConfig] = useState({
+    title: '',
+    message: '',
+    action: null,
+    severity: 'warning'
+  });
 
   useEffect(() => {
     if (role) {
@@ -26,8 +36,35 @@ const RoleModal = ({ open, mode, role, onClose, onSave }) => {
     setFormData({ ...formData, name: e.target.value });
   };
 
+  const showConfirmation = (config) => {
+    setConfirmationConfig(config);
+    setConfirmationOpen(true);
+  };
+
+  const handleConfirmationClose = () => {
+    setConfirmationOpen(false);
+    setConfirmationConfig({ title: '', message: '', action: null, severity: 'warning' });
+  };
+
   const handleSubmit = () => {
-    onSave(formData);
+    const isCreateMode = mode === 'create';
+    const isEditMode = mode === 'edit';
+
+    if (isCreateMode) {
+      showConfirmation({
+        title: 'Create New Role',
+        message: `Are you sure you want to create a new role with name "${formData.name}"?`,
+        action: () => onSave(formData),
+        severity: 'info'
+      });
+    } else if (isEditMode) {
+      showConfirmation({
+        title: 'Update Role',
+        message: `Are you sure you want to update the role name to "${formData.name}"? This will modify the existing role information.`,
+        action: () => onSave(formData),
+        severity: 'warning'
+      });
+    }
   };
 
   return (
@@ -49,6 +86,17 @@ const RoleModal = ({ open, mode, role, onClose, onSave }) => {
           {mode === 'edit' ? 'Update' : 'Create'}
         </Button>
       </DialogActions>
+
+      <ConfirmationDialog
+        open={confirmationOpen}
+        onClose={handleConfirmationClose}
+        onConfirm={confirmationConfig.action}
+        title={confirmationConfig.title}
+        message={confirmationConfig.message}
+        severity={confirmationConfig.severity}
+        confirmText={mode === 'edit' ? 'Update' : 'Create'}
+        cancelText="Cancel"
+      />
     </Dialog>
   );
 };

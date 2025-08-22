@@ -14,6 +14,7 @@ import axios from "axios";
 import { BASE_URL } from "@/configs/url";
 import { toast } from "react-toastify";
 import { useAuth } from "@/context/authContext";
+import ConfirmationDialog from '../ConfirmationDialog';
 
 const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -26,6 +27,15 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
     pricePerSqft: "",
   });
   const {user} = useAuth()
+
+  // Confirmation dialog states
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [confirmationConfig, setConfirmationConfig] = useState({
+    title: '',
+    message: '',
+    action: null,
+    severity: 'warning'
+  });
 
   useEffect(() => {
     if (editData) {
@@ -58,7 +68,38 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
     }));
   };
 
+  const showConfirmation = (config) => {
+    setConfirmationConfig(config);
+    setConfirmationOpen(true);
+  };
+
+  const handleConfirmationClose = () => {
+    setConfirmationOpen(false);
+    setConfirmationConfig({ title: '', message: '', action: null, severity: 'warning' });
+  };
+
   const handleSubmit = async () => {
+    const isCreateMode = !editData;
+    const isEditMode = !!editData;
+
+    if (isCreateMode) {
+      showConfirmation({
+        title: 'Create New Cabinet',
+        message: `Are you sure you want to create a new cabinet "${formData.modelName}" with material "${formData.material}"?`,
+        action: () => submitCabinet(),
+        severity: 'info'
+      });
+    } else if (isEditMode) {
+      showConfirmation({
+        title: 'Update Cabinet',
+        message: `Are you sure you want to update cabinet "${formData.modelName}"? This will modify the existing cabinet information.`,
+        action: () => submitCabinet(),
+        severity: 'warning'
+      });
+    }
+  };
+
+  const submitCabinet = async () => {
     try {
       toast.loading(editData ? "Updating cabinet..." : "Adding cabinet...");
       formData.userId = user.id
@@ -169,6 +210,17 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
           {editData ? "Update" : "Save"}
         </Button>
       </DialogActions>
+
+      <ConfirmationDialog
+        open={confirmationOpen}
+        onClose={handleConfirmationClose}
+        onConfirm={confirmationConfig.action}
+        title={confirmationConfig.title}
+        message={confirmationConfig.message}
+        severity={confirmationConfig.severity}
+        confirmText={editData ? 'Update' : 'Save'}
+        cancelText="Cancel"
+      />
     </Dialog>
   );
 };

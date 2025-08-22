@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import { toast } from "react-toastify";
 import axios from "axios";
+import ConfirmationDialog from '../ConfirmationDialog';
 
 import { BASE_URL } from "@/configs/url";
 import { useAuth } from "@/context/authContext";
@@ -27,52 +28,119 @@ const modalStyle = {
   borderRadius: 2,
 };
 
-const ContactModal = ({ open, onClose, clientId, refreshContacts }) => {
+const ContactModal = ({ open, onClose, clientId, editContact, refreshContacts }) => {
   const [contact, setContact] = useState({
     clientId: null,
     firstName: "",
     lastName: "",
     role: "",
     emailAddress: "",
-    phone: "",
+    phoneNumber: "",
   });
 
   const [loading, setLoading] = useState(false);
   const {user} = useAuth()
 
+  // Confirmation dialog states
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [confirmationConfig, setConfirmationConfig] = useState({
+    title: '',
+    message: '',
+    action: null,
+    severity: 'warning'
+  });
+
   // Reset form and update clientId when modal opens or clientId changes
   useEffect(() => {
     if (open) {
-      setContact({
-        clientId,
-        firstName: "",
-        lastName: "",
-        role: "",
-        emailAddress: "",
-        phone: "",
-      });
+      if (editContact) {
+        // Editing existing contact
+        setContact({
+          id: editContact.id,
+          clientId: editContact.clientId,
+          firstName: editContact.firstName,
+          lastName: editContact.lastName,
+          role: editContact.role,
+          emailAddress: editContact.emailAddress,
+          phoneNumber: editContact.phoneNumber,
+        });
+      } else {
+        // Adding new contact
+        setContact({
+          clientId,
+          firstName: "",
+          lastName: "",
+          role: "",
+          emailAddress: "",
+          phoneNumber: "",
+        });
+      }
     }
-  }, [open, clientId]);
+  }, [open, clientId, editContact]);
 
   const handleChange = (e) => {
     setContact({ ...contact, [e.target.name]: e.target.value });
   };
 
+  const showConfirmation = (config) => {
+    setConfirmationConfig(config);
+    setConfirmationOpen(true);
+  };
+
+  const handleConfirmationClose = () => {
+    setConfirmationOpen(false);
+    setConfirmationConfig({ title: '', message: '', action: null, severity: 'warning' });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const isEditMode = !!editContact;
+
+    if (isEditMode) {
+      showConfirmation({
+        title: 'Update Contact',
+        message: `Are you sure you want to update contact "${contact.firstName} ${contact.lastName}"? This will modify the existing contact information.`,
+        action: () => submitContact(),
+        severity: 'warning'
+      });
+    } else {
+      showConfirmation({
+        title: 'Create New Contact',
+        message: `Are you sure you want to create a new contact "${contact.firstName} ${contact.lastName}" with role "${contact.role}"?`,
+        action: () => submitContact(),
+        severity: 'info'
+      });
+    }
+  };
+
+  const submitContact = async () => {
     setLoading(true);
 
     try {
-      await axios.post(`${BASE_URL}/api/contact/create`, {
-        ...contact,
-        userId: user.id,
-      });
-      toast.success("Contact created successfully");
+      const isEditMode = !!editContact;
+
+      if (isEditMode) {
+        // Update existing contact
+        await axios.put(`${BASE_URL}/api/contact/update/${contact.id}`, {
+          ...contact,
+          userId: user.id,
+        });
+        toast.success("Contact updated successfully");
+      } else {
+        // Create new contact
+        await axios.post(`${BASE_URL}/api/contact/create`, {
+          ...contact,
+          userId: user.id,
+        });
+        toast.success("Contact created successfully");
+      }
+      
       refreshContacts && refreshContacts();
       onClose(); // ✅ Close the modal
     } catch (error) {
       console.error(error);
-      toast.error("Error creating contact");
+      toast.error(editContact ? "Error updating contact" : "Error creating contact");
     } finally {
       setLoading(false);
     }
@@ -82,7 +150,7 @@ const ContactModal = ({ open, onClose, clientId, refreshContacts }) => {
     <Modal open={open} onClose={onClose}>
       <Box sx={modalStyle}>
         <Typography variant="h6" mb={2}>
-          Add Contact
+          {editContact ? "Edit Contact" : "Add Contact"}
         </Typography>
         <form onSubmit={handleSubmit}>
           <TextField
@@ -125,9 +193,9 @@ const ContactModal = ({ open, onClose, clientId, refreshContacts }) => {
           <TextField
             fullWidth
             label="Phone"
-            name="phone"
+            name="phoneNumber"
             type="number"
-            value={contact.phone}
+            value={contact.phoneNumber}
             onChange={handleChange}
             margin="normal"
             required
@@ -143,10 +211,21 @@ const ContactModal = ({ open, onClose, clientId, refreshContacts }) => {
               disabled={loading}
               startIcon={loading && <CircularProgress size={16} />}
             >
-              {loading ? "Submitting..." : "Submit"}
+              {loading ? "Submitting..." : (editContact ? "Update" : "Submit")}
             </Button>
           </Box>
         </form>
+
+        <ConfirmationDialog
+          open={confirmationOpen}
+          onClose={handleConfirmationClose}
+          onConfirm={confirmationConfig.action}
+          title={confirmationConfig.title}
+          message={confirmationConfig.message}
+          severity={confirmationConfig.severity}
+          confirmText={editContact ? "Update" : "Create"}
+          cancelText="Cancel"
+        />
       </Box>
     </Modal>
   );
