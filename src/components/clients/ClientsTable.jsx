@@ -165,31 +165,72 @@ const ClientsTable = () => {
 
   // ✅ Export to Excel
   const handleExportExcel = () => {
+    const totalContacts = clients.reduce((sum, client) => sum + (client.contacts?.length || 0), 0);
     showConfirmation({
       title: 'Export Clients to Excel',
-      message: `Are you sure you want to export ${clients.length} client records to Excel? This will download a file with all client data.`,
+      message: `Are you sure you want to export ${clients.length} client records with ${totalContacts} contacts to Excel? This will download a comprehensive file with all client and contact data.`,
       action: () => confirmExportExcel(),
       severity: 'info'
     });
   };
 
   const confirmExportExcel = () => {
-    const exportData = clients.map(c => ({
-      "Client ID": c.id,
-      "Company Name": c.companyName,
-      "Email": c.emailAddress,
-      "Phone": c.phoneNumber,
-      "Address": c.address,
-      "City": c.postCode,
-      "Status": c.accountStatus,
-      "Created At": c.createdAt ? new Date(c.createdAt).toLocaleString() : "N/A"
-    }));
+    // Create flattened data structure with client and contact information
+    const exportData = [];
+    
+    clients.forEach((client) => {
+      if (client.contacts && client.contacts.length > 0) {
+        // For clients with contacts, create a row for each contact
+        client.contacts.forEach((contact, index) => {
+          exportData.push({
+            "Client ID": client.id,
+            "Company Name": client.companyName,
+            "Client Email": client.emailAddress,
+            "Client Phone": client.phoneNumber,
+            "Address": client.address,
+            "City": client.postCode,
+            "Client Status": client.accountStatus,
+            "Client Created At": client.createdAt ? new Date(client.createdAt).toLocaleString() : "N/A",
+            "Contact #": index + 1,
+            "Contact ID": contact.id,
+            "Contact First Name": contact.firstName || "N/A",
+            "Contact Last Name": contact.lastName || "N/A",
+            "Contact Full Name": `${contact.firstName || ""} ${contact.lastName || ""}`.trim() || "N/A",
+            "Contact Role": contact.role || "N/A",
+            "Contact Email": contact.emailAddress || "N/A",
+            "Contact Phone": contact.phoneNumber || "N/A",
+            "Contact Created At": contact.createdAt ? new Date(contact.createdAt).toLocaleString() : "N/A",
+          });
+        });
+      } else {
+        // For clients without contacts, create a single row
+        exportData.push({
+          "Client ID": client.id,
+          "Company Name": client.companyName,
+          "Client Email": client.emailAddress,
+          "Client Phone": client.phoneNumber,
+          "Address": client.address,
+          "City": client.postCode,
+          "Client Status": client.accountStatus,
+          "Client Created At": client.createdAt ? new Date(client.createdAt).toLocaleString() : "N/A",
+          "Contact #": "No Contacts",
+          "Contact ID": "N/A",
+          "Contact First Name": "N/A",
+          "Contact Last Name": "N/A",
+          "Contact Full Name": "N/A",
+          "Contact Role": "N/A",
+          "Contact Email": "N/A",
+          "Contact Phone": "N/A",
+          "Contact Created At": "N/A",
+        });
+      }
+    });
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Clients");
-    XLSX.writeFile(workbook, "clients.xlsx");
-    toast.success("Client data exported successfully");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Clients & Contacts");
+    XLSX.writeFile(workbook, "clients_with_contacts.xlsx");
+    toast.success("Client data with contacts exported successfully");
   };
 
 

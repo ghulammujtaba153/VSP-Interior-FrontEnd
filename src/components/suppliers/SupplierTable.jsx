@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import {
@@ -11,17 +11,28 @@ import {
     Paper,
     Switch,
     Tooltip,
+    Collapse,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Chip,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import AddIcon from "@mui/icons-material/Add";
-import { DataGrid } from "@mui/x-data-grid";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
 import { BASE_URL } from "@/configs/url";
 import Loader from "../loader/Loader";
 import SupplierModal from "./SupplierModal";
 import ViewSupplier from "./ViewSupplier";
 import AddContact from "./AddContact";
+import EditContact from "./EditContact";
 import PermissionWrapper from "../PermissionWrapper";
 import { useAuth } from "@/context/authContext";
 import ImportCSV from "./ImportCSV";
@@ -38,6 +49,9 @@ const SupplierTable = () => {
     const [openView, setOpenView] = useState(false);
     const [openAddContact, setOpenAddContact] = useState(false);
     const [selectedContactSupplier, setSelectedContactSupplier] = useState(null);
+    const [openEditContact, setOpenEditContact] = useState(false);
+    const [selectedContact, setSelectedContact] = useState(null);
+    const [expandedRows, setExpandedRows] = useState(new Set());
     const { user } = useAuth();
     const [importCSV, setImportCSV] = useState(false);
 
@@ -88,6 +102,45 @@ const SupplierTable = () => {
     const handleAddContact = (supplier) => {
         setSelectedContactSupplier(supplier);
         setOpenAddContact(true);
+    };
+
+    const handleEditContact = (contact) => {
+        setSelectedContact(contact);
+        setOpenEditContact(true);
+    };
+
+    const handleDeleteContact = (contact) => {
+        showConfirmation({
+            title: 'Delete Contact',
+            message: `Are you sure you want to delete contact "${contact.firstName} ${contact.lastName}"? This action cannot be undone.`,
+            action: () => confirmDeleteContact(contact.id),
+            severity: 'error'
+        });
+    };
+
+    const confirmDeleteContact = async (contactId) => {
+        try {
+            toast.loading("Deleting contact...");
+            await axios.delete(`${BASE_URL}/api/supplier-contacts/delete/${contactId}`, {
+                data: { userId: user.id }
+            });
+            toast.dismiss();
+            toast.success("Contact deleted successfully");
+            fetchSuppliers();
+        } catch (error) {
+            toast.dismiss();
+            toast.error(error.response?.data?.message || "Delete failed");
+        }
+    };
+
+    const toggleRowExpansion = (supplierId) => {
+        const newExpandedRows = new Set(expandedRows);
+        if (newExpandedRows.has(supplierId)) {
+            newExpandedRows.delete(supplierId);
+        } else {
+            newExpandedRows.add(supplierId);
+        }
+        setExpandedRows(newExpandedRows);
     };
 
     const handleDelete = (supplierRow) => {
@@ -150,113 +203,180 @@ const SupplierTable = () => {
 
     // ✅ Export to Excel
     const handleExportExcel = () => {
+        const totalContacts = suppliers.reduce((sum, supplier) => sum + (supplier.contacts?.length || 0), 0);
         showConfirmation({
             title: 'Export Suppliers to Excel',
-            message: `Are you sure you want to export ${suppliers.length} supplier records to Excel? This will download a file with all supplier data.`,
+            message: `Are you sure you want to export ${suppliers.length} supplier records with ${totalContacts} contacts to Excel? This will download a comprehensive file with all supplier and contact data.`,
             action: () => confirmExportExcel(),
             severity: 'info'
         });
     };
 
     const confirmExportExcel = () => {
-        const exportData = suppliers.map((s) => ({
-            "Supplier ID": s.id,
-            "Company Name": s.companyName,
-            "Email": s.email,
-            "Phone": s.phone,
-            "Address": s.address,
-            "Post Code": s.postCode,
-            "Status": s.status,
-            "Created At": s.createdAt ? new Date(s.createdAt).toLocaleString() : "N/A",
-        }));
+        // Create flattened data structure with supplier and contact information
+        const exportData = [];
+        
+        suppliers.forEach((supplier) => {
+            if (supplier.contacts && supplier.contacts.length > 0) {
+                // For suppliers with contacts, create a row for each contact
+                supplier.contacts.forEach((contact, index) => {
+                    exportData.push({
+                        "Supplier ID": supplier.id,
+                        "Company Name": supplier.companyName,
+                        "Supplier Email": supplier.email,
+                        "Supplier Phone": supplier.phone,
+                        "Address": supplier.address,
+                        "Post Code": supplier.postCode,
+                        "Supplier Status": supplier.status,
+                        "Supplier Created At": supplier.createdAt ? new Date(supplier.createdAt).toLocaleString() : "N/A",
+                        "Contact #": index + 1,
+                        "Contact ID": contact.id,
+                        "Contact First Name": contact.firstName || "N/A",
+                        "Contact Last Name": contact.lastName || "N/A",
+                        "Contact Full Name": `${contact.firstName || ""} ${contact.lastName || ""}`.trim() || "N/A",
+                        "Contact Role": contact.role || "N/A",
+                        "Contact Email": contact.emailAddress || "N/A",
+                        "Contact Phone": contact.phoneNumber || "N/A",
+                        "Contact Created At": contact.createdAt ? new Date(contact.createdAt).toLocaleString() : "N/A",
+                    });
+                });
+            } else {
+                // For suppliers without contacts, create a single row
+                exportData.push({
+                    "Supplier ID": supplier.id,
+                    "Company Name": supplier.companyName,
+                    "Supplier Email": supplier.email,
+                    "Supplier Phone": supplier.phone,
+                    "Address": supplier.address,
+                    "Post Code": supplier.postCode,
+                    "Supplier Status": supplier.status,
+                    "Supplier Created At": supplier.createdAt ? new Date(supplier.createdAt).toLocaleString() : "N/A",
+                    "Contact #": "No Contacts",
+                    "Contact ID": "N/A",
+                    "Contact First Name": "N/A",
+                    "Contact Last Name": "N/A",
+                    "Contact Full Name": "N/A",
+                    "Contact Role": "N/A",
+                    "Contact Email": "N/A",
+                    "Contact Phone": "N/A",
+                    "Contact Created At": "N/A",
+                });
+            }
+        });
 
         const worksheet = XLSX.utils.json_to_sheet(exportData);
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Suppliers");
-        XLSX.writeFile(workbook, "suppliers.xlsx");
-        toast.success("Supplier data exported successfully");
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Suppliers & Contacts");
+        XLSX.writeFile(workbook, "suppliers_with_contacts.xlsx");
+        toast.success("Supplier data with contacts exported successfully");
     };
 
-    if (loading) {
-        return <Loader />;
-    }
-
-    const columns = [
-        { field: "id", headerName: "ID", flex: 1 },
-        { field: "companyName", headerName: "Company Name", flex: 1.5 },
-        { field: "email", headerName: "Email", flex: 1.5 },
-        { field: "phone", headerName: "Phone", flex: 1 },
-        { field: "address", headerName: "Address", flex: 1.5 },
-        { field: "postCode", headerName: "Post Code", flex: 1 },
-        {
-            field: "status",
-            headerName: "Status",
-            flex: 1,
-            renderCell: (params) => (
-                <Switch
-                    checked={params.value === "active"}
-                    onChange={() => handleStatusChange(params.row.id, params.value)}
-                    color="primary"
-                />
-            ),
-        },
-        {
-            field: "actions",
-            headerName: "Actions",
-            flex: 2,
-            sortable: false,
-            filterable: false,
-            renderCell: (params) => (
-                <Box>
-                    <PermissionWrapper resource="supplier-contacts" action="canCreate">
-                        <Tooltip title="Add Contact">
-                            <IconButton color="primary" onClick={() => handleAddContact(params.row)}>
-                                <AddIcon />
-                            </IconButton>
-                        </Tooltip>
-                    </PermissionWrapper>
-                    <PermissionWrapper resource="suppliers" action="canView">
-                        <Tooltip title="View">
-                            <IconButton color="primary" onClick={() => handleView(params.row)}>
-                                <VisibilityIcon />
-                            </IconButton>
-                        </Tooltip>
-                    </PermissionWrapper>
-                    <PermissionWrapper resource="suppliers" action="canEdit">
-                        <Tooltip title="Edit">
-                            <IconButton color="secondary" onClick={() => handleEdit(params.row)}>
-                                <EditIcon />
-                            </IconButton>
-                        </Tooltip>
-                    </PermissionWrapper>
-                    <PermissionWrapper resource="suppliers" action="canDelete">
-                        <Tooltip title="Delete">
-                            <IconButton color="error" onClick={() => handleDelete(params.row)}>
-                                <DeleteIcon />
-                            </IconButton>
-                        </Tooltip>
-                    </PermissionWrapper>
+    // ContactsTable component for nested table
+    const ContactsTable = ({ contacts, supplierId }) => {
+        if (!contacts || contacts.length === 0) {
+            return (
+                <Box p={2}>
+                    <Typography variant="body2" color="textSecondary" align="center">
+                        No contacts found for this supplier.
+                    </Typography>
                 </Box>
-            ),
-        },
-    ];
+            );
+        }
+
+        return (
+            <Box sx={{ margin: 1 }}>
+                <Typography variant="h6" gutterBottom sx={{ marginLeft: 1 }}>
+                    Contacts ({contacts.length})
+                </Typography>
+                <TableContainer component={Paper} elevation={1}>
+                    <Table size="small">
+                        <TableHead>
+                            <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                                <TableCell><strong>Contact ID</strong></TableCell>
+                                <TableCell><strong>Name</strong></TableCell>
+                                <TableCell><strong>Role</strong></TableCell>
+                                <TableCell><strong>Email</strong></TableCell>
+                                <TableCell><strong>Phone</strong></TableCell>
+                                <TableCell><strong>Created Date</strong></TableCell>
+                                <TableCell><strong>Actions</strong></TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {contacts.map((contact) => (
+                                <TableRow key={contact.id} hover>
+                                    <TableCell>{contact.id}</TableCell>
+                                    <TableCell>
+                                        <Typography variant="body2">
+                                            {contact.firstName} {contact.lastName}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Chip 
+                                            label={contact.role} 
+                                            size="small" 
+                                            color="primary" 
+                                            variant="outlined"
+                                        />
+                                    </TableCell>
+                                    <TableCell>{contact.emailAddress || 'N/A'}</TableCell>
+                                    <TableCell>{contact.phoneNumber || 'N/A'}</TableCell>
+                                    <TableCell>
+                                        {contact.createdAt ? new Date(contact.createdAt).toLocaleDateString() : 'N/A'}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Box display="flex" gap={0.5}>
+                                            <PermissionWrapper resource="supplier-contacts" action="canEdit">
+                                                <Tooltip title="Edit Contact">
+                                                    <IconButton 
+                                                        size="small" 
+                                                        color="primary" 
+                                                        onClick={() => handleEditContact(contact)}
+                                                    >
+                                                        <EditIcon />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </PermissionWrapper>
+                                            <PermissionWrapper resource="supplier-contacts" action="canDelete">
+                                                <Tooltip title="Delete Contact">
+                                                    <IconButton 
+                                                        size="small" 
+                                                        color="error" 
+                                                        onClick={() => handleDeleteContact(contact)}
+                                                    >
+                                                        <DeleteIcon />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </PermissionWrapper>
+                                        </Box>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </Box>
+        );
+    };
+
+    if (loading) return <Loader />;
 
     return (
-        <Paper p={2} sx={{p:2}}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                <Typography variant="h5" gutterBottom>Suppliers</Typography>
+        <Paper p={2} sx={{ padding: 2 }}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="h5">Suppliers</Typography>
                 <Box display="flex" gap={1}>
-                    <Button variant="outlined" color="primary" onClick={handleImportCSV}>Import CSV</Button>
+                    <Button variant="outlined" color="success" onClick={handleImportCSV}>
+                        Import CSV
+                    </Button>
                     <Button variant="outlined" color="success" onClick={handleExportExcel}>
                         Export Excel
                     </Button>
-                    <Button variant="contained" color="primary" onClick={handleAdd}>
+                    <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={handleAdd}>
                         Add Supplier
                     </Button>
                 </Box>
             </Box>
 
-            {/* Modals */}
             <SupplierModal
                 open={openModal}
                 onClose={() => setOpenModal(false)}
@@ -281,23 +401,127 @@ const SupplierTable = () => {
             />
 
             <ImportCSV
-                open={importCSV} // This can be controlled by a state if you want to show/hide it
-                onClose={() => setImportCSV(false)} // Implement close logic if needed
+                open={importCSV}
+                onClose={() => setImportCSV(false)}
                 fetchSuppliers={fetchSuppliers}
             />
 
-            <Paper>
-                <DataGrid
-                    rows={suppliers.map((supplier) => ({
-                        ...supplier,
-                        id: supplier.id, // DataGrid expects a unique 'id' field
-                    }))}
-                    columns={columns}
-                    autoHeight
-                    pageSize={10}
-                    rowsPerPageOptions={[5, 10, 20]}
-                    disableRowSelectionOnClick
-                />
+            <EditContact
+                open={openEditContact}
+                onClose={() => setOpenEditContact(false)}
+                contact={selectedContact}
+                onContactUpdated={() => {
+                    setOpenEditContact(false);
+                    fetchSuppliers();
+                }}
+            />
+
+            <Paper elevation={3}>
+                <TableContainer>
+                    <Table>
+                        <TableHead>
+                            <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                                <TableCell width="50px"></TableCell>
+                                <TableCell><strong>Supplier ID</strong></TableCell>
+                                <TableCell><strong>Company Name</strong></TableCell>
+                                <TableCell><strong>Email</strong></TableCell>
+                                <TableCell><strong>Phone</strong></TableCell>
+                                <TableCell><strong>Address</strong></TableCell>
+                                <TableCell><strong>Post Code</strong></TableCell>
+                                <TableCell><strong>Contacts</strong></TableCell>
+                                <TableCell><strong>Status</strong></TableCell>
+                                <TableCell><strong>Actions</strong></TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {suppliers.map((supplier) => (
+                                <React.Fragment key={supplier.id}>
+                                    {/* Main supplier row */}
+                                    <TableRow hover>
+                                        <TableCell>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => toggleRowExpansion(supplier.id)}
+                                                color="primary"
+                                            >
+                                                {expandedRows.has(supplier.id) ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                                            </IconButton>
+                                        </TableCell>
+                                        <TableCell>{supplier.id}</TableCell>
+                                        <TableCell>
+                                            <Typography variant="body2" fontWeight="medium">
+                                                {supplier.companyName}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell>{supplier.email}</TableCell>
+                                        <TableCell>{supplier.phone}</TableCell>
+                                        <TableCell>{supplier.address}</TableCell>
+                                        <TableCell>{supplier.postCode}</TableCell>
+                                        <TableCell>
+                                            <Chip
+                                                label={supplier.contacts?.length || 0}
+                                                size="small"
+                                                color={supplier.contacts?.length > 0 ? "success" : "default"}
+                                                variant="outlined"
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Switch
+                                                checked={supplier.status === "active"}
+                                                onChange={() =>
+                                                    handleStatusChange(supplier.id, supplier.status)
+                                                }
+                                                color="success"
+                                                size="small"
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Box display="flex" gap={0.5}>
+                                                <PermissionWrapper resource="supplier-contacts" action="canCreate">
+                                                    <Tooltip title="Add Contact">
+                                                        <IconButton size="small" color="success" onClick={() => handleAddContact(supplier)}>
+                                                            <PersonAddAlt1Icon />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </PermissionWrapper>
+                                                <PermissionWrapper resource="suppliers" action="canView">
+                                                    <Tooltip title="View">
+                                                        <IconButton size="small" onClick={() => handleView(supplier)} color="info">
+                                                            <VisibilityIcon />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </PermissionWrapper>
+                                                <PermissionWrapper resource="suppliers" action="canEdit">
+                                                    <Tooltip title="Edit">
+                                                        <IconButton size="small" onClick={() => handleEdit(supplier)} color="primary">
+                                                            <EditIcon />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </PermissionWrapper>
+                                                <PermissionWrapper resource="suppliers" action="canDelete">
+                                                    <Tooltip title="Delete">
+                                                        <IconButton size="small" onClick={() => handleDelete(supplier)} color="error">
+                                                            <DeleteIcon />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </PermissionWrapper>
+                                            </Box>
+                                        </TableCell>
+                                    </TableRow>
+                                    
+                                    {/* Expanded contacts row */}
+                                    <TableRow>
+                                        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={10}>
+                                            <Collapse in={expandedRows.has(supplier.id)} timeout="auto" unmountOnExit>
+                                                <ContactsTable contacts={supplier.contacts} supplierId={supplier.id} />
+                                            </Collapse>
+                                        </TableCell>
+                                    </TableRow>
+                                </React.Fragment>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
             </Paper>
 
             <ConfirmationDialog
