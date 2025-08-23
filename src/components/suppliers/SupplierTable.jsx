@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import {
@@ -19,6 +19,8 @@ import {
     TableHead,
     TableRow,
     TablePagination,
+    TextField,
+    InputAdornment,
     Chip,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
@@ -28,6 +30,8 @@ import AddIcon from "@mui/icons-material/Add";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
+import SearchIcon from "@mui/icons-material/Search";
+import ClearIcon from "@mui/icons-material/Clear";
 import { BASE_URL } from "@/configs/url";
 import Loader from "../loader/Loader";
 import SupplierModal from "./SupplierModal";
@@ -60,6 +64,9 @@ const SupplierTable = () => {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [totalCount, setTotalCount] = useState(0);
+
+    // Search state
+    const [searchTerm, setSearchTerm] = useState('');
 
     // Confirmation dialog states
     const [confirmationOpen, setConfirmationOpen] = useState(false);
@@ -177,10 +184,15 @@ const SupplierTable = () => {
         }
     };
 
-    const fetchSuppliers = async (currentPage = page, currentRowsPerPage = rowsPerPage) => {
+    const fetchSuppliers = async (currentPage = page, currentRowsPerPage = rowsPerPage, search = searchTerm) => {
         try {
             setLoading(true);
-            const res = await axios.get(`${BASE_URL}/api/suppliers/get?page=${currentPage + 1}&limit=${currentRowsPerPage}`);
+            const searchParams = new URLSearchParams({
+                page: (currentPage + 1).toString(),
+                limit: currentRowsPerPage.toString(),
+                ...(search && { search })
+            });
+            const res = await axios.get(`${BASE_URL}/api/suppliers/get?${searchParams}`);
             setSuppliers(res.data.data);
             setTotalCount(res.data.pagination?.totalItems || 0);
         } catch (error) {
@@ -194,12 +206,14 @@ const SupplierTable = () => {
         fetchSuppliers();
     }, []);
 
-    // Refetch data when page or rowsPerPage changes
+    // Refetch data when page, rowsPerPage, or searchTerm changes
     useEffect(() => {
         if (!loading) {
             fetchSuppliers();
         }
     }, [page, rowsPerPage]);
+
+    // Remove automatic debounced search - now using Apply button
 
     // Pagination event handlers
     const handleChangePage = (event, newPage) => {
@@ -212,6 +226,28 @@ const SupplierTable = () => {
         setRowsPerPage(newRowsPerPage);
         setPage(0);
         setExpandedRows(new Set()); // Clear expanded rows when changing page size
+    };
+
+    // Search event handlers
+    const handleSearchChange = (event) => {
+        setSearchTerm(event.target.value);
+    };
+
+    const handleSearchApply = () => {
+        setPage(0); // Reset to first page when searching
+        fetchSuppliers(0, rowsPerPage, searchTerm);
+    };
+
+    const handleSearchClear = () => {
+        setSearchTerm('');
+        setPage(0);
+        fetchSuppliers(0, rowsPerPage, ''); // Immediately fetch all results when clearing
+    };
+
+    const handleSearchKeyPress = (event) => {
+        if (event.key === 'Enter') {
+            handleSearchApply();
+        }
     };
 
     const handleStatusChange = async (id, currentStatus) => {
@@ -308,8 +344,8 @@ const SupplierTable = () => {
                 }
             });
 
-            const worksheet = XLSX.utils.json_to_sheet(exportData);
-            const workbook = XLSX.utils.book_new();
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Suppliers & Contacts");
             XLSX.writeFile(workbook, "suppliers_with_contacts.xlsx");
             
@@ -425,6 +461,53 @@ const SupplierTable = () => {
                         Add Supplier
                     </Button>
                 </Box>
+            </Box>
+
+            {/* Search Section */}
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Box display="flex" alignItems="center" gap={1}>
+                    <TextField
+                        placeholder="Search suppliers by name, email, phone, address..."
+                        value={searchTerm}
+                        onChange={handleSearchChange}
+                        onKeyPress={handleSearchKeyPress}
+                        variant="outlined"
+                        size="small"
+                        sx={{ width: '300px' }}
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <SearchIcon />
+                                </InputAdornment>
+                            ),
+                            endAdornment: searchTerm && (
+                                <InputAdornment position="end">
+                                    <IconButton
+                                        aria-label="clear search"
+                                        onClick={handleSearchClear}
+                                        edge="end"
+                                        size="small"
+                                    >
+                                        <ClearIcon />
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        onClick={handleSearchApply}
+                        sx={{ height: '40px' }}
+                    >
+                        Apply
+                    </Button>
+                </Box>
+                <Typography variant="body2" color="textSecondary">
+                    {totalCount > 0 ? `${totalCount} supplier${totalCount !== 1 ? 's' : ''} found` : 'No suppliers found'}
+                    {searchTerm && ` for "${searchTerm}"`}
+                </Typography>
             </Box>
 
             <SupplierModal

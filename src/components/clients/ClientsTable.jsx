@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import {
@@ -19,6 +19,8 @@ import {
   TableHead,
   TableRow,
   TablePagination,
+  TextField,
+  InputAdornment,
   Chip,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
@@ -28,6 +30,8 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
 import Loader from '../loader/Loader';
 import { BASE_URL } from '@/configs/url';
 import { useAuth } from '@/context/authContext';
@@ -64,6 +68,9 @@ const ClientsTable = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
 
+  // Search state
+  const [searchTerm, setSearchTerm] = useState('');
+
   // Confirmation dialog states
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [confirmationConfig, setConfirmationConfig] = useState({
@@ -75,10 +82,15 @@ const ClientsTable = () => {
 
   const { user } = useAuth();
 
-  const fetchClients = async (currentPage = page, currentRowsPerPage = rowsPerPage) => {
+  const fetchClients = async (currentPage = page, currentRowsPerPage = rowsPerPage, search = searchTerm) => {
     try {
       setLoading(true);
-      const response = await axios.get(`${BASE_URL}/api/client/get?page=${currentPage + 1}&limit=${currentRowsPerPage}`);
+      const searchParams = new URLSearchParams({
+        page: (currentPage + 1).toString(),
+        limit: currentRowsPerPage.toString(),
+        ...(search && { search })
+      });
+      const response = await axios.get(`${BASE_URL}/api/client/get?${searchParams}`);
       setClients(response.data.data);
       setTotalCount(response.data.pagination?.totalItems || 0);
     } catch (error) {
@@ -304,6 +316,8 @@ const ClientsTable = () => {
     }
   }, [page, rowsPerPage]);
 
+  // Remove automatic debounced search - now using Apply button
+
   // Pagination event handlers
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -315,6 +329,28 @@ const ClientsTable = () => {
     setRowsPerPage(newRowsPerPage);
     setPage(0);
     setExpandedRows(new Set()); // Clear expanded rows when changing page size
+  };
+
+  // Search event handlers
+  const handleSearchChange = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const handleSearchApply = () => {
+    setPage(0); // Reset to first page when searching
+    fetchClients(0, rowsPerPage, searchTerm);
+  };
+
+  const handleSearchClear = () => {
+    setSearchTerm('');
+    setPage(0);
+    fetchClients(0, rowsPerPage, ''); // Immediately fetch all results when clearing
+  };
+
+  const handleSearchKeyPress = (event) => {
+    if (event.key === 'Enter') {
+      handleSearchApply();
+    }
   };
 
   // ContactsTable component for nested table
@@ -424,6 +460,53 @@ const ClientsTable = () => {
             Add Client
           </Button>
         </Box>
+      </Box>
+
+      {/* Search Section */}
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <Box display="flex" alignItems="center" gap={1}>
+          <TextField
+            placeholder="Search clients by name, email, phone, address..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            onKeyPress={handleSearchKeyPress}
+            variant="outlined"
+            size="small"
+            sx={{ width: '300px' }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+              endAdornment: searchTerm && (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label="clear search"
+                    onClick={handleSearchClear}
+                    edge="end"
+                    size="small"
+                  >
+                    <ClearIcon />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            size="small"
+            onClick={handleSearchApply}
+            sx={{ height: '40px' }}
+          >
+            Apply
+          </Button>
+        </Box>
+        <Typography variant="body2" color="textSecondary">
+          {totalCount > 0 ? `${totalCount} client${totalCount !== 1 ? 's' : ''} found` : 'No clients found'}
+          {searchTerm && ` for "${searchTerm}"`}
+        </Typography>
       </Box>
 
       <ClientsModal
