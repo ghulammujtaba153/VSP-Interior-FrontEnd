@@ -18,6 +18,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TablePagination,
   Chip,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
@@ -58,6 +59,11 @@ const ClientsTable = () => {
   // Expanded rows state for nested table
   const [expandedRows, setExpandedRows] = useState(new Set());
 
+  // Pagination states
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+
   // Confirmation dialog states
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [confirmationConfig, setConfirmationConfig] = useState({
@@ -69,10 +75,12 @@ const ClientsTable = () => {
 
   const { user } = useAuth();
 
-  const fetchClients = async () => {
+  const fetchClients = async (currentPage = page, currentRowsPerPage = rowsPerPage) => {
     try {
-      const response = await axios.get(`${BASE_URL}/api/client/get`);
-      setClients(response.data);
+      setLoading(true);
+      const response = await axios.get(`${BASE_URL}/api/client/get?page=${currentPage + 1}&limit=${currentRowsPerPage}`);
+      setClients(response.data.data);
+      setTotalCount(response.data.pagination?.totalItems || 0);
     } catch (error) {
       toast.error("Error fetching clients");
     } finally {
@@ -163,25 +171,63 @@ const ClientsTable = () => {
     setExpandedRows(newExpandedRows);
   };
 
+  // Fetch all clients for export (without pagination)
+  const fetchAllClients = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/client/get?page=1&limit=10000`); // Large limit to get all
+      return response.data.data;
+    } catch (error) {
+      toast.error("Failed to fetch clients for export");
+      return [];
+    }
+  };
+
   // ✅ Export to Excel
   const handleExportExcel = () => {
-    const totalContacts = clients.reduce((sum, client) => sum + (client.contacts?.length || 0), 0);
     showConfirmation({
-      title: 'Export Clients to Excel',
-      message: `Are you sure you want to export ${clients.length} client records with ${totalContacts} contacts to Excel? This will download a comprehensive file with all client and contact data.`,
+      title: 'Export All Clients to Excel',
+      message: `Are you sure you want to export all client records with their contacts to Excel? This will download a comprehensive file with all client and contact data.`,
       action: () => confirmExportExcel(),
       severity: 'info'
     });
   };
 
-  const confirmExportExcel = () => {
-    // Create flattened data structure with client and contact information
-    const exportData = [];
-    
-    clients.forEach((client) => {
-      if (client.contacts && client.contacts.length > 0) {
-        // For clients with contacts, create a row for each contact
-        client.contacts.forEach((contact, index) => {
+  const confirmExportExcel = async () => {
+    try {
+      toast.loading("Preparing export data...");
+      
+      // Fetch all clients for export
+      const allClients = await fetchAllClients();
+      
+      // Create flattened data structure with client and contact information
+      const exportData = [];
+      
+      allClients.forEach((client) => {
+        if (client.contacts && client.contacts.length > 0) {
+          // For clients with contacts, create a row for each contact
+          client.contacts.forEach((contact, index) => {
+            exportData.push({
+              "Client ID": client.id,
+              "Company Name": client.companyName,
+              "Client Email": client.emailAddress,
+              "Client Phone": client.phoneNumber,
+              "Address": client.address,
+              "City": client.postCode,
+              "Client Status": client.accountStatus,
+              "Client Created At": client.createdAt ? new Date(client.createdAt).toLocaleString() : "N/A",
+              "Contact #": index + 1,
+              "Contact ID": contact.id,
+              "Contact First Name": contact.firstName || "N/A",
+              "Contact Last Name": contact.lastName || "N/A",
+              "Contact Full Name": `${contact.firstName || ""} ${contact.lastName || ""}`.trim() || "N/A",
+              "Contact Role": contact.role || "N/A",
+              "Contact Email": contact.emailAddress || "N/A",
+              "Contact Phone": contact.phoneNumber || "N/A",
+              "Contact Created At": contact.createdAt ? new Date(contact.createdAt).toLocaleString() : "N/A",
+            });
+          });
+        } else {
+          // For clients without contacts, create a single row
           exportData.push({
             "Client ID": client.id,
             "Company Name": client.companyName,
@@ -191,46 +237,30 @@ const ClientsTable = () => {
             "City": client.postCode,
             "Client Status": client.accountStatus,
             "Client Created At": client.createdAt ? new Date(client.createdAt).toLocaleString() : "N/A",
-            "Contact #": index + 1,
-            "Contact ID": contact.id,
-            "Contact First Name": contact.firstName || "N/A",
-            "Contact Last Name": contact.lastName || "N/A",
-            "Contact Full Name": `${contact.firstName || ""} ${contact.lastName || ""}`.trim() || "N/A",
-            "Contact Role": contact.role || "N/A",
-            "Contact Email": contact.emailAddress || "N/A",
-            "Contact Phone": contact.phoneNumber || "N/A",
-            "Contact Created At": contact.createdAt ? new Date(contact.createdAt).toLocaleString() : "N/A",
+            "Contact #": "No Contacts",
+            "Contact ID": "N/A",
+            "Contact First Name": "N/A",
+            "Contact Last Name": "N/A",
+            "Contact Full Name": "N/A",
+            "Contact Role": "N/A",
+            "Contact Email": "N/A",
+            "Contact Phone": "N/A",
+            "Contact Created At": "N/A",
           });
-        });
-      } else {
-        // For clients without contacts, create a single row
-        exportData.push({
-          "Client ID": client.id,
-          "Company Name": client.companyName,
-          "Client Email": client.emailAddress,
-          "Client Phone": client.phoneNumber,
-          "Address": client.address,
-          "City": client.postCode,
-          "Client Status": client.accountStatus,
-          "Client Created At": client.createdAt ? new Date(client.createdAt).toLocaleString() : "N/A",
-          "Contact #": "No Contacts",
-          "Contact ID": "N/A",
-          "Contact First Name": "N/A",
-          "Contact Last Name": "N/A",
-          "Contact Full Name": "N/A",
-          "Contact Role": "N/A",
-          "Contact Email": "N/A",
-          "Contact Phone": "N/A",
-          "Contact Created At": "N/A",
-        });
-      }
-    });
+        }
+      });
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Clients & Contacts");
-    XLSX.writeFile(workbook, "clients_with_contacts.xlsx");
-    toast.success("Client data with contacts exported successfully");
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Clients & Contacts");
+      XLSX.writeFile(workbook, "clients_with_contacts.xlsx");
+      
+      toast.dismiss();
+      toast.success(`Successfully exported ${allClients.length} clients with contacts to Excel`);
+    } catch (error) {
+      toast.dismiss();
+      toast.error("Failed to export client data");
+    }
   };
 
 
@@ -266,6 +296,26 @@ const ClientsTable = () => {
   useEffect(() => {
     fetchClients();
   }, []);
+
+  // Refetch data when page or rowsPerPage changes
+  useEffect(() => {
+    if (!loading) {
+      fetchClients();
+    }
+  }, [page, rowsPerPage]);
+
+  // Pagination event handlers
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+    setExpandedRows(new Set()); // Clear expanded rows when changing pages
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    const newRowsPerPage = parseInt(event.target.value, 10);
+    setRowsPerPage(newRowsPerPage);
+    setPage(0);
+    setExpandedRows(new Set()); // Clear expanded rows when changing page size
+  };
 
   // ContactsTable component for nested table
   const ContactsTable = ({ contacts, clientId }) => {
@@ -521,6 +571,16 @@ const ClientsTable = () => {
             </TableBody>
           </Table>
         </TableContainer>
+        
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25, 50]}
+          component="div"
+          count={totalCount}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+        />
       </Paper>
 
       <ConfirmationDialog

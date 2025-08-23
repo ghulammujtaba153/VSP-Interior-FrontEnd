@@ -18,6 +18,7 @@ import {
     TableContainer,
     TableHead,
     TableRow,
+    TablePagination,
     Chip,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
@@ -54,6 +55,11 @@ const SupplierTable = () => {
     const [expandedRows, setExpandedRows] = useState(new Set());
     const { user } = useAuth();
     const [importCSV, setImportCSV] = useState(false);
+
+    // Pagination states
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [totalCount, setTotalCount] = useState(0);
 
     // Confirmation dialog states
     const [confirmationOpen, setConfirmationOpen] = useState(false);
@@ -171,10 +177,12 @@ const SupplierTable = () => {
         }
     };
 
-    const fetchSuppliers = async () => {
+    const fetchSuppliers = async (currentPage = page, currentRowsPerPage = rowsPerPage) => {
         try {
-            const res = await axios.get(`${BASE_URL}/api/suppliers/get`);
+            setLoading(true);
+            const res = await axios.get(`${BASE_URL}/api/suppliers/get?page=${currentPage + 1}&limit=${currentRowsPerPage}`);
             setSuppliers(res.data.data);
+            setTotalCount(res.data.pagination?.totalItems || 0);
         } catch (error) {
             toast.error(error?.response?.data?.message || "Failed to fetch suppliers");
         } finally {
@@ -185,6 +193,26 @@ const SupplierTable = () => {
     useEffect(() => {
         fetchSuppliers();
     }, []);
+
+    // Refetch data when page or rowsPerPage changes
+    useEffect(() => {
+        if (!loading) {
+            fetchSuppliers();
+        }
+    }, [page, rowsPerPage]);
+
+    // Pagination event handlers
+    const handleChangePage = (event, newPage) => {
+        setPage(newPage);
+        setExpandedRows(new Set()); // Clear expanded rows when changing pages
+    };
+
+    const handleChangeRowsPerPage = (event) => {
+        const newRowsPerPage = parseInt(event.target.value, 10);
+        setRowsPerPage(newRowsPerPage);
+        setPage(0);
+        setExpandedRows(new Set()); // Clear expanded rows when changing page size
+    };
 
     const handleStatusChange = async (id, currentStatus) => {
         try {
@@ -201,25 +229,63 @@ const SupplierTable = () => {
         }
     };
 
+    // Fetch all suppliers for export (without pagination)
+    const fetchAllSuppliers = async () => {
+        try {
+            const res = await axios.get(`${BASE_URL}/api/suppliers/get?page=1&limit=10000`); // Large limit to get all
+            return res.data.data;
+        } catch (error) {
+            toast.error("Failed to fetch suppliers for export");
+            return [];
+        }
+    };
+
     // ✅ Export to Excel
     const handleExportExcel = () => {
-        const totalContacts = suppliers.reduce((sum, supplier) => sum + (supplier.contacts?.length || 0), 0);
         showConfirmation({
-            title: 'Export Suppliers to Excel',
-            message: `Are you sure you want to export ${suppliers.length} supplier records with ${totalContacts} contacts to Excel? This will download a comprehensive file with all supplier and contact data.`,
+            title: 'Export All Suppliers to Excel',
+            message: `Are you sure you want to export all supplier records with their contacts to Excel? This will download a comprehensive file with all supplier and contact data.`,
             action: () => confirmExportExcel(),
             severity: 'info'
         });
     };
 
-    const confirmExportExcel = () => {
-        // Create flattened data structure with supplier and contact information
-        const exportData = [];
-        
-        suppliers.forEach((supplier) => {
-            if (supplier.contacts && supplier.contacts.length > 0) {
-                // For suppliers with contacts, create a row for each contact
-                supplier.contacts.forEach((contact, index) => {
+    const confirmExportExcel = async () => {
+        try {
+            toast.loading("Preparing export data...");
+            
+            // Fetch all suppliers for export
+            const allSuppliers = await fetchAllSuppliers();
+            
+            // Create flattened data structure with supplier and contact information
+            const exportData = [];
+            
+            allSuppliers.forEach((supplier) => {
+                if (supplier.contacts && supplier.contacts.length > 0) {
+                    // For suppliers with contacts, create a row for each contact
+                    supplier.contacts.forEach((contact, index) => {
+                        exportData.push({
+                            "Supplier ID": supplier.id,
+                            "Company Name": supplier.companyName,
+                            "Supplier Email": supplier.email,
+                            "Supplier Phone": supplier.phone,
+                            "Address": supplier.address,
+                            "Post Code": supplier.postCode,
+                            "Supplier Status": supplier.status,
+                            "Supplier Created At": supplier.createdAt ? new Date(supplier.createdAt).toLocaleString() : "N/A",
+                            "Contact #": index + 1,
+                            "Contact ID": contact.id,
+                            "Contact First Name": contact.firstName || "N/A",
+                            "Contact Last Name": contact.lastName || "N/A",
+                            "Contact Full Name": `${contact.firstName || ""} ${contact.lastName || ""}`.trim() || "N/A",
+                            "Contact Role": contact.role || "N/A",
+                            "Contact Email": contact.emailAddress || "N/A",
+                            "Contact Phone": contact.phoneNumber || "N/A",
+                            "Contact Created At": contact.createdAt ? new Date(contact.createdAt).toLocaleString() : "N/A",
+                        });
+                    });
+                } else {
+                    // For suppliers without contacts, create a single row
                     exportData.push({
                         "Supplier ID": supplier.id,
                         "Company Name": supplier.companyName,
@@ -229,46 +295,30 @@ const SupplierTable = () => {
                         "Post Code": supplier.postCode,
                         "Supplier Status": supplier.status,
                         "Supplier Created At": supplier.createdAt ? new Date(supplier.createdAt).toLocaleString() : "N/A",
-                        "Contact #": index + 1,
-                        "Contact ID": contact.id,
-                        "Contact First Name": contact.firstName || "N/A",
-                        "Contact Last Name": contact.lastName || "N/A",
-                        "Contact Full Name": `${contact.firstName || ""} ${contact.lastName || ""}`.trim() || "N/A",
-                        "Contact Role": contact.role || "N/A",
-                        "Contact Email": contact.emailAddress || "N/A",
-                        "Contact Phone": contact.phoneNumber || "N/A",
-                        "Contact Created At": contact.createdAt ? new Date(contact.createdAt).toLocaleString() : "N/A",
+                        "Contact #": "No Contacts",
+                        "Contact ID": "N/A",
+                        "Contact First Name": "N/A",
+                        "Contact Last Name": "N/A",
+                        "Contact Full Name": "N/A",
+                        "Contact Role": "N/A",
+                        "Contact Email": "N/A",
+                        "Contact Phone": "N/A",
+                        "Contact Created At": "N/A",
                     });
-                });
-            } else {
-                // For suppliers without contacts, create a single row
-                exportData.push({
-                    "Supplier ID": supplier.id,
-                    "Company Name": supplier.companyName,
-                    "Supplier Email": supplier.email,
-                    "Supplier Phone": supplier.phone,
-                    "Address": supplier.address,
-                    "Post Code": supplier.postCode,
-                    "Supplier Status": supplier.status,
-                    "Supplier Created At": supplier.createdAt ? new Date(supplier.createdAt).toLocaleString() : "N/A",
-                    "Contact #": "No Contacts",
-                    "Contact ID": "N/A",
-                    "Contact First Name": "N/A",
-                    "Contact Last Name": "N/A",
-                    "Contact Full Name": "N/A",
-                    "Contact Role": "N/A",
-                    "Contact Email": "N/A",
-                    "Contact Phone": "N/A",
-                    "Contact Created At": "N/A",
-                });
-            }
-        });
+                }
+            });
 
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Suppliers & Contacts");
-        XLSX.writeFile(workbook, "suppliers_with_contacts.xlsx");
-        toast.success("Supplier data with contacts exported successfully");
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Suppliers & Contacts");
+            XLSX.writeFile(workbook, "suppliers_with_contacts.xlsx");
+            
+            toast.dismiss();
+            toast.success(`Successfully exported ${allSuppliers.length} suppliers with contacts to Excel`);
+        } catch (error) {
+            toast.dismiss();
+            toast.error("Failed to export supplier data");
+        }
     };
 
     // ContactsTable component for nested table
@@ -314,7 +364,7 @@ const SupplierTable = () => {
                                         <Chip 
                                             label={contact.role} 
                                             size="small" 
-                                            color="primary" 
+                    color="primary"
                                             variant="outlined"
                                         />
                                     </TableCell>
@@ -332,10 +382,10 @@ const SupplierTable = () => {
                                                         color="primary" 
                                                         onClick={() => handleEditContact(contact)}
                                                     >
-                                                        <EditIcon />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </PermissionWrapper>
+                                <EditIcon />
+                            </IconButton>
+                        </Tooltip>
+                    </PermissionWrapper>
                                             <PermissionWrapper resource="supplier-contacts" action="canDelete">
                                                 <Tooltip title="Delete Contact">
                                                     <IconButton 
@@ -343,11 +393,11 @@ const SupplierTable = () => {
                                                         color="error" 
                                                         onClick={() => handleDeleteContact(contact)}
                                                     >
-                                                        <DeleteIcon />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </PermissionWrapper>
-                                        </Box>
+                                <DeleteIcon />
+                            </IconButton>
+                        </Tooltip>
+                    </PermissionWrapper>
+                </Box>
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -522,6 +572,16 @@ const SupplierTable = () => {
                         </TableBody>
                     </Table>
                 </TableContainer>
+                
+                <TablePagination
+                    rowsPerPageOptions={[5, 10, 25, 50]}
+                    component="div"
+                    count={totalCount}
+                    rowsPerPage={rowsPerPage}
+                    page={page}
+                    onPageChange={handleChangePage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
+                />
             </Paper>
 
             <ConfirmationDialog
