@@ -91,17 +91,22 @@ const LoginV2 = ({ mode }) => {
     const email = form.email.value
     const password = form.password.value
 
+    toast.loading("Logging in...")
+
     try {
       const res = await axios.post(`${BASE_URL}/api/user/login`, { email, password })
 
       console.log(res.data)
       setAuth(res.data.token)
+      toast.dismiss()
       setSuccess(true)
       router.push('/home')
     } catch (error) {
       setError(true)
+      toast.dismiss()
       toast.error(error?.response?.data?.message || 'An unexpected error occurred')
     }
+    toast.dismiss();
   }
 
   return (

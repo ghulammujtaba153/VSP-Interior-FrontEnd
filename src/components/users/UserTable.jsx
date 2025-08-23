@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import {
   Box, Button, IconButton, Typography, Paper, Switch,
@@ -24,11 +24,15 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useAuth } from '@/context/authContext';
 
 import * as XLSX from "xlsx";   // ✅ Import XLSX
+import Loader from '../loader/Loader';
 
-const UserTable = ({ users, fetchUsers }) => {
+const UserTable = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('view');
   const [selectedUser, setSelectedUser] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   
   // Confirmation dialog states (only for delete)
   const [confirmationOpen, setConfirmationOpen] = useState(false);
@@ -36,6 +40,24 @@ const UserTable = ({ users, fetchUsers }) => {
   
   const { canView, canCreate, canEdit, canDelete } = usePermissions();
   const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+
+
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(`${BASE_URL}/api/user/get?page=${page}&limit=${limit}`);
+      setUsers(res.data);
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      toast.error("Error fetching users");
+    }
+  };
+
+  useEffect(() => {
+    fetchUsers();
+  }, [page, limit]);
 
   const handleOpenModal = (mode, user = null) => {
     setModalMode(mode);
@@ -209,6 +231,11 @@ const UserTable = ({ users, fetchUsers }) => {
     },
   ];
 
+
+  if(loading){
+    return <Loader/>
+  }
+
   return (
     <Box sx={{ width: '100%', borderRadius: 2, boxShadow: 1, p: 2 }} component={Paper} >
       <Box
@@ -236,9 +263,10 @@ const UserTable = ({ users, fetchUsers }) => {
         rows={users}
         columns={columns}
         getRowId={(row) => row.id}
-        pageSize={5}
-        rowsPerPageOptions={[5, 10, 20]}
+        pageSize={10}
+        rowsPerPageOptions={[10, 20, 50, 100]}
         disableRowSelectionOnClick
+        loading={loading}
       />
 
       <UserModal
