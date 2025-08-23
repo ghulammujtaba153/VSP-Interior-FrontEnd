@@ -49,6 +49,7 @@ const UserTable = ({ users, fetchUsers }) => {
   };
 
   const handleSaveUser = async (formData) => {
+    toast.loading("Saving user...");
     if (modalMode === 'edit') {
       try {
         formData.userId = user.id;
@@ -57,6 +58,8 @@ const UserTable = ({ users, fetchUsers }) => {
         fetchUsers();
       } catch (error) {
         toast.error("Error updating user");
+      } finally{
+        toast.dismiss();
       }
     } else if (modalMode === 'create') {
       try {
@@ -66,8 +69,11 @@ const UserTable = ({ users, fetchUsers }) => {
         fetchUsers();
       } catch (error) {
         toast.error("Error creating user");
+      } finally{
+        toast.dismiss();
       }
     }
+    toast.dismiss();
     handleCloseModal();
   };
 
@@ -77,13 +83,17 @@ const UserTable = ({ users, fetchUsers }) => {
   };
 
   const confirmDeleteUser = async () => {
+    toast.loading("Deleting user...");
+
     try {
       await axios.delete(`${BASE_URL}/api/user/delete/${userToDelete.id}`, {
         data: { userId: user.id }
       });
       fetchUsers();
+      toast.dismiss();
       toast.success("User deleted successfully");
     } catch (error) {
+      toast.dismiss();
       console.error("Error deleting user", error);
       toast.error("Error deleting user");
     } finally {
