@@ -10,6 +10,7 @@ import {
   Typography,
   Paper,
   CircularProgress,
+  TextField,
 } from "@mui/material";
 import { Visibility, Edit, Delete } from "@mui/icons-material";
 import InventoryModal from "./InventoryModal";
@@ -19,14 +20,13 @@ import PermissionWrapper from "../PermissionWrapper";
 import { useAuth } from "@/context/authContext";
 import { DataGrid } from "@mui/x-data-grid";
 import ImportCSV from "./ImportCSV";
-import ConfirmationDialog from '../ConfirmationDialog';
-
-// ✅ Import XLSX
-import * as XLSX from "xlsx";
+import ConfirmationDialog from "../ConfirmationDialog";
+import * as XLSX from "xlsx"; // ✅ Import XLSX
 
 const InventoryTable = () => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState([]);
+  const [rowCount, setRowCount] = useState(0); // ✅ total records count
   const [open, setOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const [viewOpen, setViewOpen] = useState(false);
@@ -34,16 +34,19 @@ const InventoryTable = () => {
   const { user } = useAuth();
   const [importCSV, setImportCSV] = useState(false);
 
-  // Confirmation dialog states
+  // ✅ pagination + search
+  const [page, setPage] = useState(0); // DataGrid is 0-based
+  const [limit, setLimit] = useState(10);
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  // ✅ Confirmation dialog states
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [confirmationConfig, setConfirmationConfig] = useState({
-    title: '',
-    message: '',
+    title: "",
+    message: "",
     action: null,
-    severity: 'warning'
+    severity: "warning",
   });
-
-
 
   const showConfirmation = (config) => {
     setConfirmationConfig(config);
@@ -52,22 +55,32 @@ const InventoryTable = () => {
 
   const handleConfirmationClose = () => {
     setConfirmationOpen(false);
-    setConfirmationConfig({ title: '', message: '', action: null, severity: 'warning' });
+    setConfirmationConfig({
+      title: "",
+      message: "",
+      action: null,
+      severity: "warning",
+    });
   };
 
   const handleImportCSV = () => {
     showConfirmation({
-      title: 'Import Inventory',
-      message: 'Are you sure you want to import inventory items from Excel? This will add new inventory records to your database.',
+      title: "Import Inventory",
+      message:
+        "Are you sure you want to import inventory items from Excel? This will add new inventory records to your database.",
       action: () => setImportCSV(true),
-      severity: 'info'
+      severity: "info",
     });
-  }
+  };
 
   const fetchData = async () => {
+    setLoading(true);
     try {
-      const res = await axios.get(`${BASE_URL}/api/inventory/get`);
+      const res = await axios.get(
+        `${BASE_URL}/api/inventory/get?page=${page + 1}&limit=${limit}&search=${search}`
+      );
       setData(res.data.inventory || []);
+      setRowCount(res.data.total || 0);
     } catch (error) {
       console.error("Error fetching inventory:", error);
     } finally {
@@ -76,15 +89,19 @@ const InventoryTable = () => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    const delayDebounce = setTimeout(() => {
+      fetchData();
+    }, 500); // debounce search
+
+    return () => clearTimeout(delayDebounce);
+  }, [page, limit, search]);
 
   const handleDelete = (inventoryRow) => {
     showConfirmation({
-      title: 'Delete Inventory Item',
+      title: "Delete Inventory Item",
       message: `Are you sure you want to delete inventory item "${inventoryRow.name}" (${inventoryRow.itemCode})? This action cannot be undone and will remove all associated data.`,
       action: () => confirmDeleteInventory(inventoryRow.id),
-      severity: 'error'
+      severity: "error",
     });
   };
 
@@ -92,9 +109,7 @@ const InventoryTable = () => {
     try {
       toast.loading("Deleting Inventory...");
       await axios.delete(`${BASE_URL}/api/inventory/delete/${id}`, {
-        data: {
-          userId: user.id,
-        },
+        data: { userId: user.id },
       });
       toast.dismiss();
       toast.success("Inventory deleted successfully");
@@ -113,26 +128,26 @@ const InventoryTable = () => {
   // ✅ Export to Excel
   const handleExportExcel = () => {
     showConfirmation({
-      title: 'Export Inventory to Excel',
+      title: "Export Inventory to Excel",
       message: `Are you sure you want to export ${data.length} inventory items to Excel? This will download a file with all inventory data.`,
       action: () => confirmExportExcel(),
-      severity: 'info'
+      severity: "info",
     });
   };
 
   const confirmExportExcel = () => {
     const exportData = data.map((item) => ({
-      "ID": item.id,
+      ID: item.id,
       "Item Code": item.itemCode,
-      "Name": item.name,
-      "Category": item.category,
-      "Unit": item.unit,
-      "Quantity": item.quantity,
-      "Price": item.costPrice,
+      Name: item.name,
+      Category: item.category,
+      Unit: item.unit,
+      Quantity: item.quantity,
+      Price: item.costPrice,
       "Minimun Threshold": item.minThreshold,
       "Maximum Threshold": item.maxThreshold,
-      "Supplier": item.supplier?.companyName || "N/A",
-      "Date": item.createdAt ? formatDate(item.createdAt) : "N/A",
+      Supplier: item.supplier?.companyName || "N/A",
+      Date: item.createdAt ? formatDate(item.createdAt) : "N/A",
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -142,7 +157,13 @@ const InventoryTable = () => {
     toast.success("Inventory data exported successfully");
   };
 
-  if (loading) {
+  const handleResetSearch = () => {
+    setSearchInput('')
+    setSearch('')
+    setPage(0)
+  }
+
+  if (loading && data.length === 0) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
         <CircularProgress />
@@ -206,16 +227,38 @@ const InventoryTable = () => {
 
   return (
     <Paper p={3} sx={{ p: 4 }}>
-      {/* Header with Add + Export Buttons */}
+      {/* Header with Add + Export + Search */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h5" fontWeight="bold">
           Inventory Table
         </Typography>
         <Box display="flex" gap={1}>
+        <TextField
+            size="small"
+            placeholder="Search inventory..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+          <Button variant="outlined" color="primary" onClick={() => {
+              setPage(0) // reset to first page
+              setSearch(searchInput) // ✅ apply search
+            }}
+          >
+            Apply
+          </Button>
+          <Button
+          variant="outlined"
+          color="secondary"
+          onClick={handleResetSearch}
+        >
+          Reset
+        </Button>
+        </Box>
+        <Box display="flex" gap={1}>
+          
           <Button variant="outlined" color="primary" onClick={handleImportCSV}>
             Import Excel
           </Button>
-
           <Button variant="outlined" color="success" onClick={handleExportExcel}>
             Export Excel
           </Button>
@@ -241,20 +284,21 @@ const InventoryTable = () => {
           }))}
           columns={columns}
           autoHeight
-          pageSize={10}
+          pagination
+          paginationMode="server"
+          rowCount={rowCount}
+          page={page}
+          pageSize={limit}
           rowsPerPageOptions={[5, 10, 20]}
+          onPageChange={(newPage) => setPage(newPage)}
+          onPageSizeChange={(newLimit) => setLimit(newLimit)}
           disableRowSelectionOnClick
+          loading={loading}
         />
       </Paper>
 
+      <ImportCSV open={importCSV} onClose={() => setImportCSV(false)} fetchData={fetchData} />
 
-      <ImportCSV
-        open={importCSV}
-        onClose={() => setImportCSV(false)}
-        fetchData={fetchData}
-      />
-
-      {/* Modal for Add/Edit */}
       <InventoryModal
         open={open}
         setOpen={setOpen}
@@ -263,11 +307,7 @@ const InventoryTable = () => {
         onSuccess={fetchData}
       />
 
-      <ViewInventoryModal
-        open={viewOpen}
-        setOpen={setViewOpen}
-        inventory={viewData}
-      />
+      <ViewInventoryModal open={viewOpen} setOpen={setViewOpen} inventory={viewData} />
 
       <ConfirmationDialog
         open={confirmationOpen}
@@ -276,7 +316,7 @@ const InventoryTable = () => {
         title={confirmationConfig.title}
         message={confirmationConfig.message}
         severity={confirmationConfig.severity}
-        confirmText={confirmationConfig.severity === 'error' ? 'Delete' : 'Confirm'}
+        confirmText={confirmationConfig.severity === "error" ? "Delete" : "Confirm"}
         cancelText="Cancel"
       />
     </Paper>

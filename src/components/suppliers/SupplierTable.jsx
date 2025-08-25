@@ -289,13 +289,13 @@ const SupplierTable = () => {
     const confirmExportExcel = async () => {
         try {
             toast.loading("Preparing export data...");
-            
+
             // Fetch all suppliers for export
             const allSuppliers = await fetchAllSuppliers();
-            
+
             // Create flattened data structure with supplier and contact information
             const exportData = [];
-            
+
             allSuppliers.forEach((supplier) => {
                 if (supplier.contacts && supplier.contacts.length > 0) {
                     // For suppliers with contacts, create a row for each contact
@@ -344,11 +344,11 @@ const SupplierTable = () => {
                 }
             });
 
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
-        const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Suppliers & Contacts");
             XLSX.writeFile(workbook, "suppliers_with_contacts.xlsx");
-            
+
             toast.dismiss();
             toast.success(`Successfully exported ${allSuppliers.length} suppliers with contacts to Excel`);
         } catch (error) {
@@ -356,6 +356,12 @@ const SupplierTable = () => {
             toast.error("Failed to export supplier data");
         }
     };
+
+    const handleResetSearch = () => {
+        setSearchTerm('')
+        setPage(0)
+        fetchSuppliers(0, rowsPerPage, '') // Immediately fetch all results when clearing
+    }
 
     // ContactsTable component for nested table
     const ContactsTable = ({ contacts, supplierId }) => {
@@ -397,10 +403,10 @@ const SupplierTable = () => {
                                         </Typography>
                                     </TableCell>
                                     <TableCell>
-                                        <Chip 
-                                            label={contact.role} 
-                                            size="small" 
-                    color="primary"
+                                        <Chip
+                                            label={contact.role}
+                                            size="small"
+                                            color="primary"
                                             variant="outlined"
                                         />
                                     </TableCell>
@@ -413,27 +419,27 @@ const SupplierTable = () => {
                                         <Box display="flex" gap={0.5}>
                                             <PermissionWrapper resource="supplier-contacts" action="canEdit">
                                                 <Tooltip title="Edit Contact">
-                                                    <IconButton 
-                                                        size="small" 
-                                                        color="primary" 
+                                                    <IconButton
+                                                        size="small"
+                                                        color="primary"
                                                         onClick={() => handleEditContact(contact)}
                                                     >
-                                <EditIcon />
-                            </IconButton>
-                        </Tooltip>
-                    </PermissionWrapper>
+                                                        <EditIcon />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </PermissionWrapper>
                                             <PermissionWrapper resource="supplier-contacts" action="canDelete">
                                                 <Tooltip title="Delete Contact">
-                                                    <IconButton 
-                                                        size="small" 
-                                                        color="error" 
+                                                    <IconButton
+                                                        size="small"
+                                                        color="error"
                                                         onClick={() => handleDeleteContact(contact)}
                                                     >
-                                <DeleteIcon />
-                            </IconButton>
-                        </Tooltip>
-                    </PermissionWrapper>
-                </Box>
+                                                        <DeleteIcon />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </PermissionWrapper>
+                                        </Box>
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -502,6 +508,14 @@ const SupplierTable = () => {
                         sx={{ height: '40px' }}
                     >
                         Apply
+                    </Button>
+
+                    <Button
+                        variant="outlined"
+                        color="secondary"
+                        onClick={handleResetSearch}
+                    >
+                        Reset
                     </Button>
                 </Box>
                 <Typography variant="body2" color="textSecondary">
@@ -641,7 +655,7 @@ const SupplierTable = () => {
                                             </Box>
                                         </TableCell>
                                     </TableRow>
-                                    
+
                                     {/* Expanded contacts row */}
                                     <TableRow>
                                         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={10}>
@@ -655,7 +669,7 @@ const SupplierTable = () => {
                         </TableBody>
                     </Table>
                 </TableContainer>
-                
+
                 <TablePagination
                     rowsPerPageOptions={[5, 10, 25, 50]}
                     component="div"

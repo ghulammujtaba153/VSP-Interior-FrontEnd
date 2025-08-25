@@ -207,13 +207,13 @@ const ClientsTable = () => {
   const confirmExportExcel = async () => {
     try {
       toast.loading("Preparing export data...");
-      
+
       // Fetch all clients for export
       const allClients = await fetchAllClients();
-      
+
       // Create flattened data structure with client and contact information
       const exportData = [];
-      
+
       allClients.forEach((client) => {
         if (client.contacts && client.contacts.length > 0) {
           // For clients with contacts, create a row for each contact
@@ -266,7 +266,7 @@ const ClientsTable = () => {
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Clients & Contacts");
       XLSX.writeFile(workbook, "clients_with_contacts.xlsx");
-      
+
       toast.dismiss();
       toast.success(`Successfully exported ${allClients.length} clients with contacts to Excel`);
     } catch (error) {
@@ -304,6 +304,12 @@ const ClientsTable = () => {
     setSelectedClientId(contact.clientId);
     setOpenContactModal(true);
   };
+
+  const handleResetSearch = () => {
+    setSearchTerm('')
+    setPage(0)
+    fetchClients(0, rowsPerPage, '') // Immediately fetch all results when clearing
+  }
 
   useEffect(() => {
     fetchClients();
@@ -393,10 +399,10 @@ const ClientsTable = () => {
                     </Typography>
                   </TableCell>
                   <TableCell>
-                    <Chip 
-                      label={contact.role} 
-                      size="small" 
-                      color="primary" 
+                    <Chip
+                      label={contact.role}
+                      size="small"
+                      color="primary"
                       variant="outlined"
                     />
                   </TableCell>
@@ -407,29 +413,29 @@ const ClientsTable = () => {
                   </TableCell>
                   <TableCell>
                     <Box display="flex" gap={0.5}>
-          <PermissionWrapper resource="clients" action="canEdit">
+                      <PermissionWrapper resource="clients" action="canEdit">
                         <Tooltip title="Edit Contact">
-                          <IconButton 
-                            size="small" 
-                            color="primary" 
+                          <IconButton
+                            size="small"
+                            color="primary"
                             onClick={() => handleEditContact(contact)}
                           >
-                <EditIcon />
-              </IconButton>
-            </Tooltip>
-          </PermissionWrapper>
-          <PermissionWrapper resource="clients" action="canDelete">
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </PermissionWrapper>
+                      <PermissionWrapper resource="clients" action="canDelete">
                         <Tooltip title="Delete Contact">
-                          <IconButton 
-                            size="small" 
-                            color="error" 
+                          <IconButton
+                            size="small"
+                            color="error"
                             onClick={() => handleDeleteContact(contact)}
                           >
-                <DeleteIcon />
-              </IconButton>
-            </Tooltip>
-          </PermissionWrapper>
-        </Box>
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </PermissionWrapper>
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))}
@@ -501,6 +507,13 @@ const ClientsTable = () => {
             sx={{ height: '40px' }}
           >
             Apply
+          </Button>
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={handleResetSearch}
+          >
+            Reset
           </Button>
         </Box>
         <Typography variant="body2" color="textSecondary">
@@ -640,7 +653,7 @@ const ClientsTable = () => {
                       </Box>
                     </TableCell>
                   </TableRow>
-                  
+
                   {/* Expanded contacts row */}
                   <TableRow>
                     <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={10}>
@@ -654,7 +667,7 @@ const ClientsTable = () => {
             </TableBody>
           </Table>
         </TableContainer>
-        
+
         <TablePagination
           rowsPerPageOptions={[5, 10, 25, 50]}
           component="div"
