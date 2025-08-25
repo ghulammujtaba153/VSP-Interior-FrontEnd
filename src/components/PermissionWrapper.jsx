@@ -1,7 +1,6 @@
 import React from 'react';
-
 import { usePermissions } from '@/hooks/usePermissions';
-import { useAuth } from '@/context/authContext'; // Assuming you have this
+import { useAuth } from '@/context/authContext';
 
 const PermissionWrapper = ({ 
   children, 
@@ -12,55 +11,20 @@ const PermissionWrapper = ({
   customDeniedMessage = null
 }) => {
   const { hasPermission, showPermissionDenied } = usePermissions();
-  const { user } = useAuth(); // Add this to get user role
-
-  console.log("user in permission wrapper", user);
-
-  console.log("hasPermission in permission wrapper", user?.Role);
-
-
+  const { user } = useAuth();
 
   // ✅ Always allow superadmin
   const userHasPermission = hasPermission(resource, action);
 
-  // If user doesn't have permission
   if (!userHasPermission) {
-    // If we want to show a denied message when clicked
-    // if (showDeniedMessage && React.isValidElement(children)) {
-    //   return React.cloneElement(children, {
-    //     onClick: (e) => {
-    //       e.preventDefault();
-    //       e.stopPropagation();
-    //       const message = customDeniedMessage || `access ${resource}`;
-
-    //       showPermissionDenied(resource, action.replace('can', '').toLowerCase());
-
-    //       // Call original onClick if it exists
-    //       if (children.props.onClick) {
-    //         children.props.onClick(e);
-    //       }
-    //     },
-    //     style: {
-    //       ...children.props.style,
-    //       opacity: 0.6,
-    //       cursor: 'not-allowed'
-    //     }
-    //   });
-    // }
-
     if (showDeniedMessage && React.isValidElement(children)) {
       return React.cloneElement(children, {
+        // 🚫 override click completely
         onClick: (e) => {
           e.preventDefault();
           e.stopPropagation();
-    
           const message = customDeniedMessage || `access ${resource}`;
           showPermissionDenied(resource, action.replace('can', '').toLowerCase());
-    
-          // ❌ REMOVE this - it still runs the original handler
-          // if (children.props.onClick) {
-          //   children.props.onClick(e);
-          // }
         },
         style: {
           ...children.props.style,
@@ -69,13 +33,10 @@ const PermissionWrapper = ({
         }
       });
     }
-    
-
-    // Return fallback component or null
     return fallback;
   }
 
-  // User has permission, render children normally
+  // ✅ User has permission
   return children;
 };
 

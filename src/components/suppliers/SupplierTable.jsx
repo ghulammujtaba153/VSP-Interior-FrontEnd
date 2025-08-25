@@ -417,7 +417,7 @@ const SupplierTable = () => {
                                     </TableCell>
                                     <TableCell>
                                         <Box display="flex" gap={0.5}>
-                                            <PermissionWrapper resource="supplier-contacts" action="canEdit">
+                                            
                                                 <Tooltip title="Edit Contact">
                                                     <IconButton
                                                         size="small"
@@ -427,8 +427,7 @@ const SupplierTable = () => {
                                                         <EditIcon />
                                                     </IconButton>
                                                 </Tooltip>
-                                            </PermissionWrapper>
-                                            <PermissionWrapper resource="supplier-contacts" action="canDelete">
+                                            
                                                 <Tooltip title="Delete Contact">
                                                     <IconButton
                                                         size="small"
@@ -438,7 +437,7 @@ const SupplierTable = () => {
                                                         <DeleteIcon />
                                                     </IconButton>
                                                 </Tooltip>
-                                            </PermissionWrapper>
+                                            
                                         </Box>
                                     </TableCell>
                                 </TableRow>
@@ -624,34 +623,32 @@ const SupplierTable = () => {
                                         </TableCell>
                                         <TableCell>
                                             <Box display="flex" gap={0.5}>
-                                                <PermissionWrapper resource="supplier-contacts" action="canCreate">
                                                     <Tooltip title="Add Contact">
                                                         <IconButton size="small" color="success" onClick={() => handleAddContact(supplier)}>
                                                             <PersonAddAlt1Icon />
                                                         </IconButton>
                                                     </Tooltip>
-                                                </PermissionWrapper>
-                                                <PermissionWrapper resource="suppliers" action="canView">
-                                                    <Tooltip title="View">
+                                                <Tooltip title="View">
+                                                    <PermissionWrapper resource="suppliers" action="canView">
                                                         <IconButton size="small" onClick={() => handleView(supplier)} color="info">
                                                             <VisibilityIcon />
                                                         </IconButton>
-                                                    </Tooltip>
-                                                </PermissionWrapper>
-                                                <PermissionWrapper resource="suppliers" action="canEdit">
-                                                    <Tooltip title="Edit">
+                                                    </PermissionWrapper>
+                                                </Tooltip>
+                                                <Tooltip title="Edit">
+                                                    <PermissionWrapper resource="suppliers" action="canEdit">
                                                         <IconButton size="small" onClick={() => handleEdit(supplier)} color="primary">
                                                             <EditIcon />
                                                         </IconButton>
-                                                    </Tooltip>
-                                                </PermissionWrapper>
-                                                <PermissionWrapper resource="suppliers" action="canDelete">
-                                                    <Tooltip title="Delete">
+                                                    </PermissionWrapper>
+                                                </Tooltip>
+                                                <Tooltip title="Delete">
+                                                    <PermissionWrapper resource="suppliers" action="canDelete">
                                                         <IconButton size="small" onClick={() => handleDelete(supplier)} color="error">
                                                             <DeleteIcon />
                                                         </IconButton>
-                                                    </Tooltip>
-                                                </PermissionWrapper>
+                                                    </PermissionWrapper>
+                                                </Tooltip>
                                             </Box>
                                         </TableCell>
                                     </TableRow>
