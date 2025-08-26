@@ -7,12 +7,11 @@ import {
   Box,
   Typography,
   Grid,
-  FormGroup,
-  FormControlLabel,
-  Checkbox,
   Paper,
   Chip,
   Button,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
 import { BASE_URL } from "@/configs/url";
 import Loader from "@/components/loader/Loader";
@@ -20,74 +19,63 @@ import { toast } from "react-toastify";
 
 // Individual Permission Card Component with its own isolated state
 const PermissionCard = ({ permission, roleId, onSaved }) => {
-  const [localState, setLocalState] = useState({
-    canCreate: Boolean(permission.canCreate),
-    canView: Boolean(permission.canView),
-    canEdit: Boolean(permission.canEdit),
-    canDelete: Boolean(permission.canDelete),
-  });
-  const [originalState, setOriginalState] = useState({
-    canCreate: Boolean(permission.canCreate),
-    canView: Boolean(permission.canView),
-    canEdit: Boolean(permission.canEdit),
-    canDelete: Boolean(permission.canDelete),
-  });
+  // Determine if module is enabled (has any permissions)
+  const isModuleEnabled = Boolean(
+    permission.canCreate || permission.canView || permission.canEdit || permission.canDelete
+  );
+  
+  const [localState, setLocalState] = useState(isModuleEnabled);
+  const [originalState, setOriginalState] = useState(isModuleEnabled);
   const [isSaving, setIsSaving] = useState(false);
 
   // Update states when permission prop changes (after save refresh)
   useEffect(() => {
-    const newState = {
-      canCreate: Boolean(permission.canCreate),
-      canView: Boolean(permission.canView),
-      canEdit: Boolean(permission.canEdit),
-      canDelete: Boolean(permission.canDelete),
-    };
-    setLocalState(newState);
-    setOriginalState(newState);
+    const newEnabled = Boolean(
+      permission.canCreate || permission.canView || permission.canEdit || permission.canDelete
+    );
+    setLocalState(newEnabled);
+    setOriginalState(newEnabled);
   }, [permission.canCreate, permission.canView, permission.canEdit, permission.canDelete]);
 
   // Check if current state differs from original
   const hasChanges = () => {
-    return (
-      localState.canCreate !== originalState.canCreate ||
-      localState.canView !== originalState.canView ||
-      localState.canEdit !== originalState.canEdit ||
-      localState.canDelete !== originalState.canDelete
-    );
+    return localState !== originalState;
   };
 
-  const handleChange = (field, value) => {
-    console.log(`Changing ${permission.resource} ${field} to:`, value);
-    setLocalState(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  const handleToggle = (value) => {
+    console.log(`Toggling ${permission.resource} module to:`, value);
+    setLocalState(value);
   };
 
   const handleSave = async () => {
     setIsSaving(true);
     
     try {
+      // When enabled, give all permissions; when disabled, remove all permissions
+      const permissions = localState ? {
+        canCreate: true,
+        canView: true,
+        canEdit: true,
+        canDelete: true,
+      } : {
+        canCreate: false,
+        canView: false,
+        canEdit: false,
+        canDelete: false,
+      };
+
       if (permission.id) {
         // Update existing permission
-        await axios.put(`${BASE_URL}/api/permission/update/${permission.id}`, {
-          canCreate: localState.canCreate,
-          canView: localState.canView,
-          canEdit: localState.canEdit,
-          canDelete: localState.canDelete,
-        });
-        toast.success(`${permission.resource} permissions updated successfully!`);
+        await axios.put(`${BASE_URL}/api/permission/update/${permission.id}`, permissions);
+        toast.success(`${permission.resource} module ${localState ? 'enabled' : 'disabled'} successfully!`);
       } else {
         // Create new permission
         await axios.post(`${BASE_URL}/api/permission/create-or-update`, {
           roleId: parseInt(roleId),
           resourceId: permission.resourceId,
-          canCreate: localState.canCreate,
-          canView: localState.canView,
-          canEdit: localState.canEdit,
-          canDelete: localState.canDelete,
+          ...permissions,
         });
-        toast.success(`${permission.resource} permissions created successfully!`);
+        toast.success(`${permission.resource} module ${localState ? 'enabled' : 'disabled'} successfully!`);
       }
       
       // Call parent refresh function
@@ -133,52 +121,31 @@ const PermissionCard = ({ permission, roleId, onSaved }) => {
       </Box>
       
       {/* Debug info */}
-      <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mb: 1 }}>
-        ID: {permission.resourceId} | Current: C:{String(localState.canCreate)} V:{String(localState.canView)} E:{String(localState.canEdit)} D:{String(localState.canDelete)}
+      <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mb: 2 }}>
+        ID: {permission.resourceId} | Status: {localState ? 'Enabled' : 'Disabled'}
       </Typography>
       
-      <FormGroup>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
         <FormControlLabel
           control={
-            <Checkbox
-              checked={localState.canCreate}
-              onChange={(e) => handleChange("canCreate", e.target.checked)}
+            <Switch
+              checked={localState}
+              onChange={(e) => handleToggle(e.target.checked)}
               disabled={isSaving}
+              color="primary"
             />
           }
-          label="Create"
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={localState.canView}
-              onChange={(e) => handleChange("canView", e.target.checked)}
-              disabled={isSaving}
-            />
+          label={
+            <Typography variant="body1" sx={{ fontWeight: 500 }}>
+              {/* {localState ? 'Module Enabled' : 'Module Disabled'} */}
+            </Typography>
           }
-          label="Read"
         />
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={localState.canEdit}
-              onChange={(e) => handleChange("canEdit", e.target.checked)}
-              disabled={isSaving}
-            />
-          }
-          label="Edit"
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={localState.canDelete}
-              onChange={(e) => handleChange("canDelete", e.target.checked)}
-              disabled={isSaving}
-            />
-          }
-          label="Delete"
-        />
-      </FormGroup>
+      </Box>
+      
+      <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mb: 1 }}>
+        {localState ? 'Full access: Create, Read, Edit, Delete' : 'No access to this module'}
+      </Typography>
       <Button
         variant="contained"
         size="small"

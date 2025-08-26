@@ -168,11 +168,7 @@ const VerticalMenu = ({ scrollMenu }) => {
         >
         </SubMenu>
 
-        <SubMenu
-          label='User Management'
-          icon={<i className='tabler-users' />}
-        >
-        </SubMenu>
+        
 
         <SubMenu
           label='Settings'
