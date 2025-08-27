@@ -16,6 +16,7 @@ import ConfirmationDialog from '../ConfirmationDialog';
 
 import { BASE_URL } from "@/configs/url";
 import { useAuth } from "@/context/authContext";
+import { MuiTelInput } from 'mui-tel-input';
 
 const modalStyle = {
   position: "absolute",
@@ -190,16 +191,15 @@ const ContactModal = ({ open, onClose, clientId, editContact, refreshContacts })
             margin="normal"
             required
           />
-          <TextField
-            fullWidth
-            label="Phone"
-            name="phoneNumber"
-            type="number"
-            value={contact.phoneNumber}
-            onChange={handleChange}
-            margin="normal"
-            required
-          />
+          <MuiTelInput
+  fullWidth
+  defaultCountry="NZ"
+  label="Phone Number"
+  value={contact.phoneNumber}
+  onChange={(value) => setContact({ ...contact, phoneNumber: value })}
+  margin="normal"
+  required
+/>
           <Box mt={2} display="flex" justifyContent="flex-end">
             <Button onClick={onClose} sx={{ mr: 2 }}>
               Cancel

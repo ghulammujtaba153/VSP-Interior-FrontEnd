@@ -9,7 +9,6 @@ import {
   Grid,
   Paper,
   Chip,
-  Button,
   Switch,
   FormControlLabel,
 } from "@mui/material";
@@ -37,22 +36,16 @@ const PermissionCard = ({ permission, roleId, onSaved }) => {
     setOriginalState(newEnabled);
   }, [permission.canCreate, permission.canView, permission.canEdit, permission.canDelete]);
 
-  // Check if current state differs from original
-  const hasChanges = () => {
-    return localState !== originalState;
-  };
 
-  const handleToggle = (value) => {
+
+  const handleToggle = async (value) => {
     console.log(`Toggling ${permission.resource} module to:`, value);
     setLocalState(value);
-  };
-
-  const handleSave = async () => {
     setIsSaving(true);
     
     try {
       // When enabled, give all permissions; when disabled, remove all permissions
-      const permissions = localState ? {
+      const permissions = value ? {
         canCreate: true,
         canView: true,
         canEdit: true,
@@ -67,7 +60,7 @@ const PermissionCard = ({ permission, roleId, onSaved }) => {
       if (permission.id) {
         // Update existing permission
         await axios.put(`${BASE_URL}/api/permission/update/${permission.id}`, permissions);
-        toast.success(`${permission.resource} module ${localState ? 'enabled' : 'disabled'} successfully!`);
+        toast.success(`${permission.resource} module ${value ? 'enabled' : 'disabled'} successfully!`);
       } else {
         // Create new permission
         await axios.post(`${BASE_URL}/api/permission/create-or-update`, {
@@ -75,8 +68,11 @@ const PermissionCard = ({ permission, roleId, onSaved }) => {
           resourceId: permission.resourceId,
           ...permissions,
         });
-        toast.success(`${permission.resource} module ${localState ? 'enabled' : 'disabled'} successfully!`);
+        toast.success(`${permission.resource} module ${value ? 'enabled' : 'disabled'} successfully!`);
       }
+      
+      // Update original state to reflect the change
+      setOriginalState(value);
       
       // Call parent refresh function
       onSaved();
@@ -84,10 +80,14 @@ const PermissionCard = ({ permission, roleId, onSaved }) => {
     } catch (error) {
       console.error("Error saving permission", error);
       toast.error(`Failed to save ${permission.resource} permissions`);
+      // Revert the local state if save failed
+      setLocalState(!value);
     } finally {
       setIsSaving(false);
     }
   };
+
+
 
   return (
     <Paper elevation={3} sx={{ p: 2 }}>
@@ -109,10 +109,10 @@ const PermissionCard = ({ permission, roleId, onSaved }) => {
             color={permission.id ? "success" : "default"}
             size="small"
           />
-          {hasChanges() && (
+          {isSaving && (
             <Chip
-              label="Modified"
-              color="warning"
+              label="Saving..."
+              color="info"
               size="small"
               variant="outlined"
             />
@@ -146,15 +146,6 @@ const PermissionCard = ({ permission, roleId, onSaved }) => {
       <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mb: 1 }}>
         {localState ? 'Full access: Create, Read, Edit, Delete' : 'No access to this module'}
       </Typography>
-      <Button
-        variant="contained"
-        size="small"
-        sx={{ mt: 2 }}
-        onClick={handleSave}
-        disabled={!hasChanges() || isSaving}
-      >
-        {isSaving ? "Saving..." : "Save"}
-      </Button>
     </Paper>
   );
 };
@@ -188,7 +179,7 @@ const RolePage = () => {
   const handlePermissionSaved = async () => {
     // Refresh data without forcing re-render of all components
     setLoading(true);
-    await fetchData();
+    // await fetchData();
     setLoading(false);
   };
 

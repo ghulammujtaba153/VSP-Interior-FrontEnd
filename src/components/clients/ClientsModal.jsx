@@ -15,6 +15,7 @@ import {
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import ConfirmationDialog from '../ConfirmationDialog';
+import { MuiTelInput } from 'mui-tel-input';
 
 import { BASE_URL } from '@/configs/url';
 import { useAuth } from '@/context/authContext';
@@ -141,15 +142,15 @@ const ClientsModal = ({ open, handleClose, editClient, refreshClients }) => {
             margin="normal"
             required
           />
-          <TextField
-            fullWidth
-            label="Phone Number"
-            name="phoneNumber"
-            value={client.phoneNumber}
-            onChange={handleChange}
-            margin="normal"
-            required
-          />
+          <MuiTelInput
+  fullWidth
+  defaultCountry="NZ"
+  label="Phone Number"
+  value={client.phoneNumber}
+  onChange={(value) => setClient({ ...client, phoneNumber: value })}
+  margin="normal"
+  required
+/>
           <TextField
             fullWidth
             label="Address"
@@ -175,7 +176,7 @@ const ClientsModal = ({ open, handleClose, editClient, refreshClients }) => {
             value={client.notes}
             onChange={handleChange}
             margin="normal"
-            required
+            
           />
         </DialogContent>
         <DialogActions>

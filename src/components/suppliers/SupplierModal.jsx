@@ -17,6 +17,7 @@ import ConfirmationDialog from '../ConfirmationDialog';
 
 import { BASE_URL } from "@/configs/url";
 import { useAuth } from "@/context/authContext";
+import { MuiTelInput } from "mui-tel-input";
 
 const defaultData = {
     companyName: "",
@@ -135,13 +136,15 @@ const SupplierModal = ({ open, onClose, fetchSuppliers, selectedSupplier }) => {
                     value={data.email}
                     onChange={handleChange}
                 />
-                <TextField
+                <MuiTelInput
                     fullWidth
                     margin="dense"
-                    label="Phone"
+                    label="Phone Number"
+                                       
                     name="phone"
                     value={data.phone}
-                    onChange={handleChange}
+                    onChange={(value) => setData({ ...data, phone: value })}
+                    defaultCountry="NZ"
                 />
                 <TextField
                     fullWidth

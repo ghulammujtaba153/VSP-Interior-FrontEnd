@@ -30,7 +30,10 @@ import {
   TableRow,
   IconButton,
   Tooltip,
-  Badge
+  Badge,
+  TextField,
+  Button,
+  Stack
 } from '@mui/material'
 import {
   ExpandMore as ExpandMoreIcon,
@@ -43,18 +46,24 @@ import {
   Inventory as InventoryIcon,
   Kitchen as CabinetIcon,
   SupervisorAccount as RoleIcon,
-  ContactPhone as ContactIcon
+  ContactPhone as ContactIcon,
+  FilterList as FilterIcon,
+  Clear as ClearIcon
 } from '@mui/icons-material'
 
 const AuditSection = () => {
   const [audits, setAudits] = useState([])
+  const [filteredAudits, setFilteredAudits] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
 
   const fetchAudits = async () => {
     try {
       const response = await axios.get(`${BASE_URL}/api/audit/get`)
       setAudits(response.data.audits)
+      setFilteredAudits(response.data.audits)
       setLoading(false)
     } catch (error) {
       console.log(error)
@@ -66,6 +75,47 @@ const AuditSection = () => {
   useEffect(() => {
     fetchAudits()
   }, [])
+
+  // Filter audits by date range
+  const filterAuditsByDate = () => {
+    if (!fromDate && !toDate) {
+      setFilteredAudits(audits)
+      return
+    }
+
+    const filtered = audits.filter(audit => {
+      const auditDate = new Date(audit.createdAt)
+      const from = fromDate ? new Date(fromDate) : null
+      const to = toDate ? new Date(toDate) : null
+
+      // Set time to start/end of day for proper comparison
+      if (from) from.setHours(0, 0, 0, 0)
+      if (to) to.setHours(23, 59, 59, 999)
+
+      if (from && to) {
+        return auditDate >= from && auditDate <= to
+      } else if (from) {
+        return auditDate >= from
+      } else if (to) {
+        return auditDate <= to
+      }
+      return true
+    })
+
+    setFilteredAudits(filtered)
+  }
+
+  // Clear filters
+  const clearFilters = () => {
+    setFromDate('')
+    setToDate('')
+    setFilteredAudits(audits)
+  }
+
+  // Apply filters when dates change
+  useEffect(() => {
+    filterAuditsByDate()
+  }, [fromDate, toDate, audits])
 
   // Helper functions
   const getActionColor = (action) => {
@@ -106,10 +156,10 @@ const AuditSection = () => {
     return new Date(dateString).toLocaleString()
   }
 
-  // Group audits by different criteria
+  // Group audits by different criteria (using filtered audits)
   const getAuditsByAction = () => {
     const grouped = {}
-    audits.forEach(audit => {
+    filteredAudits.forEach(audit => {
       if (!grouped[audit.action]) {
         grouped[audit.action] = []
       }
@@ -120,7 +170,7 @@ const AuditSection = () => {
 
   const getAuditsByTable = () => {
     const grouped = {}
-    audits.forEach(audit => {
+    filteredAudits.forEach(audit => {
       if (!grouped[audit.tableName]) {
         grouped[audit.tableName] = []
       }
@@ -130,16 +180,16 @@ const AuditSection = () => {
   }
 
   const getRecentAudits = () => {
-    return audits.slice(0, 10) // Show last 10 activities
+    return filteredAudits.slice(0, 10) // Show last 10 activities
   }
 
   const getAuditStats = () => {
     const stats = {
-      total: audits.length,
-      create: audits.filter(a => a.action === 'create').length,
-      update: audits.filter(a => a.action === 'update').length,
-      delete: audits.filter(a => a.action === 'delete').length,
-      login: audits.filter(a => a.action === 'login').length
+      total: filteredAudits.length,
+      create: filteredAudits.filter(a => a.action === 'create').length,
+      update: filteredAudits.filter(a => a.action === 'update').length,
+      delete: filteredAudits.filter(a => a.action === 'delete').length,
+      login: filteredAudits.filter(a => a.action === 'login').length
     }
     return stats
   }
@@ -171,6 +221,48 @@ const AuditSection = () => {
       <Typography variant="h4" component="h1" gutterBottom sx={{ mb: 4 }}>
         System Audit
       </Typography>
+
+      {/* Date Filter Section */}
+      <Card sx={{ mb: 4 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <FilterIcon />
+            Filter by Date Range
+          </Typography>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
+            <TextField
+              type="date"
+              label="From Date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              size="small"
+            />
+            <TextField
+              type="date"
+              label="To Date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              size="small"
+            />
+            <Button
+              variant="outlined"
+              onClick={clearFilters}
+              startIcon={<ClearIcon />}
+              disabled={!fromDate && !toDate}
+              size="small"
+            >
+              Clear Filters
+            </Button>
+            <Typography variant="body2" color="text.secondary">
+              {filteredAudits.length !== audits.length && 
+                `Showing ${filteredAudits.length} of ${audits.length} records`
+              }
+            </Typography>
+          </Stack>
+        </CardContent>
+      </Card>
 
       {/* Stats Cards Section */}
       <Grid container spacing={3} sx={{ mb: 4 }}>

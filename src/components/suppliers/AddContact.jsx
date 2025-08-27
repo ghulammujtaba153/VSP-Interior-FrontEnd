@@ -18,6 +18,7 @@ import ConfirmationDialog from '../ConfirmationDialog';
 
 import { BASE_URL } from "@/configs/url";
 import { useAuth } from "@/context/authContext";
+import { MuiTelInput } from "mui-tel-input";
 
 const AddContact = ({ open, onClose, supplierId, onContactAdded }) => {
   const [data, setData] = useState({
@@ -128,13 +129,15 @@ const AddContact = ({ open, onClose, supplierId, onContactAdded }) => {
             fullWidth
             type="email"
           />
-          <TextField
+          <MuiTelInput
             name="phoneNumber"
             label="Phone Number"
             value={data.phoneNumber}
-            onChange={handleChange}
+            onChange={(value) => setData({ ...data, phoneNumber: value })}
             fullWidth
             type="tel"
+            defaultCountry="NZ"
+            limit={11}
           />
         </Stack>
       </DialogContent>
