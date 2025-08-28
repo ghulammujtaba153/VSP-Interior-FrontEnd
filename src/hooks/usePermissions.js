@@ -9,8 +9,13 @@ export const usePermissions = () => {
   const hasPermission = (resourceName, action = 'canView') => {
     console.log("user in usePermissions", user);
   
-    // ✅ Always allow superadmin early
-    if (user?.Role?.name === 'superadmin') {
+    // ✅ Always allow superadmin early (case-insensitive and robust)
+    const roleName = user?.Role?.name || user?.role?.name;
+    if (roleName && (
+      roleName.toLowerCase().trim() === 'superadmin' ||
+      roleName.toLowerCase().trim() === 'super admin' ||
+      roleName.toLowerCase().trim() === 'super_admin'
+    )) {
       return true;
     }
   

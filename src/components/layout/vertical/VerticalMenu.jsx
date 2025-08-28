@@ -32,7 +32,7 @@ const VerticalMenu = ({ scrollMenu }) => {
   const verticalNavOptions = useVerticalNav()
   const { user } = useAuth()
   const { canView } = usePermissions()
-  
+
   // Vars
   const { isBreakpointReached, transitionDuration } = verticalNavOptions
   const ScrollWrapper = isBreakpointReached ? 'div' : PerfectScrollbar
@@ -43,13 +43,13 @@ const VerticalMenu = ({ scrollMenu }) => {
     <ScrollWrapper
       {...(isBreakpointReached
         ? {
-            className: 'bs-full overflow-y-auto overflow-x-hidden',
-            onScroll: container => scrollMenu(container, false)
-          }
+          className: 'bs-full overflow-y-auto overflow-x-hidden',
+          onScroll: container => scrollMenu(container, false)
+        }
         : {
-            options: { wheelPropagation: false, suppressScrollX: true },
-            onScrollY: container => scrollMenu(container, true)
-          })}
+          options: { wheelPropagation: false, suppressScrollX: true },
+          onScrollY: container => scrollMenu(container, true)
+        })}
     >
       {/* Incase you also want to scroll NavHeader to scroll with Vertical Menu, remove NavHeader from above and paste it below this comment */}
       {/* Vertical Menu */}
@@ -60,30 +60,33 @@ const VerticalMenu = ({ scrollMenu }) => {
         renderExpandedMenuItemIcon={{ icon: <i className='tabler-circle text-xs' /> }}
         menuSectionStyles={menuSectionStyles(verticalNavOptions, theme)}
       >
-        
-          <MenuItem href='/home' icon={<i className='tabler-smart-home' />}>
-            Home
-          </MenuItem>
-        
 
-        <SubMenu
-          label='User & Access Control'
-          icon={<i className='tabler-brain' />}
+        <MenuItem href='/home' icon={<i className='tabler-smart-home' />}>
+          Home
+        </MenuItem>
 
-        // suffix={<CustomChip label='5' size='small' color='error' round='true' />}
-        >
-          <PermissionWrapper resource="users">
-            <MenuItem href='/users'>Users</MenuItem>
-          </PermissionWrapper>
-          
-          <PermissionWrapper resource="roles">
-            <MenuItem href='/users/roles'>Roles</MenuItem>
-          </PermissionWrapper>
-          
-          <PermissionWrapper resource="resources">
-            <MenuItem href='/users/resources'>Resources</MenuItem>
-          </PermissionWrapper>
-        </SubMenu>
+        <PermissionWrapper resource="users">
+          <SubMenu
+            label='User & Access Control'
+            icon={<i className='tabler-brain' />}
+
+          // suffix={<CustomChip label='5' size='small' color='error' round='true' />}
+          >
+
+            <PermissionWrapper resource="users">
+              <MenuItem href='/users'>Users</MenuItem>
+            </PermissionWrapper>
+
+
+            <PermissionWrapper resource="users">
+              <MenuItem href='/users/roles'>Roles</MenuItem>
+            </PermissionWrapper>
+
+            <PermissionWrapper resource="users">
+              <MenuItem href='/users/resources'>Resources</MenuItem>
+            </PermissionWrapper>
+          </SubMenu>
+        </PermissionWrapper>
 
 
         <PermissionWrapper resource="clients">
@@ -93,11 +96,13 @@ const VerticalMenu = ({ scrollMenu }) => {
         </PermissionWrapper>
 
 
+
         <PermissionWrapper resource="suppliers">
           <MenuItem href='/suppliers' icon={<i className='tabler-building-warehouse' />}>
             Suppliers
           </MenuItem>
         </PermissionWrapper>
+
 
 
         <SubMenu
@@ -114,6 +119,8 @@ const VerticalMenu = ({ scrollMenu }) => {
           </PermissionWrapper>
 
         </SubMenu>
+
+
 
         <SubMenu
           label='Cabinet'
@@ -168,7 +175,7 @@ const VerticalMenu = ({ scrollMenu }) => {
         >
         </SubMenu>
 
-        
+
 
         <SubMenu
           label='Settings'
@@ -177,7 +184,7 @@ const VerticalMenu = ({ scrollMenu }) => {
         </SubMenu>
 
       </Menu>
-      
+
     </ScrollWrapper>
   )
 }
