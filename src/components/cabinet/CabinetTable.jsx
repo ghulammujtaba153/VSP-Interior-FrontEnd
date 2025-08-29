@@ -10,14 +10,23 @@ import {
   IconButton,
   Typography,
   Paper,
-  TextField
+  TextField,
+  Chip,
+  Tooltip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination,
+  TableSortLabel
 } from '@mui/material'
-import { Visibility, Edit, Delete } from '@mui/icons-material'
+import { Visibility, Edit, Delete, Add } from '@mui/icons-material'
 import CabinetModal from './CabinetModal'
 import ViewCabinet from './ViewCabinet'
 import { toast } from 'react-toastify'
 import { useAuth } from '@/context/authContext'
-import { DataGrid } from '@mui/x-data-grid'
 import CSVFileModal from './CSVFileModal'
 import ConfirmationDialog from '../ConfirmationDialog'
 
@@ -34,8 +43,10 @@ const CabinetTable = () => {
   const [viewData, setViewData] = useState(null)
   const { user } = useAuth()
   const [csvModalOpen, setCsvModalOpen] = useState(false)
-  const [page, setPage] = useState(0) // DataGrid is 0-based
+  const [page, setPage] = useState(0)
   const [limit, setLimit] = useState(10)
+  const [orderBy, setOrderBy] = useState('id')
+  const [order, setOrder] = useState('asc')
 
   const [searchInput, setSearchInput] = useState('') // typing state
   const [search, setSearch] = useState('') // applied state
@@ -55,10 +66,11 @@ const CabinetTable = () => {
       const res = await axios.get(
         `${BASE_URL}/api/cabinet/get?page=${page + 1}&limit=${limit}&search=${search}`
       )
-      setData(res.data.cabinet || [])
-      setRowCount(res.data.total || 0)
+      setData(res.data.cabinet || res.data.data || [])
+      setRowCount(res.data.total || res.data.pagination?.totalItems || 0)
     } catch (error) {
       console.error('Error fetching cabinets:', error)
+      toast.error('Failed to fetch cabinets')
     } finally {
       setLoading(false)
     }
@@ -82,7 +94,7 @@ const CabinetTable = () => {
   const handleDelete = (cabinetRow) => {
     showConfirmation({
       title: 'Delete Cabinet',
-      message: `Are you sure you want to delete cabinet "${cabinetRow.modelName}" (${cabinetRow.material})? This action cannot be undone and will remove all associated data.`,
+      message: `Are you sure you want to delete cabinet with code "${cabinetRow.code}"? This action cannot be undone and will remove all associated data.`,
       action: () => confirmDeleteCabinet(cabinetRow.id),
       severity: 'error'
     })
@@ -111,14 +123,15 @@ const CabinetTable = () => {
   }, [page, limit, search]) // ✅ only runs when Apply updates `search`
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toISOString().slice(0, 10)
+    if (!dateString) return 'N/A'
+    return new Date(dateString).toLocaleDateString()
   }
 
   // ✅ Export to Excel
   const handleExportExcel = () => {
     showConfirmation({
       title: 'Export Cabinets to Excel',
-      message: `Are you sure you want to export ${data.length} cabinet records to Excel? This will download a file with all cabinet data.`,
+      message: `Are you sure you want to export ${data.length} cabinet records to Excel? This will download a file with all cabinet data including categories and dynamic properties.`,
       action: () => confirmExportExcel(),
       severity: 'info'
     })
@@ -127,15 +140,14 @@ const CabinetTable = () => {
   const confirmExportExcel = () => {
     const exportData = data.map((cabinet) => ({
       ID: cabinet.id,
-      'Model Name': cabinet.modelName,
-      Material: cabinet.material,
-      Height: cabinet.height,
-      Width: cabinet.width,
-      Depth: cabinet.depth,
-      'Base Price': cabinet.basePrice,
-      'Price Per Sqft': cabinet.pricePerSqft,
-      Status: cabinet.status,
-      Date: cabinet.createdAt ? formatDate(cabinet.createdAt) : 'N/A'
+      'Cabinet Code': cabinet.code,
+      'Category': cabinet.cabinetCategory?.name || 'N/A',
+      'Subcategory': cabinet.cabinetSubCategory?.name || 'N/A',
+      'Description': cabinet.description || 'N/A',
+      'Status': cabinet.status || 'N/A',
+      'Created Date': cabinet.createdAt ? formatDate(cabinet.createdAt) : 'N/A',
+      'Updated Date': cabinet.updatedAt ? formatDate(cabinet.updatedAt) : 'N/A',
+      'Dynamic Properties': cabinet.dynamicData ? Object.entries(cabinet.dynamicData).map(([key, value]) => `${key}: ${value}`).join('; ') : 'N/A'
     }))
 
     const worksheet = XLSX.utils.json_to_sheet(exportData)
@@ -151,100 +163,32 @@ const CabinetTable = () => {
     setPage(0)
   }
 
-  if (loading) return <Loader />
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage)
+  }
 
-  const columns = [
-    { field: 'id', headerName: 'ID', flex: 1 },
-    { field: 'modelName', headerName: 'Model Name', flex: 1.5 },
-    { field: 'material', headerName: 'Material', flex: 1 },
-    { field: 'height', headerName: 'Height', flex: 1 },
-    { field: 'width', headerName: 'Width', flex: 1 },
-    {
-      field: 'basePrice',
-      headerName: 'Base Price',
-      flex: 1,
-      renderCell: (params) => `$${params.value}`
-    },
-    { field: 'status', headerName: 'Status', flex: 1 },
-    {
-      field: 'createdAt',
-      headerName: 'Date',
-      flex: 1,
-      renderCell: (params) => formatDate(params.value)
-    },
-    {
-      field: 'actions',
-      headerName: 'Actions',
-      flex: 1.2,
-      sortable: false,
-      filterable: false,
-      renderCell: (params) => (
-        <Box>
-          <IconButton
-            color='primary'
-            onClick={() => {
-              setViewData(params.row)
-              setViewOpen(true)
-            }}
-          >
-            <Visibility />
-          </IconButton>
-          <IconButton
-            color='secondary'
-            onClick={() => {
-              setEditData(params.row)
-              setOpen(true)
-            }}
-          >
-            <Edit />
-          </IconButton>
-          <IconButton
-            color='error'
-            onClick={() => {
-              handleDelete(params.row)
-            }}
-          >
-            <Delete />
-          </IconButton>
-        </Box>
-      )
-    }
-  ]
+  const handleChangeRowsPerPage = (event) => {
+    setLimit(parseInt(event.target.value, 10))
+    setPage(0)
+  }
+
+  const handleSort = (property) => {
+    const isAsc = orderBy === property && order === 'asc'
+    setOrder(isAsc ? 'desc' : 'asc')
+    setOrderBy(property)
+  }
+
+  if (loading) return <Loader />
 
   return (
     <Paper p={8} sx={{ padding: 2 }}>
       {/* Header */}
       <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
         <Typography variant='h5' fontWeight='bold'>
-          Cabinet Table
+          Cabinet Management
         </Typography>
         
-        {/* Search + Apply */}
-        <Box display="flex" gap={1}>
-          <TextField
-            label="Search"
-            size="small"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-          />
-          <Button
-            variant="contained"
-            onClick={() => {
-              setPage(0) // reset to first page
-              setSearch(searchInput) // ✅ apply search
-            }}
-          >
-            Apply
-          </Button>
-
-          <Button
-          variant="outlined"
-          color="secondary"
-          onClick={handleResetSearch}
-        >
-          Reset
-        </Button>
-        </Box>
+        
 
         <Box display='flex' gap={2}>
           <Button
@@ -256,7 +200,7 @@ const CabinetTable = () => {
           </Button>
 
           <Button
-            variant='contained'
+            variant='outlined'
             color='primary'
             onClick={() => {
               showConfirmation({
@@ -274,37 +218,209 @@ const CabinetTable = () => {
           <Button
             variant='contained'
             color='primary'
+            startIcon={<Add />}
             onClick={() => {
               setEditData(null)
               setOpen(true)
             }}
           >
-            Add Item
+            Add Cabinet
           </Button>
         </Box>
       </Box>
 
-      {/* DataGrid Table */}
-      <Paper>
-        <DataGrid
-          rows={data.map((cabinet) => ({
-            ...cabinet,
-            id: cabinet.id
-          }))}
-          columns={columns}
-          autoHeight
-          rowCount={rowCount}
-          pageSize={limit}
-          pagination
-          paginationMode="server"
-          onPageChange={(newPage) => setPage(newPage)}
-          onPageSizeChange={(newLimit) => {
-            setLimit(newLimit)
-            setPage(0)
-          }}
-          rowsPerPageOptions={[5, 10, 20]}
-          disableRowSelectionOnClick
-          loading={loading}
+      {/* Search + Apply */}
+      <Box display="flex" gap={1}>
+          <TextField
+            label="Search cabinets by code, description, or category..."
+            size="small"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            sx={{ width: '300px' }}
+            placeholder="Search..."
+          />
+          <Button
+            variant="contained"
+            onClick={() => {
+              setPage(0) // reset to first page
+              setSearch(searchInput) // ✅ apply search
+            }}
+          >
+            Apply
+          </Button>
+
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={handleResetSearch}
+          >
+            Reset
+          </Button>
+        </Box>
+
+      {/* Custom Table */}
+      <Paper elevation={1}>
+        <TableContainer>
+          <Table sx={{ minWidth: 650 }} aria-label="cabinet table">
+            <TableHead>
+              <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === 'id'}
+                    direction={orderBy === 'id' ? order : 'asc'}
+                    onClick={() => handleSort('id')}
+                  >
+                    ID
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === 'code'}
+                    direction={orderBy === 'code' ? order : 'asc'}
+                    onClick={() => handleSort('code')}
+                  >
+                    Cabinet Code
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell>Category</TableCell>
+                <TableCell>Subcategory</TableCell>
+                <TableCell>Description</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Properties</TableCell>
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === 'createdAt'}
+                    direction={orderBy === 'createdAt' ? order : 'asc'}
+                    onClick={() => handleSort('createdAt')}
+                  >
+                    Created
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {data.map((cabinet) => (
+                <TableRow
+                  key={cabinet.id}
+                  sx={{ '&:nth-of-type(odd)': { backgroundColor: '#fafafa' } }}
+                  hover
+                >
+                  <TableCell>{cabinet.id}</TableCell>
+                  <TableCell>
+                    <Typography variant="body2" fontWeight="medium">
+                      {cabinet.code || 'N/A'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    {cabinet.cabinetCategory ? (
+                      <Chip 
+                        label={cabinet.cabinetCategory.name} 
+                        color="primary" 
+                        variant="outlined" 
+                        size="small"
+                      />
+                    ) : (
+                      <Typography variant="body2" color="textSecondary">N/A</Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {cabinet.cabinetSubCategory ? (
+                      <Chip 
+                        label={cabinet.cabinetSubCategory.name} 
+                        color="secondary" 
+                        variant="outlined" 
+                        size="small"
+                      />
+                    ) : (
+                      <Typography variant="body2" color="textSecondary">N/A</Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip title={cabinet.description || 'No description'}>
+                      <Typography variant="body2" noWrap sx={{ maxWidth: 200 }}>
+                        {cabinet.description || 'No description'}
+                      </Typography>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell>
+                    <Chip 
+                      label={cabinet.status || 'N/A'} 
+                      color={cabinet.status === 'active' ? 'success' : 'default'} 
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    {cabinet.dynamicData && Object.keys(cabinet.dynamicData).length > 0 ? (
+                      <Tooltip title={Object.entries(cabinet.dynamicData).map(([key, value]) => `${key}: ${value}`).join(', ')}>
+                        <Chip 
+                          label={`${Object.keys(cabinet.dynamicData).length} property${Object.keys(cabinet.dynamicData).length !== 1 ? 'ies' : 'y'}`}
+                          color="info" 
+                          variant="outlined" 
+                          size="small"
+                        />
+                      </Tooltip>
+                    ) : (
+                      <Typography variant="body2" color="textSecondary">No properties</Typography>
+                    )}
+                  </TableCell>
+                  <TableCell>{formatDate(cabinet.createdAt)}</TableCell>
+                  <TableCell>
+                    <Box display="flex" gap={0.5}>
+                      <Tooltip title="View Cabinet">
+                        <IconButton
+                          color='primary'
+                          size="small"
+                          onClick={() => {
+                            setViewData(cabinet)
+                            setViewOpen(true)
+                          }}
+                        >
+                          <Visibility />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Edit Cabinet">
+                        <IconButton
+                          color='secondary'
+                          size="small"
+                          onClick={() => {
+                            setEditData(cabinet)
+                            setOpen(true)
+                          }}
+                        >
+                          <Edit />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Delete Cabinet">
+                        <IconButton
+                          color='error'
+                          size="small"
+                          onClick={() => handleDelete(cabinet)}
+                        >
+                          <Delete />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+        
+        {/* Pagination */}
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 20, 50]}
+          component="div"
+          count={rowCount}
+          rowsPerPage={limit}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          labelRowsPerPage="Rows per page:"
+          labelDisplayedRows={({ from, to, count }) =>
+            `${from}-${to} of ${count !== -1 ? count : `more than ${to}`}`
+          }
         />
       </Paper>
 

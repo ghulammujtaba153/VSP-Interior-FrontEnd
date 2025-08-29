@@ -28,6 +28,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import DownloadIcon from '@mui/icons-material/Download';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import SearchIcon from '@mui/icons-material/Search';
@@ -41,6 +43,8 @@ import ViewClient from './ViewClient';
 import PermissionWrapper from '../PermissionWrapper';
 import ConfirmationDialog from '../ConfirmationDialog';
 import ImportModal from './ImportModal';
+
+  import ContactsImportModal from './ContactsImportModal';
 
 // ✅ Import XLSX for export
 import * as XLSX from "xlsx";
@@ -275,6 +279,38 @@ const ClientsTable = () => {
     }
   };
 
+  // Export contacts for a specific client
+  const exportContactsToExcel = (contacts, clientId) => {
+    try {
+      if (!contacts || contacts.length === 0) {
+        toast.warning('No contacts to export');
+        return;
+      }
+
+      // Create export data for contacts
+      const exportData = contacts.map((contact, index) => ({
+        "Contact #": index + 1,
+        "Contact ID": contact.id,
+        "First Name": contact.firstName || "N/A",
+        "Last Name": contact.lastName || "N/A",
+        "Full Name": `${contact.firstName || ""} ${contact.lastName || ""}`.trim() || "N/A",
+        "Role": contact.role || "N/A",
+        "Email": contact.emailAddress || "N/A",
+        "Phone": contact.phoneNumber || "N/A",
+        "Created At": contact.createdAt ? new Date(contact.createdAt).toLocaleString() : "N/A",
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Contacts");
+      XLSX.writeFile(workbook, `contacts_client_${clientId}.xlsx`);
+
+      toast.success(`Successfully exported ${contacts.length} contacts to Excel`);
+    } catch (error) {
+      toast.error("Failed to export contacts data");
+    }
+  };
+
 
   const handleDeleteContact = (contact) => {
     showConfirmation({
@@ -361,21 +397,92 @@ const ClientsTable = () => {
 
   // ContactsTable component for nested table
   const ContactsTable = ({ contacts, clientId }) => {
+    const [openContactsImportModal, setOpenContactsImportModal] = useState(false);
+
     if (!contacts || contacts.length === 0) {
       return (
         <Box p={2}>
           <Typography variant="body2" color="textSecondary" align="center">
             No contacts found for this client.
           </Typography>
+          <Box display="flex" justifyContent="center" mt={2}>
+            <PermissionWrapper resource="clients" action="canEdit">
+              <Button
+                size="small"
+                variant="outlined"
+                color="primary"
+                startIcon={<CloudUploadIcon />}
+                onClick={() => setOpenContactsImportModal(true)}
+              >
+                Import Contacts
+              </Button>
+            </PermissionWrapper>
+            <PermissionWrapper resource="clients" action="canEdit">
+              <Button
+                size="small"
+                variant="outlined"
+                color="success"
+                onClick={() => handleAddContact(clientId)}
+                sx={{ ml: 1 }}
+              >
+                Add Contact
+              </Button>
+            </PermissionWrapper>
+          </Box>
+          
+          {openContactsImportModal && (
+            <ContactsImportModal
+              open={openContactsImportModal}
+              onClose={() => setOpenContactsImportModal(false)}
+              clientId={clientId}
+              refreshContacts={fetchClients}
+            />
+          )}
         </Box>
       );
     }
 
     return (
       <Box sx={{ margin: 1 }}>
-        <Typography variant="h6" gutterBottom sx={{ marginLeft: 1 }}>
-          Contacts ({contacts.length})
-        </Typography>
+        <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ marginLeft: 1, marginRight: 1, mb: 1 }}>
+          <Typography variant="h6">
+            Contacts ({contacts.length})
+          </Typography>
+          <Box display="flex" gap={1}>
+            <PermissionWrapper resource="clients" action="canEdit">
+              <Button
+                size="small"
+                variant="outlined"
+                color="primary"
+                startIcon={<CloudUploadIcon />}
+                onClick={() => setOpenContactsImportModal(true)}
+              >
+                Import Contacts
+              </Button>
+            </PermissionWrapper>
+            <PermissionWrapper resource="clients" action="canEdit">
+              <Button
+                size="small"
+                variant="outlined"
+                color="info"
+                startIcon={<DownloadIcon />}
+                onClick={() => exportContactsToExcel(contacts, clientId)}
+              >
+                Export Contacts
+              </Button>
+            </PermissionWrapper>
+            <PermissionWrapper resource="clients" action="canEdit">
+              <Button
+                size="small"
+                variant="outlined"
+                color="success"
+                onClick={() => handleAddContact(clientId)}
+              >
+                Add Contact
+              </Button>
+            </PermissionWrapper>
+          </Box>
+        </Box>
         <TableContainer component={Paper} elevation={1}>
           <Table size="small">
             <TableHead>
@@ -442,6 +549,15 @@ const ClientsTable = () => {
             </TableBody>
           </Table>
         </TableContainer>
+        
+        {openContactsImportModal && (
+          <ContactsImportModal
+            open={openContactsImportModal}
+            onClose={() => setOpenContactsImportModal(false)}
+            clientId={clientId}
+            refreshContacts={fetchClients}
+          />
+        )}
       </Box>
     );
   };

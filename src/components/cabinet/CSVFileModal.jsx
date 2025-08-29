@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -17,6 +17,10 @@ import {
   Stack,
   IconButton,
   Tooltip,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import * as XLSX from "xlsx";
 import axios from "axios";
@@ -33,14 +37,8 @@ import {
 } from "@mui/icons-material";
 
 const requiredFields = [
-  "modelName",
-  "material",
-  "height",
-  "width",
-  "depth",
-  "basePrice",
-  "pricePerSqft",
-  "status",
+  "code",
+  "description"
 ];
 
 const CSVFileModal = ({ open, onClose, onSuccess }) => {
@@ -49,79 +47,135 @@ const CSVFileModal = ({ open, onClose, onSuccess }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedSubCategory, setSelectedSubCategory] = useState("");
+  const [csvColumns, setCsvColumns] = useState([]); // Dynamic columns from CSV
   const { user } = useAuth();
 
-  // Sample template data
+  // Fetch categories when modal opens
+  useEffect(() => {
+    if (open) {
+      fetchCategories();
+    }
+  }, [open]);
+
+  // Fetch subcategories when category changes
+  useEffect(() => {
+    if (selectedCategory) {
+      fetchSubCategories(selectedCategory);
+      setSelectedSubCategory(""); // Reset subcategory when category changes
+    } else {
+      setSubCategories([]);
+      setSelectedSubCategory("");
+    }
+  }, [selectedCategory]);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/cabinet-categories/get`);
+      setCategories(response.data.data || response.data || []);
+    } catch (error) {
+      toast.error("Failed to fetch categories");
+    }
+  };
+
+  const fetchSubCategories = async (categoryId) => {
+    try {
+      const response = await axios.get(`${BASE_URL}/api/cabinet-subcategories/get/${categoryId}`);
+      setSubCategories(response.data || []);
+    } catch (error) {
+      toast.error("Failed to fetch subcategories");
+    }
+  };
+
+  // Sample template data with common fields
   const templateData = [
     {
-      modelName: "Modern Kitchen Base",
-      material: "Oak Wood",
-      height: 36,
-      width: 24,
-      depth: 12,
-      basePrice: 150.00,
-      pricePerSqft: 12.50,
-      status: "active"
+      code: "UBEP|900H|400D|18Th",
+      description: "Under Bench | End Panel | 900H x 400D x18Th",
+      vspCode: "2",
+      unit: "Each",
+      height: "0.9",
+      thickness: "0.18",
+      depth: "0.4",
+      ends: "",
+      bottom: "",
+      top: "",
+      rail: "",
+      b: "",
+      // Add any other fields you commonly use
+      material: "Plywood",
+      finish: "White",
+      price: "150.00"
     },
     {
-      modelName: "Classic Wall Cabinet",
-      material: "Maple Wood",
-      height: 30,
-      width: 18,
-      depth: 12,
-      basePrice: 120.00,
-      pricePerSqft: 10.00,
-      status: "active"
+      code: "UBEP|900H|600D|18Th",
+      description: "Under Bench | End Panel | 900H x 600D x18Th",
+      vspCode: "4",
+      unit: "Each",
+      height: "0.9",
+      thickness: "0.18",
+      depth: "0.6",
+      ends: "",
+      bottom: "",
+      top: "",
+      rail: "",
+      b: "",
+      material: "Plywood",
+      finish: "White",
+      price: "180.00"
     },
     {
-      modelName: "Premium Pantry",
-      material: "Cherry Wood", 
-      height: 84,
-      width: 36,
-      depth: 24,
-      basePrice: 450.00,
-      pricePerSqft: 18.75,
-      status: "inactive"
+      code: "UBEP|900H|800D|18Th",
+      description: "Under Bench | End Panel | 900H x 800D x18Th",
+      vspCode: "6",
+      unit: "Each",
+      height: "0.9",
+      thickness: "0.18",
+      depth: "0.8",
+      ends: "",
+      bottom: "",
+      top: "",
+      rail: "",
+      b: "",
+      material: "Plywood",
+      finish: "White",
+      price: "210.00"
     }
   ];
 
   // ✅ Row-level validation
   const validateRows = (data) => {
     let newErrors = {};
-    let seenCombos = new Set();
+    let seenCodes = new Set();
 
     data.forEach((row, idx) => {
       let rowErrors = [];
 
-      // 1. Required fields
+      // 1. Required fields (only code and description are required)
       requiredFields.forEach((field) => {
         if (!row[field] && row[field] !== 0) {
           rowErrors.push(`${field} is required`);
         }
       });
 
-      // 2. Numeric validation
-      ["basePrice", "height", "width"].forEach((f) => {
-        if (row[f] && (isNaN(row[f]) || Number(row[f]) <= 0)) {
-          rowErrors.push(`${f} must be numeric > 0`);
+      // 2. Code validation - must be unique
+      if (row.code) {
+        if (seenCodes.has(row.code)) {
+          rowErrors.push("Code must be unique");
+        } else {
+          seenCodes.add(row.code);
+        }
+      }
+
+      // 3. Numeric validation for common numeric fields (if they exist)
+      ["height", "thickness", "depth", "vspCode", "price"].forEach((field) => {
+        if (row[field] && (isNaN(row[field]) || Number(row[field]) < 0)) {
+          rowErrors.push(`${field} must be numeric >= 0`);
         }
       });
-
-      // 3. Status validation
-      if (
-        row.status &&
-        !["active", "inactive"].includes(String(row.status).toLowerCase())
-      ) {
-        rowErrors.push("status must be Active or Inactive");
-      }
-
-      // 4. Duplicate check
-      const combo = `${row.modelName || ""}-${row.material || ""}`;
-      if (seenCombos.has(combo)) {
-        rowErrors.push("Duplicate modelName + material");
-      } else {
-        seenCombos.add(combo);
-      }
 
       if (rowErrors.length > 0) {
         newErrors[idx] = rowErrors;
@@ -175,7 +229,24 @@ const CSVFileModal = ({ open, onClose, onSuccess }) => {
         const data = new Uint8Array(event.target.result);
         const workbook = XLSX.read(data, { type: "array" });
         const sheet = workbook.Sheets[workbook.SheetNames[0]];
-        const parsed = XLSX.utils.sheet_to_json(sheet);
+        
+        // Get the range of the sheet to find all columns
+        const range = XLSX.utils.decode_range(sheet['!ref']);
+        const allColumns = [];
+        
+        // Extract column headers from the first row (row 1)
+        for (let col = range.s.c; col <= range.e.c; col++) {
+          const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+          const cell = sheet[cellAddress];
+          const columnName = cell ? cell.v : `Column${col + 1}`;
+          allColumns.push(columnName);
+        }
+
+        // Parse the data starting from row 2 (since row 1 has headers)
+        const parsed = XLSX.utils.sheet_to_json(sheet, { 
+          header: allColumns,
+          range: 1 // Start from row 2 (index 1)
+        });
 
         if (parsed.length === 0) {
           toast.error("The file appears to be empty or invalid");
@@ -183,9 +254,19 @@ const CSVFileModal = ({ open, onClose, onSuccess }) => {
           return;
         }
 
+        // Ensure code and description are first, then add all other columns
+        const priorityColumns = ['code', 'description'];
+        const otherColumns = allColumns.filter(col => !priorityColumns.includes(col));
+        const finalColumns = [...priorityColumns, ...otherColumns];
+        
+        console.log('Detected columns:', allColumns);
+        console.log('Final column order:', finalColumns);
+        console.log('Parsed data:', parsed);
+        
+        setCsvColumns(finalColumns);
         setRows(parsed);
         validateRows(parsed);
-        toast.success(`Successfully loaded ${parsed.length} rows`);
+        toast.success(`Successfully loaded ${parsed.length} rows with ${finalColumns.length} columns`);
       } catch (error) {
         toast.error("Error reading file. Please check the file format.");
         console.error("File reading error:", error);
@@ -226,6 +307,7 @@ const CSVFileModal = ({ open, onClose, onSuccess }) => {
     setRows([]);
     setErrors({});
     setUploading(false);
+    setCsvColumns([]);
   };
 
   // ✅ Edit a cell
@@ -238,6 +320,11 @@ const CSVFileModal = ({ open, onClose, onSuccess }) => {
 
   // ✅ Confirm upload
   const handleConfirm = async () => {
+    if (!selectedCategory || !selectedSubCategory) {
+      toast.error("Please select both category and subcategory");
+      return;
+    }
+
     toast.loading("Inserting data...");
     try {
       // only send valid rows
@@ -249,9 +336,30 @@ const CSVFileModal = ({ open, onClose, onSuccess }) => {
         return;
       }
 
+      // Prepare data with category and subcategory IDs
+      const cabinetsToUpload = validRows.map(row => {
+        // Extract all fields that are not code or description
+        const dynamicData = {};
+        Object.keys(row).forEach(key => {
+          if (!requiredFields.includes(key) && row[key] !== undefined && row[key] !== "") {
+            dynamicData[key] = row[key];
+          }
+        });
+
+        return {
+          code: row.code,
+          description: row.description,
+          cabinetCategoryId: parseInt(selectedCategory),
+          cabinetSubCategoryId: parseInt(selectedSubCategory),
+          userId: user.id,
+          dynamicData: dynamicData,
+          status: "active" // Default status
+        };
+      });
+
       await axios.post(`${BASE_URL}/api/cabinet/csv`, {
         userId: user.id,
-        cabinets: validRows,
+        cabinets: cabinetsToUpload,
       });
 
       toast.dismiss();
@@ -265,15 +373,153 @@ const CSVFileModal = ({ open, onClose, onSuccess }) => {
     }
   };
 
+  const canUpload = selectedCategory && selectedSubCategory && rows.length > 0 && Object.keys(errors).length === 0;
+
+  // Render table header dynamically
+  const renderTableHeader = () => (
+    <thead style={{ position: 'sticky', top: 0, backgroundColor: '#f5f5f5', zIndex: 1 }}>
+      <tr>
+        <th style={{ border: '1px solid #ddd', padding: '8px', fontWeight: 'bold', fontSize: '12px' }}>
+          #
+        </th>
+        {csvColumns.map((column) => (
+          <th 
+            key={column} 
+            style={{ 
+              border: '1px solid #ddd', 
+              padding: '8px', 
+              fontWeight: 'bold', 
+              fontSize: '12px', 
+              minWidth: requiredFields.includes(column) ? '200px' : '120px'
+            }}
+          >
+            {column} {requiredFields.includes(column) && '*'}
+          </th>
+        ))}
+        <th style={{ border: '1px solid #ddd', padding: '8px', fontWeight: 'bold', fontSize: '12px', minWidth: '150px' }}>
+          Status
+        </th>
+      </tr>
+    </thead>
+  );
+
+  // Render table body dynamically
+  const renderTableBody = () => (
+    <tbody>
+      {rows.map((row, idx) => (
+        <tr key={idx} style={{ backgroundColor: errors[idx] ? '#ffebee' : 'white' }}>
+          <td style={{ border: '1px solid #ddd', padding: '4px', textAlign: 'center', fontWeight: 'bold' }}>
+            {idx + 1}
+          </td>
+          {csvColumns.map((column) => (
+            <td key={column} style={{ border: '1px solid #ddd', padding: '4px' }}>
+              <TextField
+                value={row[column] || ""}
+                onChange={(e) => handleEdit(idx, column, e.target.value)}
+                size="small"
+                variant="outlined"
+                fullWidth
+                error={errors[idx]?.some(err => err.includes(column))}
+                sx={{ 
+                  '& .MuiOutlinedInput-root': { 
+                    fontSize: '12px',
+                    '& fieldset': {
+                      borderWidth: '1px'
+                    }
+                  }
+                }}
+              />
+            </td>
+          ))}
+          <td style={{ border: '1px solid #ddd', padding: '4px' }}>
+            {errors[idx] ? (
+              <Stack spacing={0.5}>
+                {errors[idx].map((err, i) => (
+                  <Chip
+                    key={i}
+                    label={err}
+                    size="small"
+                    color="error"
+                    variant="outlined"
+                    sx={{ fontSize: '10px', height: '20px' }}
+                  />
+                ))}
+              </Stack>
+            ) : (
+              <Chip 
+                label="✓ Valid" 
+                size="small" 
+                color="success" 
+                variant="outlined"
+                sx={{ fontSize: '10px', height: '20px' }}
+              />
+            )}
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  );
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth>
       <DialogTitle>
         <Box display="flex" alignItems="center" gap={1}>
           <FileIcon />
-          Upload Cabinet Pricing
+          Upload Cabinet Data
         </Box>
       </DialogTitle>
       <DialogContent>
+        {/* Category Selection Section */}
+        <Paper sx={{ p: 3, mb: 3, bgcolor: 'info.50', border: '1px solid', borderColor: 'info.200' }}>
+          <Typography variant="h6" color="info.main" gutterBottom>
+            📂 Select Category & Subcategory First
+          </Typography>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Choose the category and subcategory for all cabinets in your upload file
+          </Typography>
+          
+          <Stack direction="row" spacing={2} alignItems="center">
+            <FormControl sx={{ minWidth: 200 }}>
+              <InputLabel>Category *</InputLabel>
+              <Select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                label="Category *"
+              >
+                {categories.map((category) => (
+                  <MenuItem key={category.id} value={category.id}>
+                    {category.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl sx={{ minWidth: 200 }} disabled={!selectedCategory}>
+              <InputLabel>Subcategory *</InputLabel>
+              <Select
+                value={selectedSubCategory}
+                onChange={(e) => setSelectedSubCategory(e.target.value)}
+                label="Subcategory *"
+              >
+                {subCategories.map((subCategory) => (
+                  <MenuItem key={subCategory.id} value={subCategory.id}>
+                    {subCategory.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {selectedCategory && selectedSubCategory && (
+              <Chip 
+                label="✓ Ready for upload" 
+                color="success" 
+                variant="outlined"
+                icon={<SuccessIcon />}
+              />
+            )}
+          </Stack>
+        </Paper>
+
         {/* Template Download Section */}
         <Paper sx={{ p: 2, mb: 3, bgcolor: 'primary.50', border: '1px solid', borderColor: 'primary.200' }}>
           <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
@@ -282,7 +528,8 @@ const CSVFileModal = ({ open, onClose, onSuccess }) => {
                 📋 Download Template First
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Download the Excel template with sample data to understand the required format
+                Download the Excel template with sample data. Only <strong>Code</strong> and <strong>Description</strong> are required fields. 
+                All other columns will be automatically detected from your CSV and stored as dynamic properties.
               </Typography>
             </Box>
             <Button
@@ -296,53 +543,55 @@ const CSVFileModal = ({ open, onClose, onSuccess }) => {
           </Stack>
         </Paper>
 
-        {/* File Upload Section */}
-        <Paper
-          sx={{
-            p: 3,
-            mb: 3,
-            border: `2px dashed ${dragOver ? 'primary.main' : 'grey.300'}`,
-            bgcolor: dragOver ? 'primary.50' : 'background.paper',
-            transition: 'all 0.2s ease',
-            cursor: 'pointer',
-            '&:hover': {
-              borderColor: 'primary.main',
-              bgcolor: 'primary.50'
-            }
-          }}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() => document.getElementById('file-input').click()}
-        >
-          <input
-            id="file-input"
-            type="file"
-            accept=".xlsx,.xls,.csv"
-            onChange={handleInputChange}
-            style={{ display: 'none' }}
-          />
-          
-          <Stack alignItems="center" spacing={2}>
-            <UploadIcon sx={{ fontSize: 48, color: dragOver ? 'primary.main' : 'grey.400' }} />
-            <Box textAlign="center">
-              <Typography variant="h6" gutterBottom>
-                {dragOver ? 'Drop your file here' : 'Drag & drop your file here'}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                or click to browse files
-              </Typography>
-              <Stack direction="row" spacing={1} justifyContent="center" mt={1}>
-                <Chip label="Excel (.xlsx)" size="small" variant="outlined" />
-                <Chip label="Excel (.xls)" size="small" variant="outlined" />
-                <Chip label="CSV" size="small" variant="outlined" />
-              </Stack>
-              <Typography variant="caption" color="text.secondary" display="block" mt={1}>
-                Maximum file size: 5MB
-              </Typography>
-            </Box>
-          </Stack>
-        </Paper>
+        {/* File Upload Section - Only show when category/subcategory selected */}
+        {selectedCategory && selectedSubCategory && (
+          <Paper
+            sx={{
+              p: 3,
+              mb: 3,
+              border: `2px dashed ${dragOver ? 'primary.main' : 'grey.300'}`,
+              bgcolor: dragOver ? 'primary.50' : 'background.paper',
+              transition: 'all 0.2s ease',
+              cursor: 'pointer',
+              '&:hover': {
+                borderColor: 'primary.main',
+                bgcolor: 'primary.50'
+              }
+            }}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            onClick={() => document.getElementById('file-input').click()}
+          >
+            <input
+              id="file-input"
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              onChange={handleInputChange}
+              style={{ display: 'none' }}
+            />
+            
+            <Stack alignItems="center" spacing={2}>
+              <UploadIcon sx={{ fontSize: 48, color: dragOver ? 'primary.main' : 'grey.400' }} />
+              <Box textAlign="center">
+                <Typography variant="h6" gutterBottom>
+                  {dragOver ? 'Drop your file here' : 'Drag & drop your file here'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  or click to browse files
+                </Typography>
+                <Stack direction="row" spacing={1} justifyContent="center" mt={1}>
+                  <Chip label="Excel (.xlsx)" size="small" variant="outlined" />
+                  <Chip label="Excel (.xls)" size="small" variant="outlined" />
+                  <Chip label="CSV" size="small" variant="outlined" />
+                </Stack>
+                <Typography variant="caption" color="text.secondary" display="block" mt={1}>
+                  Maximum file size: 5MB
+                </Typography>
+              </Box>
+            </Stack>
+          </Paper>
+        )}
 
         {/* Upload Progress */}
         {uploading && (
@@ -363,7 +612,7 @@ const CSVFileModal = ({ open, onClose, onSuccess }) => {
                     {selectedFile.name}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {(selectedFile.size / 1024).toFixed(1)} KB • {rows.length} rows loaded
+                    {(selectedFile.size / 1024).toFixed(1)} KB • {rows.length} rows • {csvColumns.length} columns detected
                   </Typography>
                 </Box>
               </Box>
@@ -396,82 +645,13 @@ const CSVFileModal = ({ open, onClose, onSuccess }) => {
           <Box>
             <Divider sx={{ my: 2 }} />
             <Typography variant="h6" mb={2} display="flex" alignItems="center" gap={1}>
-              📊 Data Preview & Edit
+              📊 Data Preview & Edit ({csvColumns.length} columns detected)
             </Typography>
             <Paper sx={{ overflow: 'hidden' }}>
               <Box sx={{ overflow: 'auto', maxHeight: '400px' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead style={{ position: 'sticky', top: 0, backgroundColor: '#f5f5f5', zIndex: 1 }}>
-                    <tr>
-                      <th style={{ border: '1px solid #ddd', padding: '8px', fontWeight: 'bold', fontSize: '12px' }}>
-                        #
-                      </th>
-                      {requiredFields.map((field) => (
-                        <th
-                          key={field}
-                          style={{ border: '1px solid #ddd', padding: '8px', fontWeight: 'bold', fontSize: '12px', minWidth: '120px' }}
-                        >
-                          {field}
-                        </th>
-                      ))}
-                      <th style={{ border: '1px solid #ddd', padding: '8px', fontWeight: 'bold', fontSize: '12px', minWidth: '150px' }}>
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((row, idx) => (
-                      <tr key={idx} style={{ backgroundColor: errors[idx] ? '#ffebee' : 'white' }}>
-                        <td style={{ border: '1px solid #ddd', padding: '4px', textAlign: 'center', fontWeight: 'bold' }}>
-                          {idx + 1}
-                        </td>
-                        {requiredFields.map((field) => (
-                          <td key={field} style={{ border: '1px solid #ddd', padding: '4px' }}>
-                            <TextField
-                              value={row[field] || ""}
-                              onChange={(e) => handleEdit(idx, field, e.target.value)}
-                              size="small"
-                              variant="outlined"
-                              fullWidth
-                              error={errors[idx]?.some(err => err.includes(field))}
-                              sx={{ 
-                                '& .MuiOutlinedInput-root': { 
-                                  fontSize: '12px',
-                                  '& fieldset': {
-                                    borderWidth: '1px'
-                                  }
-                                }
-                              }}
-                            />
-                          </td>
-                        ))}
-                        <td style={{ border: '1px solid #ddd', padding: '4px' }}>
-                          {errors[idx] ? (
-                            <Stack spacing={0.5}>
-                              {errors[idx].map((err, i) => (
-                                <Chip
-                                  key={i}
-                                  label={err}
-                                  size="small"
-                                  color="error"
-                                  variant="outlined"
-                                  sx={{ fontSize: '10px', height: '20px' }}
-                                />
-                              ))}
-                            </Stack>
-                          ) : (
-                            <Chip 
-                              label="✓ Valid" 
-                              size="small" 
-                              color="success" 
-                              variant="outlined"
-                              sx={{ fontSize: '10px', height: '20px' }}
-                            />
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
+                  {renderTableHeader()}
+                  {renderTableBody()}
                 </table>
               </Box>
             </Paper>
@@ -493,13 +673,15 @@ const CSVFileModal = ({ open, onClose, onSuccess }) => {
         <Button
           onClick={handleConfirm}
           variant="contained"
-          disabled={rows.length === 0 || Object.keys(errors).length > 0}
+          disabled={!canUpload}
           size="large"
           startIcon={<UploadIcon />}
         >
-          {Object.keys(errors).length > 0 
-            ? `Fix ${Object.keys(errors).length} Errors First` 
-            : `Upload ${rows.length} Records`
+          {!selectedCategory || !selectedSubCategory 
+            ? "Select Category & Subcategory First"
+            : Object.keys(errors).length > 0 
+              ? `Fix ${Object.keys(errors).length} Errors First` 
+              : `Upload ${rows.length} Records`
           }
         </Button>
       </DialogActions>

@@ -30,6 +30,8 @@ import AddIcon from "@mui/icons-material/Add";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import PersonAddAlt1Icon from "@mui/icons-material/PersonAddAlt1";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import DownloadIcon from "@mui/icons-material/Download";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
 import { BASE_URL } from "@/configs/url";
@@ -42,6 +44,8 @@ import PermissionWrapper from "../PermissionWrapper";
 import { useAuth } from "@/context/authContext";
 import ImportCSV from "./ImportCSV";
 import ConfirmationDialog from '../ConfirmationDialog';
+import ContactsImportModal from "./ContactsImportModal";
+import { table, layout, button } from '@/styles/globalStyles';
 
 // ✅ Import XLSX for exporting
 import * as XLSX from "xlsx";
@@ -363,27 +367,120 @@ const SupplierTable = () => {
         fetchSuppliers(0, rowsPerPage, '') // Immediately fetch all results when clearing
     }
 
+    // Export contacts for a specific supplier
+    const exportContactsToExcel = (contacts, supplierId) => {
+        try {
+            if (!contacts || contacts.length === 0) {
+                toast.warning('No contacts to export');
+                return;
+            }
+
+            // Create export data for contacts
+            const exportData = contacts.map((contact, index) => ({
+                "Contact #": index + 1,
+                "Contact ID": contact.id,
+                "First Name": contact.firstName || "N/A",
+                "Last Name": contact.lastName || "N/A",
+                "Full Name": `${contact.firstName || ""} ${contact.lastName || ""}`.trim() || "N/A",
+                "Role": contact.role || "N/A",
+                "Email": contact.emailAddress || "N/A",
+                "Phone": contact.phoneNumber || "N/A",
+                "Created At": contact.createdAt ? new Date(contact.createdAt).toLocaleString() : "N/A",
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Contacts");
+            XLSX.writeFile(workbook, `supplier_contacts_${supplierId}.xlsx`);
+
+            toast.success(`Successfully exported ${contacts.length} contacts to Excel`);
+        } catch (error) {
+            toast.error("Failed to export contacts data");
+        }
+    };
+
     // ContactsTable component for nested table
     const ContactsTable = ({ contacts, supplierId }) => {
+        const [openContactsImportModal, setOpenContactsImportModal] = useState(false);
+
         if (!contacts || contacts.length === 0) {
             return (
                 <Box p={2}>
                     <Typography variant="body2" color="textSecondary" align="center">
                         No contacts found for this supplier.
                     </Typography>
+                    <Box sx={{ ...layout.buttonGroup, justifyContent: 'center', marginTop: 2 }}>
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            color="primary"
+                            startIcon={<CloudUploadIcon />}
+                            onClick={() => setOpenContactsImportModal(true)}
+                        >
+                            Import Contacts
+                        </Button>
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            color="success"
+                            onClick={() => handleAddContact({ id: supplierId })}
+                            sx={{ ml: 1 }}
+                        >
+                            Add Contact
+                        </Button>
+                    </Box>
+                    
+                    {openContactsImportModal && (
+                        <ContactsImportModal
+                            open={openContactsImportModal}
+                            onClose={() => setOpenContactsImportModal(false)}
+                            supplierId={supplierId}
+                            refreshContacts={fetchSuppliers}
+                        />
+                    )}
                 </Box>
             );
         }
 
         return (
             <Box sx={{ margin: 1 }}>
-                <Typography variant="h6" gutterBottom sx={{ marginLeft: 1 }}>
-                    Contacts ({contacts.length})
-                </Typography>
+                <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ marginLeft: 1, marginRight: 1, mb: 1 }}>
+                    <Typography variant="h6">
+                        Contacts ({contacts.length})
+                    </Typography>
+                    <Box sx={layout.buttonGroup}>
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            color="primary"
+                            startIcon={<CloudUploadIcon />}
+                            onClick={() => setOpenContactsImportModal(true)}
+                        >
+                            Import Contacts
+                        </Button>
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            color="info"
+                            startIcon={<DownloadIcon />}
+                            onClick={() => exportContactsToExcel(contacts, supplierId)}
+                        >
+                            Export Contacts
+                        </Button>
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            color="success"
+                            onClick={() => handleAddContact({ id: supplierId })}
+                        >
+                            Add Contact
+                        </Button>
+                    </Box>
+                </Box>
                 <TableContainer component={Paper} elevation={1}>
                     <Table size="small">
                         <TableHead>
-                            <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                            <TableRow sx={table.header}>
                                 <TableCell><strong>Contact ID</strong></TableCell>
                                 <TableCell><strong>Name</strong></TableCell>
                                 <TableCell><strong>Role</strong></TableCell>
@@ -416,7 +513,7 @@ const SupplierTable = () => {
                                         {contact.createdAt ? new Date(contact.createdAt).toLocaleDateString() : 'N/A'}
                                     </TableCell>
                                     <TableCell>
-                                        <Box display="flex" gap={0.5}>
+                                        <Box sx={table.actionButtons}>
                                             
                                                 <Tooltip title="Edit Contact">
                                                     <IconButton
@@ -445,6 +542,15 @@ const SupplierTable = () => {
                         </TableBody>
                     </Table>
                 </TableContainer>
+                
+                {openContactsImportModal && (
+                    <ContactsImportModal
+                        open={openContactsImportModal}
+                        onClose={() => setOpenContactsImportModal(false)}
+                        supplierId={supplierId}
+                        refreshContacts={fetchSuppliers}
+                    />
+                )}
             </Box>
         );
     };
@@ -452,10 +558,10 @@ const SupplierTable = () => {
     if (loading) return <Loader />;
 
     return (
-        <Paper p={2} sx={{ padding: 2 }}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <Paper sx={layout.container}>
+            <Box sx={layout.header}>
                 <Typography variant="h5">Suppliers</Typography>
-                <Box display="flex" gap={1}>
+                <Box sx={layout.buttonGroup}>
                     <Button variant="outlined" color="success" onClick={handleImportCSV}>
                         Import CSV
                     </Button>
@@ -469,7 +575,7 @@ const SupplierTable = () => {
             </Box>
 
             {/* Search Section */}
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+            <Box sx={layout.searchSection}>
                 <Box display="flex" alignItems="center" gap={1}>
                     <TextField
                         placeholder="Search suppliers by name, email, phone, address..."
@@ -566,7 +672,7 @@ const SupplierTable = () => {
                 <TableContainer>
                     <Table>
                         <TableHead>
-                            <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+                            <TableRow sx={table.header}>
                                 <TableCell width="50px"></TableCell>
                                 <TableCell><strong>Supplier ID</strong></TableCell>
                                 <TableCell><strong>Company Name</strong></TableCell>

@@ -126,11 +126,22 @@ const VerticalMenu = ({ scrollMenu }) => {
           label='Cabinet'
           icon={<i className='tabler-door' />}
         >
+
+          <PermissionWrapper resource="cabinet">
+            <MenuItem href='/cabinet/categories'>
+              Categories
+            </MenuItem>
+          </PermissionWrapper>
+
           <PermissionWrapper resource="cabinet">
             <MenuItem href='/cabinet'>
               Cabinet
             </MenuItem>
           </PermissionWrapper>
+
+
+
+
         </SubMenu>
 
         <SubMenu
