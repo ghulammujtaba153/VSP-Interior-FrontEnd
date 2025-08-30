@@ -73,9 +73,9 @@ const PermissionWrapper = ({
 
   // ✅ Always allow superadmin - check this first (case-insensitive and robust)
   const isSuperAdmin = roleName && (
-    roleName.toLowerCase().trim() === 'superadmin' ||
-    roleName.toLowerCase().trim() === 'super admin' ||
-    roleName.toLowerCase().trim() === 'super_admin'
+    roleName.toLowerCase().trim() == 'superadmin' ||
+    roleName.toLowerCase().trim() == 'super admin' ||
+    roleName.toLowerCase().trim() == 'super_admin'
   );
   
   // Debug logging
