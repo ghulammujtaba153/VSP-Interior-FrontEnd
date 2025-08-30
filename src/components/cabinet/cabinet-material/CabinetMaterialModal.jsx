@@ -179,7 +179,7 @@ const CabinetMaterialModal = ({ open, onClose, editData, onSuccess }) => {
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Select Cabinets"
+                label="Select Items"
                 placeholder="Search by code..."
                 margin="normal"
                 required
