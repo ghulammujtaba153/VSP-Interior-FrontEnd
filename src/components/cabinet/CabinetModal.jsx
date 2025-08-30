@@ -282,7 +282,7 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
     <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth>
       <DialogTitle>
         <Typography variant="h6">
-          {editData ? "Edit Cabinet" : "Add New Cabinet"}
+          {editData ? "Edit Item" : "Add New Item"}
         </Typography>
       </DialogTitle>
       <DialogContent>

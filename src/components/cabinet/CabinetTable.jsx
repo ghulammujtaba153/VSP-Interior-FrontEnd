@@ -224,7 +224,7 @@ const CabinetTable = () => {
               setOpen(true)
             }}
           >
-            Add Cabinet
+            Add Item
           </Button>
         </Box>
       </Box>
