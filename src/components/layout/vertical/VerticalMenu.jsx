@@ -140,6 +140,13 @@ const VerticalMenu = ({ scrollMenu }) => {
           </PermissionWrapper>
 
 
+          <PermissionWrapper resource="cabinet">
+            <MenuItem href='/cabinet/material'>
+              Cabinet
+            </MenuItem>
+          </PermissionWrapper>
+
+
 
 
         </SubMenu>

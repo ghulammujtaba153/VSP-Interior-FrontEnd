@@ -57,6 +57,7 @@ const CabinetCategoriesTable = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
+  
 
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
@@ -64,12 +65,8 @@ const CabinetCategoriesTable = () => {
   const fetchData = async (currentPage = page, currentRowsPerPage = rowsPerPage, search = '') => {
     try {
       setLoading(true);
-      const searchParams = new URLSearchParams({
-        page: (currentPage + 1).toString(),
-        limit: currentRowsPerPage.toString(),
-        ...(search && { search })
-      });
-      const response = await axios.get(`${BASE_URL}/api/cabinet-categories/get?${searchParams}`);
+      console.log("fetching data", currentPage, currentRowsPerPage, search);
+      const response = await axios.get(`${BASE_URL}/api/cabinet-categories/get?page=${currentPage + 1}&limit=${currentRowsPerPage}&search=${search}`);
       setData(response.data.data || response.data);
       setTotalCount(response.data.pagination?.totalItems || response.data.length || 0);
     } catch (error) {

@@ -140,7 +140,7 @@ const CabinetTable = () => {
   const confirmExportExcel = () => {
     const exportData = data.map((cabinet) => ({
       ID: cabinet.id,
-      'Cabinet Code': cabinet.code,
+      'Code': cabinet.code,
       'Category': cabinet.cabinetCategory?.name || 'N/A',
       'Subcategory': cabinet.cabinetSubCategory?.name || 'N/A',
       'Description': cabinet.description || 'N/A',
@@ -185,7 +185,7 @@ const CabinetTable = () => {
       {/* Header */}
       <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
         <Typography variant='h5' fontWeight='bold'>
-          Cabinet Management
+          Material Management
         </Typography>
         
         
@@ -232,7 +232,7 @@ const CabinetTable = () => {
       {/* Search + Apply */}
       <Box display="flex" gap={1}>
           <TextField
-            label="Search cabinets by code, description, or category..."
+            label="Search by code, description"
             size="small"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
@@ -279,7 +279,7 @@ const CabinetTable = () => {
                     direction={orderBy === 'code' ? order : 'asc'}
                     onClick={() => handleSort('code')}
                   >
-                    Cabinet Code
+                    Code
                   </TableSortLabel>
                 </TableCell>
                 <TableCell>Category</TableCell>
