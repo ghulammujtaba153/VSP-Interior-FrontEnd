@@ -38,6 +38,10 @@ import {
 } from "@mui/icons-material";
 import CabinetCategoriesModal from "./CabinetCategoriesModal";
 import SubCategoryModal from "./SubCategoryModal";
+import SubcategoryImportModal from "./SubcategoryImportModal";
+import Link from "next/link";
+
+
 
 const CabinetCategoriesTable = () => {
   const [data, setData] = useState([]);
@@ -52,6 +56,10 @@ const CabinetCategoriesTable = () => {
   // subcategory modal
   const [openSubModal, setOpenSubModal] = useState(false);
   const [subCategoryParent, setSubCategoryParent] = useState(null);
+
+  // import subcategory modal
+  const [openImportSubModal, setOpenImportSubModal] = useState(false);
+  const [importSubCategoryParent, setImportSubCategoryParent] = useState(null);
 
   // Pagination states
   const [page, setPage] = useState(0);
@@ -207,11 +215,23 @@ const CabinetCategoriesTable = () => {
               color="success"
               startIcon={<Add />}
               onClick={() => {
+                setImportSubCategoryParent({ id: categoryId, name: categoryName });
+                setOpenImportSubModal(true);
+              }}
+            >
+              import Subcategories
+            </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              color="success"
+              startIcon={<Add />}
+              onClick={() => {
                 setSubCategoryParent({ id: categoryId, name: categoryName });
                 setOpenSubModal(true);
               }}
             >
-              Add Subcategory
+              Add Subcategory1
             </Button>
           </Box>
         </Box>
@@ -224,6 +244,8 @@ const CabinetCategoriesTable = () => {
           <Typography variant="h6">
             Subcategories ({subCategories.length})
           </Typography>
+
+          <Link href={`/cabinet/categories/sub-categories/${categoryId}`} passHref>import subcategories</Link>
           <Button
             size="small"
             variant="outlined"
@@ -390,6 +412,16 @@ const CabinetCategoriesTable = () => {
           categoryId={subCategoryParent.id}
           editSubCategory={subCategoryParent.editSubCategory}
           onSubCategoryChange={fetchData}
+        />
+      )}
+
+
+      {/* Import SubCategory Modal */}      
+      {importSubCategoryParent && (
+        <SubcategoryImportModal
+          open={openImportSubModal}
+          onClose={() => setOpenImportSubModal(false)}
+          onSuccess={fetchData}
         />
       )}
 
