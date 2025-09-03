@@ -22,7 +22,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import { BASE_URL } from "@/configs/url";
 
-const SubCategoryModal = ({ open, handleClose, categoryId, editSubCategory, onSubCategoryChange }) => {
+const SubCategoryModal = ({ open, onClose, categoryId, subCategory }) => {
   const [data, setData] = useState({ name: "" });
   const [subCategories, setSubCategories] = useState([]);
   const [editMode, setEditMode] = useState(false);
@@ -43,9 +43,9 @@ const SubCategoryModal = ({ open, handleClose, categoryId, editSubCategory, onSu
     if (open && categoryId) {
       fetchSubCategories();
       // Check if we're editing an existing subcategory
-      if (editSubCategory) {
-        setData({ name: editSubCategory.name });
-        setSubCategoryId(editSubCategory.id);
+      if (subCategory) {
+        setData({ name: subCategory.name });
+        setSubCategoryId(subCategory.id);
         setEditMode(true);
       } else {
         // Reset form for new subcategory
@@ -54,7 +54,7 @@ const SubCategoryModal = ({ open, handleClose, categoryId, editSubCategory, onSu
         setSubCategoryId(null);
       }
     }
-  }, [open, categoryId, editSubCategory]);
+  }, [open, categoryId, subCategory]);
 
   const handleSubmit = async () => {
     if (!data.name.trim()) {
@@ -129,14 +129,14 @@ const SubCategoryModal = ({ open, handleClose, categoryId, editSubCategory, onSu
     setData({ name: "" });
     setEditMode(false);
     setSubCategoryId(null);
-    handleClose();
+    onClose();
   };
 
   const handleCancel = () => {
     if (editMode) {
       // If editing, reset to original data
-      if (editSubCategory) {
-        setData({ name: editSubCategory.name });
+      if (subCategory) {
+        setData({ name: subCategory.name });
       }
     } else {
       // If adding new, clear the form
@@ -145,7 +145,7 @@ const SubCategoryModal = ({ open, handleClose, categoryId, editSubCategory, onSu
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="h6">

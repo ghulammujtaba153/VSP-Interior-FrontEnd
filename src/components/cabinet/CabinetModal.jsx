@@ -36,7 +36,7 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
     cabinetSubCategoryId: "",
     code: "",
     description: "",
-    dynamicData: {},
+    dynamicData: [],
     status: "active",
   });
 
@@ -97,16 +97,16 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
         cabinetSubCategoryId: editData.cabinetSubCategoryId || "",
         code: editData.code || "",
         description: editData.description || "",
-        dynamicData: editData.dynamicData || {},
+        dynamicData: editData.dynamicData || [],
         status: editData.status || "active",
       });
       
-      // Convert dynamicData object to dynamicFields array
-      if (editData.dynamicData && typeof editData.dynamicData === 'object') {
-        const fields = Object.entries(editData.dynamicData).map(([name, value]) => ({
+      // Convert dynamicData array to dynamicFields array
+      if (editData.dynamicData && Array.isArray(editData.dynamicData)) {
+        const fields = editData.dynamicData.map((item, index) => ({
           id: Math.random().toString(36).substr(2, 9),
-          name: name,
-          value: value
+          name: item.columnName || "",
+          value: item.value || ""
         }));
         setDynamicFields(fields);
       }
@@ -116,7 +116,7 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
         cabinetSubCategoryId: "",
         code: "",
         description: "",
-        dynamicData: {},
+        dynamicData: [],
         status: "active",
       });
       setDynamicFields([]);
@@ -166,12 +166,15 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
     ));
   };
 
-  // Convert dynamicFields array to dynamicData object
-  const getDynamicDataObject = () => {
-    const dynamicData = {};
+  // Convert dynamicFields array to dynamicData array (new format)
+  const getDynamicDataArray = () => {
+    const dynamicData = [];
     dynamicFields.forEach(field => {
       if (field.name && field.name.trim()) {
-        dynamicData[field.name.trim()] = field.value;
+        dynamicData.push({
+          columnName: field.name.trim(),
+          value: field.value || ""
+        });
       }
     });
     return dynamicData;
@@ -235,8 +238,8 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
       setLoading(true);
       toast.loading(editData ? "Updating cabinet..." : "Adding cabinet...");
       
-      // Convert dynamic fields to object
-      const dynamicData = getDynamicDataObject();
+      // Convert dynamic fields to array format
+      const dynamicData = getDynamicDataArray();
       
       const submitData = {
         ...formData,

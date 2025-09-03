@@ -12,7 +12,6 @@ import {
   Stack, 
   IconButton, 
   Chip,
-  Collapse,
   Table,
   TableBody,
   TableCell,
@@ -30,43 +29,27 @@ import {
   Edit, 
   Visibility, 
   Category, 
-  ExpandMore, 
-  ExpandLess,
   Add,
   Search,
   Clear
 } from "@mui/icons-material";
 import CabinetCategoriesModal from "./CabinetCategoriesModal";
-import SubCategoryModal from "./SubCategoryModal";
-import SubcategoryImportModal from "./SubcategoryImportModal";
 import Link from "next/link";
-
-
 
 const CabinetCategoriesTable = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [expandedRows, setExpandedRows] = useState(new Set());
 
   // modal states
   const [openModal, setOpenModal] = useState(false);
   const [modalMode, setModalMode] = useState("add"); // 'add' | 'edit' | 'view'
   const [selectedCategory, setSelectedCategory] = useState(null);
 
-  // subcategory modal
-  const [openSubModal, setOpenSubModal] = useState(false);
-  const [subCategoryParent, setSubCategoryParent] = useState(null);
-
-  // import subcategory modal
-  const [openImportSubModal, setOpenImportSubModal] = useState(false);
-  const [importSubCategoryParent, setImportSubCategoryParent] = useState(null);
-
   // Pagination states
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
   
-
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -119,20 +102,6 @@ const CabinetCategoriesTable = () => {
     }
   };
 
-  // Handle subcategory delete
-  const handleDeleteSubCategory = async (subCategoryId) => {
-    toast.loading("Please wait...");
-    try {
-      await axios.delete(`${BASE_URL}/api/cabinet-subcategories/delete/${subCategoryId}`);
-      toast.success("Subcategory deleted successfully");
-      fetchData(); // Refresh to get updated data
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to delete subcategory");
-    } finally {
-      toast.dismiss();
-    }
-  };
-
   // Handle add/edit submit
   const handleSubmit = async (formData) => {
     toast.loading("Please wait...");
@@ -155,27 +124,15 @@ const CabinetCategoriesTable = () => {
     }
   };
 
-  const toggleRowExpansion = (categoryId) => {
-    const newExpandedRows = new Set(expandedRows);
-    if (newExpandedRows.has(categoryId)) {
-      newExpandedRows.delete(categoryId);
-    } else {
-      newExpandedRows.add(categoryId);
-    }
-    setExpandedRows(newExpandedRows);
-  };
-
   // Pagination event handlers
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
-    setExpandedRows(new Set()); // Clear expanded rows when changing pages
   };
 
   const handleChangeRowsPerPage = (event) => {
     const newRowsPerPage = parseInt(event.target.value, 10);
     setRowsPerPage(newRowsPerPage);
     setPage(0);
-    setExpandedRows(new Set()); // Clear expanded rows when changing page size
   };
 
   // Search event handlers
@@ -198,129 +155,6 @@ const CabinetCategoriesTable = () => {
     if (event.key === 'Enter') {
       handleSearchApply();
     }
-  };
-
-  // SubCategoriesTable component for nested table
-  const SubCategoriesTable = ({ subCategories, categoryId, categoryName }) => {
-    if (!subCategories || subCategories.length === 0) {
-      return (
-        <Box p={2}>
-          <Typography variant="body2" color="textSecondary" align="center">
-            No subcategories found for this category.
-          </Typography>
-          <Box display="flex" justifyContent="center" mt={2}>
-            <Button
-              size="small"
-              variant="outlined"
-              color="success"
-              startIcon={<Add />}
-              onClick={() => {
-                setImportSubCategoryParent({ id: categoryId, name: categoryName });
-                setOpenImportSubModal(true);
-              }}
-            >
-              import Subcategories
-            </Button>
-            <Button
-              size="small"
-              variant="outlined"
-              color="success"
-              startIcon={<Add />}
-              onClick={() => {
-                setSubCategoryParent({ id: categoryId, name: categoryName });
-                setOpenSubModal(true);
-              }}
-            >
-              Add Subcategory1
-            </Button>
-          </Box>
-        </Box>
-      );
-    }
-
-    return (
-      <Box sx={{ margin: 1 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ marginLeft: 1, marginRight: 1, mb: 1 }}>
-          <Typography variant="h6">
-            Subcategories ({subCategories.length})
-          </Typography>
-
-          <Link href={`/cabinet/categories/sub-categories/${categoryId}`} passHref>import subcategories</Link>
-          <Button
-            size="small"
-            variant="outlined"
-            color="success"
-            startIcon={<Add />}
-            onClick={() => {
-              setSubCategoryParent({ id: categoryId, name: categoryName });
-              setOpenSubModal(true);
-            }}
-          >
-            Add Subcategory
-          </Button>
-        </Box>
-        <TableContainer component={Paper} elevation={1}>
-          <Table size="small">
-            <TableHead>
-              <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                <TableCell><strong>Subcategory ID</strong></TableCell>
-                <TableCell><strong>Name</strong></TableCell>
-                <TableCell><strong>Created Date</strong></TableCell>
-                <TableCell><strong>Updated Date</strong></TableCell>
-                <TableCell><strong>Actions</strong></TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {subCategories.map((subCategory) => (
-                <TableRow key={subCategory.id} hover>
-                  <TableCell>{subCategory.id}</TableCell>
-                  <TableCell>
-                    <Typography variant="body2">
-                      {subCategory.name}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    {subCategory.createdAt ? new Date(subCategory.createdAt).toLocaleDateString() : 'N/A'}
-                  </TableCell>
-                  <TableCell>
-                    {subCategory.updatedAt ? new Date(subCategory.updatedAt).toLocaleDateString() : 'N/A'}
-                  </TableCell>
-                  <TableCell>
-                    <Box display="flex" gap={0.5}>
-                      <Tooltip title="Edit Subcategory">
-          <IconButton
-                          size="small"
-            color="primary"
-                          onClick={() => {
-                            setSubCategoryParent({ 
-                              id: categoryId, 
-                              name: categoryName,
-                              editSubCategory: subCategory 
-                            });
-                            setOpenSubModal(true);
-                          }}
-          >
-            <Edit />
-          </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete Subcategory">
-          <IconButton
-                          size="small"
-            color="error"
-                          onClick={() => handleDeleteSubCategory(subCategory.id)}
-          >
-            <Delete />
-          </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Box>
-    );
   };
 
   if (loading) {
@@ -404,33 +238,11 @@ const CabinetCategoriesTable = () => {
         onSubmit={handleSubmit}
       />
 
-      {/* SubCategory Modal */}
-      {subCategoryParent && (
-        <SubCategoryModal
-          open={openSubModal}
-          handleClose={() => setOpenSubModal(false)}
-          categoryId={subCategoryParent.id}
-          editSubCategory={subCategoryParent.editSubCategory}
-          onSubCategoryChange={fetchData}
-        />
-      )}
-
-
-      {/* Import SubCategory Modal */}      
-      {importSubCategoryParent && (
-        <SubcategoryImportModal
-          open={openImportSubModal}
-          onClose={() => setOpenImportSubModal(false)}
-          onSuccess={fetchData}
-        />
-      )}
-
       <Paper elevation={3}>
         <TableContainer>
           <Table>
             <TableHead>
               <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-                <TableCell width="50px"></TableCell>
                 <TableCell><strong>Category ID</strong></TableCell>
                 <TableCell><strong>Category Name</strong></TableCell>
                 <TableCell><strong>Subcategories</strong></TableCell>
@@ -441,84 +253,64 @@ const CabinetCategoriesTable = () => {
             </TableHead>
             <TableBody>
               {data.map((category) => (
-                <React.Fragment key={category.id}>
-                  {/* Main category row */}
-                  <TableRow hover>
-                    <TableCell>
-                      <IconButton
-                        size="small"
-                        onClick={() => toggleRowExpansion(category.id)}
-                        color="primary"
-                      >
-                        {expandedRows.has(category.id) ? <ExpandLess /> : <ExpandMore />}
-                      </IconButton>
-                    </TableCell>
-                    <TableCell>{category.id}</TableCell>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight="medium">
-                        {category.name}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={category.subCategories?.length || 0}
-                        size="small"
-                        color={category.subCategories?.length > 0 ? "success" : "default"}
-                        variant="outlined"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {category.createdAt ? new Date(category.createdAt).toLocaleDateString() : 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      {category.updatedAt ? new Date(category.updatedAt).toLocaleDateString() : 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      <Box display="flex" gap={0.5}>
-                        <Tooltip title="View">
-                          <IconButton
-                            size="small"
-                            color="info"
-                            onClick={() => handleOpenModal("view", category)}
-                          >
-                            <Visibility />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Edit">
-                          <IconButton
-                            size="small"
-                            color="primary"
-                            onClick={() => handleOpenModal("edit", category)}
-                          >
-                            <Edit />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete">
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => handleDelete(category.id)}
-                          >
-                            <Delete />
-                          </IconButton>
-                        </Tooltip>
-    </Box>
-                    </TableCell>
-                  </TableRow>
-
-                  {/* Expanded subcategories row */}
-                  <TableRow>
-                    <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>
-                      <Collapse in={expandedRows.has(category.id)} timeout="auto" unmountOnExit>
-                        <SubCategoriesTable 
-                          subCategories={category.subCategories} 
-                          categoryId={category.id}
-                          categoryName={category.name}
-                        />
-                      </Collapse>
-                    </TableCell>
-                  </TableRow>
-                </React.Fragment>
+                <TableRow key={category.id} hover>
+                  <TableCell>{category.id}</TableCell>
+                  <TableCell>
+                    <Typography variant="body2" fontWeight="medium">
+                      {category.name}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={category.subCategories?.length || 0}
+                      size="small"
+                      color={category.subCategories?.length > 0 ? "success" : "default"}
+                      variant="outlined"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    {category.createdAt ? new Date(category.createdAt).toLocaleDateString() : 'N/A'}
+                  </TableCell>
+                  <TableCell>
+                    {category.updatedAt ? new Date(category.updatedAt).toLocaleDateString() : 'N/A'}
+                  </TableCell>
+                  <TableCell>
+                    <Box display="flex" gap={0.5}>
+                      <Tooltip title="View">
+                        <IconButton
+                          size="small"
+                          color="info"
+                          onClick={() => handleOpenModal("view", category)}
+                        >
+                          <Visibility />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Edit">
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => handleOpenModal("edit", category)}
+                        >
+                          <Edit />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Delete">
+                        <IconButton
+                          size="small"
+                          color="error"
+                          onClick={() => handleDelete(category.id)}
+                        >
+                          <Delete />
+                        </IconButton>
+                      </Tooltip>
+                      <Link href={`/cabinet/categories/sub-categories/${category.id}`} passHref>
+                        <Button size="small" variant="outlined" color="primary">
+                          Manage Sub Categories
+                        </Button>
+                      </Link>
+                    </Box>
+                  </TableCell>
+                </TableRow>
               ))}
             </TableBody>
           </Table>

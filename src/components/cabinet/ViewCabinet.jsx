@@ -13,6 +13,12 @@ import {
   Box,
   Divider,
   Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from "@mui/material";
 
 const ViewCabinet = ({ open, setOpen, data }) => {
@@ -24,7 +30,7 @@ const ViewCabinet = ({ open, setOpen, data }) => {
   };
 
   const renderDynamicProperties = (dynamicData) => {
-    if (!dynamicData || Object.keys(dynamicData).length === 0) {
+    if (!dynamicData || dynamicData.length === 0) {
       return (
         <Typography variant="body2" color="textSecondary" fontStyle="italic">
           No additional properties defined
@@ -33,33 +39,60 @@ const ViewCabinet = ({ open, setOpen, data }) => {
     }
 
     return (
-      <Box>
-        {Object.entries(dynamicData).map(([key, value], index) => (
-          <Box key={index} display="flex" justifyContent="space-between" alignItems="center" py={1} px={2} sx={{ 
-            backgroundColor: index % 2 === 0 ? 'grey.50' : 'white',
-            borderRadius: 1,
-            mb: 1
-          }}>
-            <Typography variant="body2" fontWeight="medium" color="primary">
-              {key}:
-            </Typography>
-            <Typography variant="body2">
-              {value || 'N/A'}
-            </Typography>
-          </Box>
-        ))}
+      <Box sx={{ width: '100%', overflowX: 'auto' }}>
+        <TableContainer component={Paper} variant="outlined">
+          <Table sx={{ minWidth: 400 }} size="small">
+            <TableHead>
+              <TableRow sx={{ backgroundColor: 'grey.50' }}>
+                <TableCell sx={{ fontWeight: 'bold', color: 'primary.main' }}>Property Name</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', color: 'primary.main' }}>Value</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {dynamicData.map((item, index) => (
+                <TableRow 
+                  key={index} 
+                  sx={{ 
+                    backgroundColor: index % 2 === 0 ? 'white' : 'grey.50',
+                    '&:last-child td, &:last-child th': { border: 0 }
+                  }}
+                >
+                  <TableCell component="th" scope="row" sx={{ fontWeight: 'medium' }}>
+                    {item.columnName || 'N/A'}
+                  </TableCell>
+                  <TableCell>
+                    {item.value || 'N/A'}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Box>
     );
   };
 
   return (
-    <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth>
+    <Dialog 
+      open={open} 
+      onClose={() => setOpen(false)} 
+      maxWidth="lg" 
+      fullWidth
+      sx={{
+        '& .MuiDialog-paper': {
+          maxHeight: '90vh',
+        }
+      }}
+    >
       <DialogTitle>
-        <Typography variant="h6">
+        <Typography variant="h6" component="div">
           Cabinet Details - {data.code || 'N/A'}
         </Typography>
+        <Typography variant="body2" color="textSecondary">
+          ID: #{data.id}
+        </Typography>
       </DialogTitle>
-      <DialogContent dividers>
+      <DialogContent dividers sx={{ overflowX: 'auto' }}>
         <Grid container spacing={3}>
           {/* Basic Information */}
           <Grid item xs={12}>
@@ -86,7 +119,7 @@ const ViewCabinet = ({ open, setOpen, data }) => {
 
           <Grid item xs={12}>
             <Typography variant="subtitle2" color="textSecondary">Description</Typography>
-            <Typography variant="body1">
+            <Typography variant="body1" sx={{ wordBreak: 'break-word' }}>
               {data.description || 'No description provided'}
             </Typography>
           </Grid>
@@ -101,11 +134,17 @@ const ViewCabinet = ({ open, setOpen, data }) => {
           <Grid item xs={6}>
             <Typography variant="subtitle2" color="textSecondary">Category</Typography>
             {data.cabinetCategory ? (
-              <Chip 
-                label={data.cabinetCategory.name} 
-                color="primary" 
-                variant="outlined"
-              />
+              <Box display="flex" alignItems="center" gap={1}>
+                <Chip 
+                  label={data.cabinetCategory.name} 
+                  color="primary" 
+                  variant="outlined"
+                  size="small"
+                />
+                <Typography variant="body2" color="textSecondary">
+                  (ID: {data.cabinetCategoryId})
+                </Typography>
+              </Box>
             ) : (
               <Typography variant="body2" color="textSecondary">Not assigned</Typography>
             )}
@@ -114,11 +153,17 @@ const ViewCabinet = ({ open, setOpen, data }) => {
           <Grid item xs={6}>
             <Typography variant="subtitle2" color="textSecondary">Subcategory</Typography>
             {data.cabinetSubCategory ? (
-              <Chip 
-                label={data.cabinetSubCategory.name} 
-                color="secondary" 
-                variant="outlined"
-              />
+              <Box display="flex" alignItems="center" gap={1}>
+                <Chip 
+                  label={data.cabinetSubCategory.name} 
+                  color="secondary" 
+                  variant="outlined"
+                  size="small"
+                />
+                <Typography variant="body2" color="textSecondary">
+                  (ID: {data.cabinetSubCategoryId})
+                </Typography>
+              </Box>
             ) : (
               <Typography variant="body2" color="textSecondary">Not assigned</Typography>
             )}
@@ -126,12 +171,17 @@ const ViewCabinet = ({ open, setOpen, data }) => {
 
           <Grid item xs={12}>
             <Divider sx={{ my: 2 }} />
-            <Typography variant="h6" color="primary" gutterBottom>
-              Additional Properties
-            </Typography>
-            <Paper variant="outlined" sx={{ p: 2, mt: 1 }}>
+            <Box display="flex" justifyContent="space-between" alignItems="center">
+              <Typography variant="h6" color="primary" gutterBottom>
+                Additional Properties
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                {data.dynamicData?.length || 0} propert{data.dynamicData?.length === 1 ? 'y' : 'ies'}
+              </Typography>
+            </Box>
+            <Box sx={{ mt: 2, width: '100%', overflowX: 'auto' }}>
               {renderDynamicProperties(data.dynamicData)}
-            </Paper>
+            </Box>
           </Grid>
 
           <Grid item xs={12}>
@@ -143,31 +193,35 @@ const ViewCabinet = ({ open, setOpen, data }) => {
 
           <Grid item xs={6}>
             <Typography variant="subtitle2" color="textSecondary">Created At</Typography>
-            <Typography variant="body2">
+            <Typography variant="body2" fontFamily="monospace">
               {formatDate(data.createdAt)}
             </Typography>
           </Grid>
 
           <Grid item xs={6}>
             <Typography variant="subtitle2" color="textSecondary">Updated At</Typography>
-            <Typography variant="body2">
+            <Typography variant="body2" fontFamily="monospace">
               {formatDate(data.updatedAt)}
             </Typography>
           </Grid>
 
-          <Grid item xs={6}>
-            <Typography variant="subtitle2" color="textSecondary">Cabinet ID</Typography>
-            <Typography variant="body2" fontFamily="monospace">
-              #{data.id}
-            </Typography>
-          </Grid>
+          {data.createdBy && (
+            <Grid item xs={6}>
+              <Typography variant="subtitle2" color="textSecondary">Created By</Typography>
+              <Typography variant="body2">
+                {data.createdBy.name || data.createdBy.email || 'N/A'}
+              </Typography>
+            </Grid>
+          )}
 
-          <Grid item xs={6}>
-            <Typography variant="subtitle2" color="textSecondary">Category ID</Typography>
-            <Typography variant="body2" fontFamily="monospace">
-              {data.cabinetCategoryId || 'N/A'}
-            </Typography>
-          </Grid>
+          {data.updatedBy && (
+            <Grid item xs={6}>
+              <Typography variant="subtitle2" color="textSecondary">Updated By</Typography>
+              <Typography variant="body2">
+                {data.updatedBy.name || data.updatedBy.email || 'N/A'}
+              </Typography>
+            </Grid>
+          )}
         </Grid>
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
