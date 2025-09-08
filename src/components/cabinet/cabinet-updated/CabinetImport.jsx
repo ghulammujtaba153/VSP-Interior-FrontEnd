@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useRef } from "react"
+import React, { useState, useRef, useEffect } from "react"
 import {
   Container,
   Box,
@@ -35,11 +35,13 @@ import { CloudUpload, Edit, Save, Cancel } from "@mui/icons-material"
 import * as XLSX from "xlsx"
 import { toast } from "react-toastify"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import axios from "axios"
 import { BASE_URL } from "@/configs/url"
 import { useParams } from "next/navigation"
 
 const CabinetImport = ({ id }) => {
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState(1)
   const [excelData, setExcelData] = useState([])
@@ -54,6 +56,10 @@ const CabinetImport = ({ id }) => {
   const [subCategoryList, setSubCategoryList] = useState([])
   const [subcategoriesUploaded, setSubcategoriesUploaded] = useState(false)
   const fileInputRef = useRef(null)
+
+  // Lock-in states
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false)
+  const [pendingNavigation, setPendingNavigation] = useState(null)
 
   // Handle file upload and parse excel
   const handleFileUpload = (e) => {
@@ -214,6 +220,31 @@ const CabinetImport = ({ id }) => {
     }, 1500)
   }
 
+  // Determine if the user is in the middle of an import (not completed)
+  const isInProgress = step !== 3 && (
+    columns.length > 0 ||
+    excelData.length > 0 ||
+    uniqueSubcategories.length > 0 ||
+    Object.keys(groupedData || {}).length > 0
+  )
+
+  // Warn on unload/refresh/navigation away
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isInProgress) {
+        e.preventDefault()
+        e.returnValue = ""
+        return ""
+      }
+    }
+    if (isInProgress) {
+      window.addEventListener('beforeunload', handleBeforeUnload)
+    }
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [isInProgress])
+
   const startEditing = (subcategory, rowIndex, column, value) => {
     setEditingCell({ subcategory, rowIndex, column })
     setEditValue(value)
@@ -299,7 +330,8 @@ const CabinetImport = ({ id }) => {
         toast.success("Subcategories uploaded successfully")
         setSubCategoryList(res.data.cabinetSubCategory) // <-- Save subcategories with ids
         setSubcategoriesUploaded(true) // Mark as uploaded
-      } else {
+      }
+       else {
         toast.error("Failed to upload subcategories")
       }
     } catch (error) {
@@ -330,8 +362,8 @@ const CabinetImport = ({ id }) => {
       // Prepare payload with corrected mapping logic
       const importRows = allRows.map(row => {
         // Create an array to preserve column order for dynamic data
-        const dynamicDataArray = []
-        
+        const arrayList = []
+
         // Process columns in their original order
         columns.forEach(col => {
           // Skip the fixed columns (code, sub code, description)
@@ -341,8 +373,8 @@ const CabinetImport = ({ id }) => {
             col.toLowerCase() !== descriptionHeader.toLowerCase()
           ) {
             // Preserve the original column name and value in order
-            dynamicDataArray.push({
-              columnName: col,
+            arrayList.push({
+              label: col,
               value: row[col] || ""
             })
           }
@@ -360,7 +392,7 @@ const CabinetImport = ({ id }) => {
           cabinetSubCategoryId: subcategoryId,
           code: row[subCodeHeader],
           description: row[descriptionHeader],
-          dynamicData: dynamicDataArray, // Now an array that preserves order
+          dynamicData: { arrayList },
         }
       })
 
@@ -397,7 +429,19 @@ const CabinetImport = ({ id }) => {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
     
-    <Link href="/cabinet/categories" passHref>Back</Link>
+    <Button
+      variant="text"
+      onClick={(e) => {
+        if (isInProgress) {
+          setPendingNavigation('/cabinet/categories')
+          setCancelConfirmOpen(true)
+        } else {
+          router.push('/cabinet/categories')
+        }
+      }}
+    >
+      Back
+    </Button>
 
       <Box sx={{ mb: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
@@ -693,6 +737,44 @@ const CabinetImport = ({ id }) => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setPreviewDialogOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Cancel Confirmation Dialog */}
+      <Dialog 
+        open={cancelConfirmOpen}
+        onClose={() => setCancelConfirmOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>
+          <Typography variant="h6">Confirm Cancel</Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            You are in the middle of an import. Do you want to cancel the process?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCancelConfirmOpen(false)}>
+            Stay
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => {
+              // Explicit cancel
+              handleReset()
+              setCancelConfirmOpen(false)
+              if (pendingNavigation) {
+                const to = pendingNavigation
+                setPendingNavigation(null)
+                router.push(to)
+              }
+            }}
+          >
+            Cancel Import
+          </Button>
         </DialogActions>
       </Dialog>
     </Container>

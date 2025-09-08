@@ -5,7 +5,7 @@ import SupplierTable from '@/components/suppliers/SupplierTable'
 const SuppliersPage = () => {
     return (
         <div>
-                        <SupplierTable/>
+            <SupplierTable/>
         </div>
     )
 }

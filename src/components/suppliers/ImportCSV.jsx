@@ -34,16 +34,17 @@ import {
 
 // ✅ Required fields (notes is optional)
 const requiredFields = [
-  "companyName",
-  "email",
-  "phone",
-  "address",
-  "postCode",
-  "status",
+  "Name",
+  "Email",
+  "Phone",
+  "Address",
+  "Post Code",
+  "Status",
+  "Is Company",
 ];
 
 // ✅ All fields (for table display)
-const allFields = [...requiredFields, "notes"]; // notes shown but optional
+const allFields = [...requiredFields, "Notes"]; // notes shown but optional
 
 const ImportModal = ({ open, onClose, fetchSuppliers }) => {
   const [rows, setRows] = useState([]);
@@ -56,31 +57,34 @@ const ImportModal = ({ open, onClose, fetchSuppliers }) => {
   // Sample template data for suppliers
   const templateData = [
     {
-      companyName: "ABC Wood Supplies",
-      email: "contact@abcwood.com",
-      phone: "+1-555-0123",
-      address: "123 Industrial Blvd, Woodville, State 12345",
-      postCode: "12345",
-      status: "active",
-      notes: "Primary supplier for hardwood materials"
+      "Name": "ABC Wood Supplies",
+      "Email": "contact@abcwood.com",
+      "Phone": "+1-555-0123",
+      "Address": "123 Industrial Blvd, Woodville, State 12345",
+      "Post Code": "12345",
+      "Status": "Active",
+      "Is Company": "Yes",
+      "Notes": "Primary supplier for hardwood materials"
     },
     {
-      companyName: "Premier Hardware Co.",
-      email: "sales@premierhardware.com", 
-      phone: "+1-555-0456",
-      address: "456 Commerce Street, Hardware City, State 67890",
-      postCode: "67890",
-      status: "active",
-      notes: "Specializes in cabinet hardware and hinges"
+      "Name": "Premier Hardware Co.",
+      "Email": "sales@premierhardware.com", 
+      "Phone": "+1-555-0456",
+      "Address": "456 Commerce Street, Hardware City, State 67890",
+      "Post Code": "67890",
+      "Status": "Active",
+      "Is Company": "Yes",
+      "Notes": "Specializes in cabinet hardware and hinges"
     },
     {
-      companyName: "Quality Tools Inc.",
-      email: "info@qualitytools.net",
-      phone: "+1-555-0789",
-      address: "789 Tool Way, Craftsman Valley, State 54321",
-      postCode: "54321", 
-      status: "inactive",
-      notes: "Secondary supplier for power tools and accessories"
+      "Name": "Quality Tools Inc.",
+      "Email": "info@qualitytools.net",
+      "Phone": "+1-555-0789",
+      "Address": "789 Tool Way, Craftsman Valley, State 54321",
+      "Post Code": "54321", 
+      "Status": "Inactive",
+      "Is Company": "No",
+      "Notes": "Secondary supplier for power tools and accessories"
     }
   ];
 
@@ -101,59 +105,59 @@ const ImportModal = ({ open, onClose, fetchSuppliers }) => {
       });
 
       // 2. Enhanced email validation
-      if (row.email) {
+      if (row.Email) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(row.email)) {
+        if (!emailRegex.test(row.Email)) {
           rowErrors.push("Invalid email format");
         }
       }
 
       // 3. Enhanced phone validation
-      if (row.phone) {
+      if (row.Phone) {
         const phoneRegex = /^[\+]?[0-9\s\-\(\)]{7,20}$/;
-        if (!phoneRegex.test(row.phone)) {
+        if (!phoneRegex.test(row.Phone)) {
           rowErrors.push("Invalid phone number format");
         }
       }
 
       // 4. Status validation
       if (
-        row.status &&
-        !["active", "inactive"].includes(String(row.status).toLowerCase())
+        row.Status &&
+        !["active", "inactive"].includes(String(row.Status).toLowerCase())
       ) {
         rowErrors.push("status must be Active or Inactive");
       }
 
       // 5. Postal code validation
-      if (row.postCode && !/^[A-Za-z0-9\s\-]{3,10}$/.test(row.postCode)) {
+      if (row["Post Code"] && !/^[A-Za-z0-9\s\-]{3,10}$/.test(row["Post Code"])) {
         rowErrors.push("Invalid postal code format");
       }
 
       // 6. Duplicate email in file
-      if (row.email) {
-        if (seenEmails.has(row.email.toLowerCase())) {
+      if (row.Email) {
+        if (seenEmails.has(row.Email.toLowerCase())) {
           rowErrors.push("Duplicate email in file");
         } else {
-          seenEmails.add(row.email.toLowerCase());
+          seenEmails.add(row.Email.toLowerCase());
         }
       }
 
       // 7. Duplicate company name in file
-      if (row.companyName) {
-        if (seenCompanyNames.has(row.companyName.toLowerCase())) {
+      if (row.Name) {
+        if (seenCompanyNames.has(row.Name.toLowerCase())) {
           rowErrors.push("Duplicate company name in file");
         } else {
-          seenCompanyNames.add(row.companyName.toLowerCase());
+          seenCompanyNames.add(row.Name.toLowerCase());
         }
       }
 
       // 8. Company name length validation
-      if (row.companyName && row.companyName.length < 2) {
+      if (row.Name && row.Name.length < 2) {
         rowErrors.push("Company name must be at least 2 characters");
       }
 
       // 9. Address length validation
-      if (row.address && row.address.length < 10) {
+      if (row.Address && row.Address.length < 10) {
         rowErrors.push("Address must be at least 10 characters");
       }
 
@@ -217,8 +221,28 @@ const ImportModal = ({ open, onClose, fetchSuppliers }) => {
           return;
         }
 
-        setRows(parsed);
-        validateRows(parsed);
+        // Normalize keys to match our template headers capitalization for preview/edit
+        const normalized = parsed.map((row) => {
+          const out = {}
+          Object.entries(row).forEach(([k, v]) => {
+            // Keep provided keys as-is; if lower-case versions match our headers, upcase them
+            const keyMap = {
+              companyName: 'Name',
+              email: 'Email',
+              phone: 'Phone',
+              address: 'Address',
+              postCode: 'Post Code',
+              status: 'Status',
+              notes: 'Notes',
+              isCompany: 'Is Company'
+            }
+            const mapped = keyMap[k] || k
+            out[mapped] = v
+          })
+          return out
+        })
+        setRows(normalized);
+        validateRows(normalized);
         toast.success(`Successfully loaded ${parsed.length} suppliers`);
       } catch (error) {
         toast.error("Error reading file. Please check the file format.");
@@ -282,9 +306,25 @@ const ImportModal = ({ open, onClose, fetchSuppliers }) => {
         return;
       }
 
+      // Map Title Case CSV fields to API schema (lower camelCase + types)
+      const suppliersPayload = validRows.map((row) => {
+        const statusRaw = (row["Status"] || "").toString().trim().toLowerCase();
+        const isCompanyRaw = (row["Is Company"] || "").toString().trim().toLowerCase();
+        return {
+          name: row["Name"]?.toString().trim() || "",
+          email: row["Email"]?.toString().trim() || "",
+          phone: row["Phone"]?.toString().trim() || "",
+          address: row["Address"]?.toString().trim() || "",
+          postCode: row["Post Code"]?.toString().trim() || "",
+          status: ["active", "inactive"].includes(statusRaw) ? statusRaw : "active",
+          notes: row["Notes"]?.toString().trim() || "",
+          isCompany: isCompanyRaw === "yes" || isCompanyRaw === "true",
+        };
+      });
+
       await axios.post(`${BASE_URL}/api/suppliers/import`, {
         userId: user.id,
-        suppliers: validRows,
+        suppliers: suppliersPayload,
       });
 
       toast.dismiss();

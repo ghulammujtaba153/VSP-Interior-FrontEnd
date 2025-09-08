@@ -32,23 +32,59 @@ import {
   DeleteOutline as DeleteIcon,
 } from "@mui/icons-material";
 
-// ✅ Required inventory fields
-const requiredFields = [
-  "itemCode",
-  "name",
-  "description",
-  "category",
-  "unit",
-  "supplierId",
-  "costPrice",
-  "quantity",
-  "minThreshold",
-  "maxThreshold",
-  "status",
+// ✅ Inventory schema fields (first letter capitalized for CSV)
+const schemaFields = [
+  "Name",
+  "Description",
+  "Category",
+  "Unit",
+  "SupplierId",
+  "CostPrice",
+  "Quantity",
+  "TotalStocks",
+  "Notes",
+  "Status",
 ];
 
-// ✅ All fields (same as required for now, since no optional ones like notes)
-const allFields = [...requiredFields];
+// Sample template data for inventory (first letter capitalized)
+const templateData = [
+  {
+    Name: "Wood Screws 2 inch",
+    Description: "Phillips head wood screws for cabinet assembly",
+    Category: "Hardware",
+    Unit: "Pieces",
+    SupplierId: "SUP001",
+    CostPrice: 0.25,
+    Quantity: 500,
+    TotalStocks: 500,
+    Notes: "For cabinet jobs",
+    Status: "active"
+  },
+  {
+    Name: "Cabinet Hinges",
+    Description: "Soft-close hinges for cabinet doors",
+    Category: "Hardware",
+    Unit: "Pairs",
+    SupplierId: "SUP002",
+    CostPrice: 12.50,
+    Quantity: 75,
+    TotalStocks: 75,
+    Notes: "",
+    Status: "active"
+  },
+  {
+    Name: "Oak Wood Board",
+    Description: "Premium oak board 1x6x8 feet",
+    Category: "Materials",
+    Unit: "Pieces",
+    SupplierId: "SUP001",
+    CostPrice: 45.00,
+    Quantity: 25,
+    TotalStocks: 25,
+    Notes: "Premium stock",
+    Status: "inactive"
+  }
+];
 
 const ImportCSV = ({ open, onClose, fetchData }) => {
   const [rows, setRows] = useState([]);
@@ -58,104 +94,37 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
   const [dragOver, setDragOver] = useState(false);
   const { user } = useAuth();
 
-  // Sample template data for inventory
-  const templateData = [
-    {
-      itemCode: "INV001",
-      name: "Wood Screws 2 inch",
-      description: "Phillips head wood screws for cabinet assembly",
-      category: "Hardware",
-      unit: "Pieces",
-      supplierId: "SUP001",
-      costPrice: 0.25,
-      quantity: 500,
-      minThreshold: 100,
-      maxThreshold: 1000,
-      status: "active"
-    },
-    {
-      itemCode: "INV002", 
-      name: "Cabinet Hinges",
-      description: "Soft-close hinges for cabinet doors",
-      category: "Hardware",
-      unit: "Pairs",
-      supplierId: "SUP002",
-      costPrice: 12.50,
-      quantity: 75,
-      minThreshold: 20,
-      maxThreshold: 200,
-      status: "active"
-    },
-    {
-      itemCode: "INV003",
-      name: "Oak Wood Board",
-      description: "Premium oak board 1x6x8 feet",
-      category: "Materials",
-      unit: "Pieces",
-      supplierId: "SUP001",
-      costPrice: 45.00,
-      quantity: 25,
-      minThreshold: 10,
-      maxThreshold: 100,
-      status: "inactive"
-    }
-  ];
-
-  // ✅ Enhanced row-level validation for inventory
+  // Validate rows according to schema
   const validateRows = (data) => {
     let newErrors = {};
-    let seenItemCodes = new Set();
-
     data.forEach((row, idx) => {
       let rowErrors = [];
-
-      // 1. Required fields
-      requiredFields.forEach((field) => {
-        if (!row[field] && row[field] !== 0) {
+      // Required fields (exclude Notes)
+      schemaFields.forEach((field) => {
+        if (
+          field !== "Notes" && // Notes is optional
+          (!row[field] && row[field] !== 0)
+        ) {
           rowErrors.push(`${field} is required`);
         }
       });
-
-      // 2. Numeric validation
-      ["costPrice", "quantity", "minThreshold", "maxThreshold"].forEach((field) => {
+      // Numeric validation
+      ["CostPrice", "Quantity", "TotalStocks"].forEach((field) => {
         if (row[field] && (isNaN(row[field]) || Number(row[field]) < 0)) {
           rowErrors.push(`${field} must be a positive number`);
         }
       });
-
-      // 3. Status validation
+      // Status validation
       if (
-        row.status &&
-        !["active", "inactive"].includes(String(row.status).toLowerCase())
+        row.Status &&
+        !["active", "inactive"].includes(String(row.Status).toLowerCase())
       ) {
-        rowErrors.push("status must be Active or Inactive");
+        rowErrors.push("Status must be Active or Inactive");
       }
-
-      // 4. Threshold validation
-      if (row.minThreshold && row.maxThreshold && Number(row.minThreshold) >= Number(row.maxThreshold)) {
-        rowErrors.push("minThreshold must be less than maxThreshold");
-      }
-
-      // 5. Item code uniqueness
-      if (row.itemCode) {
-        if (seenItemCodes.has(row.itemCode)) {
-          rowErrors.push("Duplicate itemCode found");
-        } else {
-          seenItemCodes.add(row.itemCode);
-        }
-      }
-
-      // 6. Category validation (optional, but good practice)
-      const validCategories = ["Hardware", "Materials", "Tools", "Supplies", "Components"];
-      if (row.category && !validCategories.includes(row.category)) {
-        rowErrors.push(`category should be one of: ${validCategories.join(", ")}`);
-      }
-
       if (rowErrors.length > 0) {
         newErrors[idx] = rowErrors;
       }
     });
-
     setErrors(newErrors);
   };
 
@@ -256,7 +225,7 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
     setUploading(false);
   };
 
-  // ✅ Edit a cell
+  // Edit a cell
   const handleEdit = (rowIdx, field, value) => {
     const updated = [...rows];
     updated[rowIdx][field] = value;
@@ -264,21 +233,29 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
     validateRows(updated);
   };
 
-  // ✅ Confirm upload
+  // Confirm upload
   const handleConfirm = async () => {
     toast.loading("Importing inventory...");
     try {
       const validRows = rows.filter((_, idx) => !errors[idx]);
-
       if (validRows.length === 0) {
         toast.dismiss();
         toast.error("No valid rows to insert");
         return;
       }
+      // Convert keys to match backend schema (lowercase first letter)
+      const backendRows = validRows.map(row => {
+        const mapped = {};
+        schemaFields.forEach(field => {
+          const backendKey = field.charAt(0).toLowerCase() + field.slice(1);
+          mapped[backendKey] = row[field];
+        });
+        return mapped;
+      });
 
       await axios.post(`${BASE_URL}/api/inventory/import`, {
         userId: user.id,
-        inventory: validRows,
+        inventory: backendRows,
       });
 
       toast.dismiss();
@@ -433,7 +410,7 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
                       <th style={{ border: '1px solid #ddd', padding: '8px', fontWeight: 'bold', fontSize: '12px' }}>
                         #
                       </th>
-                      {allFields.map((field) => (
+                      {schemaFields.map((field) => (
                         <th
                           key={field}
                           style={{ 
@@ -441,7 +418,7 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
                             padding: '8px', 
                             fontWeight: 'bold', 
                             fontSize: '12px', 
-                            minWidth: field === 'description' ? '200px' : '120px' 
+                            minWidth: field === 'Description' ? '200px' : '120px' 
                           }}
                         >
                           {field}
@@ -458,7 +435,7 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
                         <td style={{ border: '1px solid #ddd', padding: '4px', textAlign: 'center', fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>
                           {idx + 1}
                         </td>
-                        {allFields.map((field) => (
+                        {schemaFields.map((field) => (
                           <td key={field} style={{ border: '1px solid #ddd', padding: '4px' }}>
                             <TextField
                               value={row[field] || ""}
@@ -466,8 +443,8 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
                               size="small"
                               variant="outlined"
                               fullWidth
-                              multiline={field === 'description'}
-                              rows={field === 'description' ? 2 : 1}
+                              multiline={field === 'Description'}
+                              rows={field === 'Description' ? 2 : 1}
                               error={errors[idx]?.some(err => err.includes(field))}
                               sx={{ 
                                 '& .MuiOutlinedInput-root': { 
@@ -477,7 +454,7 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
                                   }
                                 }
                               }}
-                              type={['costPrice', 'quantity', 'minThreshold', 'maxThreshold'].includes(field) ? 'number' : 'text'}
+                              type={['CostPrice', 'Quantity', 'TotalStocks'].includes(field) ? 'number' : 'text'}
                             />
                           </td>
                         ))}

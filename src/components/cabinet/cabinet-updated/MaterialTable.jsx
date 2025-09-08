@@ -59,6 +59,7 @@ const MaterialTable = ({id}) => {
     severity: 'warning'
   })
 
+  
   const fetchCabinets = async () => {
     setLoading(true)
     try {
@@ -68,13 +69,15 @@ const MaterialTable = ({id}) => {
       setData(res.data.cabinet || res.data.data || [])
       setRowCount(res.data.total || res.data.pagination?.totalItems || 0)
       
-      // Extract dynamic columns from the first item's dynamicData
+      // Extract dynamic columns from the first item's dynamicData (supports arrayList/object/legacy array)
       if (res.data.cabinet && res.data.cabinet.length > 0) {
         const firstItem = res.data.cabinet[0]
-        if (firstItem.dynamicData && Array.isArray(firstItem.dynamicData)) {
-          // Extract unique column names from dynamicData array
-          const columns = firstItem.dynamicData.map(item => item.columnName)
+        const list = getArrayList(firstItem?.dynamicData)
+        if (list.length > 0) {
+          const columns = list.map(item => item.label)
           setDynamicColumns(columns)
+        } else {
+          setDynamicColumns([])
         }
       }
     } catch (error) {
@@ -197,12 +200,33 @@ const MaterialTable = ({id}) => {
     setOrderBy(property)
   }
 
-  // Helper function to get dynamic data value by column name
+  // Normalize dynamicData to ordered array of { label, value }
+  const getArrayList = (dynamicData) => {
+    if (!dynamicData) return []
+    if (Array.isArray(dynamicData?.arrayList)) {
+      return dynamicData.arrayList
+    }
+    if (Array.isArray(dynamicData)) {
+      return dynamicData.map(it => ({ label: it.columnName ?? it.label, value: it.value }))
+    }
+    if (typeof dynamicData === 'object') {
+      return Object.entries(dynamicData).map(([label, value]) => ({ label, value }))
+    }
+    return []
+  }
+
+  // Helper function to get dynamic data value by column name/label
   const getDynamicValue = (cabinet, columnName) => {
-    if (!cabinet.dynamicData || !Array.isArray(cabinet.dynamicData)) return 'N/A'
-    
-    const item = cabinet.dynamicData.find(item => item.columnName === columnName)
-    return item ? item.value : 'N/A'
+    const list = getArrayList(cabinet?.dynamicData)
+    if (list.length > 0) {
+      const found = list.find(item => item.label === columnName || item.columnName === columnName)
+      return found ? (found.value ?? 'N/A') : 'N/A'
+    }
+    // fallback to object map
+    if (cabinet?.dynamicData && typeof cabinet.dynamicData === 'object') {
+      return cabinet.dynamicData[columnName] ?? 'N/A'
+    }
+    return 'N/A'
   }
 
   if (loading) return <Loader />

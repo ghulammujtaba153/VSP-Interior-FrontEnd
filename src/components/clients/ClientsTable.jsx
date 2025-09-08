@@ -96,7 +96,12 @@ const ClientsTable = () => {
       });
       const response = await axios.get(`${BASE_URL}/api/client/get?${searchParams}`);
       setClients(response.data.data);
-      setTotalCount(response.data.pagination?.totalItems || 0);
+      setTotalCount(
+        response.data.pagination?.totalItems ||
+        response.data.total ||
+        response.data.count ||
+        0
+      );
     } catch (error) {
       toast.error("Error fetching clients");
     } finally {
@@ -190,7 +195,7 @@ const ClientsTable = () => {
   // Fetch all clients for export (without pagination)
   const fetchAllClients = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/api/client/get?page=1&limit=10000`); // Large limit to get all
+      const response = await axios.get(`${BASE_URL}/api/client/get?page=${page}&limit=${totalCount}`); // Large limit to get all
       return response.data.data;
     } catch (error) {
       toast.error("Failed to fetch clients for export");
@@ -678,17 +683,17 @@ const ClientsTable = () => {
       }
 
       <Paper elevation={3}>
-        <TableContainer>
+        <TableContainer sx={{ overflowX: 'auto' }}>
           <Table>
             <TableHead>
               <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
                 <TableCell width="50px"></TableCell>
-                <TableCell><strong>Client ID</strong></TableCell>
-                <TableCell><strong>Company Name</strong></TableCell>
-                <TableCell><strong>Email</strong></TableCell>
-                <TableCell><strong>Phone</strong></TableCell>
-                <TableCell><strong>Address</strong></TableCell>
-                <TableCell><strong>City</strong></TableCell>
+                <TableCell sx={{ minWidth: 100 }}><strong>Client ID</strong></TableCell>
+                <TableCell sx={{ minWidth: 260 }}><strong>Company Name</strong></TableCell>
+                <TableCell sx={{ minWidth: 220 }}><strong>Email</strong></TableCell>
+                <TableCell sx={{ minWidth: 160 }}><strong>Phone</strong></TableCell>
+                <TableCell sx={{ minWidth: 300 }}><strong>Address</strong></TableCell>
+                <TableCell sx={{ minWidth: 140 }}><strong>City</strong></TableCell>
                 <TableCell><strong>Contacts</strong></TableCell>
                 <TableCell><strong>Status</strong></TableCell>
                 <TableCell><strong>Actions</strong></TableCell>
@@ -710,14 +715,30 @@ const ClientsTable = () => {
                     </TableCell>
                     <TableCell>{client.id}</TableCell>
                     <TableCell>
-                      <Typography variant="body2" fontWeight="medium">
+                      <Typography variant="body2" fontWeight="medium" noWrap sx={{ maxWidth: 260 }}>
                         {client.companyName}
                       </Typography>
                     </TableCell>
-                    <TableCell>{client.emailAddress}</TableCell>
-                    <TableCell>{client.phoneNumber}</TableCell>
-                    <TableCell>{client.address}</TableCell>
-                    <TableCell>{client.postCode}</TableCell>
+                    <TableCell>
+                      <Typography variant="body2" noWrap sx={{ maxWidth: 220 }}>
+                        {client.emailAddress}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" noWrap sx={{ maxWidth: 160 }}>
+                        {client.phoneNumber}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" noWrap sx={{ maxWidth: 300 }}>
+                        {client.address}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" noWrap sx={{ maxWidth: 140 }}>
+                        {client.postCode}
+                      </Typography>
+                    </TableCell>
                     <TableCell>
                       <Chip
                         label={client.contacts?.length || 0}
@@ -792,6 +813,8 @@ const ClientsTable = () => {
           page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
+          labelRowsPerPage="Rows per page:"
+          labelDisplayedRows={({ from, to, count }) => `${from}-${to} of ${count !== -1 ? count : `more than ${to}`}`}
         />
       </Paper>
 

@@ -18,13 +18,14 @@ const SubCategoriesPage = () => {
         onChange={(e, newValue) => setTabIndex(newValue)}
         sx={{ mb: 2 }}
       >
-        <Tab label="Cabinet Import" />
+       
         <Tab label="Subcategories" />
         <Tab label="Material Table" />
+         <Tab label="Cabinet Import" />
       </Tabs>
-      {tabIndex === 0 && <CabinetImport id={id} />}
-      {tabIndex === 1 && <SubCategories id={id} />}
-      {tabIndex === 2 && <MaterialTable id={id} />}
+      {tabIndex === 0 && <SubCategories id={id} />}
+      {tabIndex === 1 && <MaterialTable id={id} />}
+        {tabIndex === 2 && <CabinetImport id={id} />}
     </Box>
   )
 }

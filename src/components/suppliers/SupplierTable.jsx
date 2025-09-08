@@ -49,6 +49,7 @@ import { table, layout, button } from '@/styles/globalStyles';
 
 // ✅ Import XLSX for exporting
 import * as XLSX from "xlsx";
+import Link from "next/link";
 
 const SupplierTable = () => {
     const [suppliers, setSuppliers] = useState([]);
@@ -163,7 +164,7 @@ const SupplierTable = () => {
     const handleDelete = (supplierRow) => {
         showConfirmation({
             title: 'Delete Supplier',
-            message: `Are you sure you want to delete supplier "${supplierRow.companyName}"? This action cannot be undone and will remove all associated data.`,
+            message: `Are you sure you want to delete supplier "${supplierRow.name}"? This action cannot be undone and will remove all associated data.`,
             action: () => confirmDeleteSupplier(supplierRow.id),
             severity: 'error'
         });
@@ -272,7 +273,7 @@ const SupplierTable = () => {
     // Fetch all suppliers for export (without pagination)
     const fetchAllSuppliers = async () => {
         try {
-            const res = await axios.get(`${BASE_URL}/api/suppliers/get?page=1&limit=10000`); // Large limit to get all
+            const res = await axios.get(`${BASE_URL}/api/suppliers/get?page=1&limit=${totalCount}`); // Large limit to get all
             return res.data.data;
         } catch (error) {
             toast.error("Failed to fetch suppliers for export");
@@ -306,7 +307,8 @@ const SupplierTable = () => {
                     supplier.contacts.forEach((contact, index) => {
                         exportData.push({
                             "Supplier ID": supplier.id,
-                            "Company Name": supplier.companyName,
+                            "Name": supplier.name,
+                            "Is Company": supplier.isCompany ? "Yes" : "No",
                             "Supplier Email": supplier.email,
                             "Supplier Phone": supplier.phone,
                             "Address": supplier.address,
@@ -328,7 +330,8 @@ const SupplierTable = () => {
                     // For suppliers without contacts, create a single row
                     exportData.push({
                         "Supplier ID": supplier.id,
-                        "Company Name": supplier.companyName,
+                        "Name": supplier.name,
+                        "Is Company": supplier.isCompany ? "Yes" : "No",
                         "Supplier Email": supplier.email,
                         "Supplier Phone": supplier.phone,
                         "Address": supplier.address,
@@ -481,13 +484,13 @@ const SupplierTable = () => {
                     <Table size="small">
                         <TableHead>
                             <TableRow sx={table.header}>
-                                <TableCell><strong>Contact ID</strong></TableCell>
-                                <TableCell><strong>Name</strong></TableCell>
-                                <TableCell><strong>Role</strong></TableCell>
-                                <TableCell><strong>Email</strong></TableCell>
-                                <TableCell><strong>Phone</strong></TableCell>
-                                <TableCell><strong>Created Date</strong></TableCell>
-                                <TableCell><strong>Actions</strong></TableCell>
+                                <TableCell sx={{ minWidth: 100 }}><strong>Contact ID</strong></TableCell>
+                                <TableCell sx={{ minWidth: 100 }}><strong>Name</strong></TableCell>
+                                <TableCell sx={{ minWidth: 100 }}><strong>Role</strong></TableCell>
+                                <TableCell sx={{ minWidth: 220 }}><strong>Email</strong></TableCell>
+                                <TableCell sx={{ minWidth: 160 }}><strong>Phone</strong></TableCell>
+                                <TableCell sx={{ minWidth: 100 }}><strong>Created Date</strong></TableCell>
+                                <TableCell sx={{ minWidth: 100 }}><strong>Actions</strong></TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -537,6 +540,7 @@ const SupplierTable = () => {
                                             
                                         </Box>
                                     </TableCell>
+                                    
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -674,15 +678,17 @@ const SupplierTable = () => {
                         <TableHead>
                             <TableRow sx={table.header}>
                                 <TableCell width="50px"></TableCell>
-                                <TableCell><strong>Supplier ID</strong></TableCell>
-                                <TableCell><strong>Company Name</strong></TableCell>
-                                <TableCell><strong>Email</strong></TableCell>
-                                <TableCell><strong>Phone</strong></TableCell>
-                                <TableCell><strong>Address</strong></TableCell>
-                                <TableCell><strong>Post Code</strong></TableCell>
-                                <TableCell><strong>Contacts</strong></TableCell>
-                                <TableCell><strong>Status</strong></TableCell>
-                                <TableCell><strong>Actions</strong></TableCell>
+                                <TableCell sx={{ minWidth: 100 }}><strong>Supplier ID</strong></TableCell>
+                                <TableCell sx={{ minWidth: 100 }}><strong>Name</strong></TableCell>
+                                <TableCell sx={{ minWidth: 100 }}><strong>Is Company</strong></TableCell>
+                                <TableCell sx={{ minWidth: 220 }}><strong>Email</strong></TableCell>
+                                <TableCell sx={{ minWidth: 160 }}><strong>Phone</strong></TableCell>
+                                <TableCell sx={{ minWidth: 300 }}><strong>Address</strong></TableCell>
+                                <TableCell sx={{ minWidth: 100 }}><strong>Post Code</strong></TableCell>
+                                <TableCell sx={{ minWidth: 100 }}><strong>Contacts</strong></TableCell>
+                                <TableCell sx={{ minWidth: 100 }}><strong>Status</strong></TableCell>
+                                <TableCell sx={{ minWidth: 180 }}><strong>Actions</strong></TableCell>
+                                <TableCell sx={{ minWidth: 100 }}><strong>View</strong></TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -702,8 +708,16 @@ const SupplierTable = () => {
                                         <TableCell>{supplier.id}</TableCell>
                                         <TableCell>
                                             <Typography variant="body2" fontWeight="medium">
-                                                {supplier.companyName}
+                                                {supplier.name}
                                             </Typography>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Chip
+                                                label={supplier.isCompany ? "Yes" : "No"}
+                                                size="small"
+                                                color={supplier.isCompany ? "primary" : "default"}
+                                                variant="outlined"
+                                            />
                                         </TableCell>
                                         <TableCell>{supplier.email}</TableCell>
                                         <TableCell>{supplier.phone}</TableCell>
@@ -729,41 +743,52 @@ const SupplierTable = () => {
                                         </TableCell>
                                         <TableCell>
                                             <Box display="flex" gap={0.5}>
+                                                {/* Only show Add Contact if isCompany is true */}
+                                                {supplier.isCompany && (
                                                     <Tooltip title="Add Contact">
                                                         <IconButton size="small" color="success" onClick={() => handleAddContact(supplier)}>
                                                             <PersonAddAlt1Icon />
                                                         </IconButton>
                                                     </Tooltip>
+                                                )}
                                                 <Tooltip title="View">
-                                                    <PermissionWrapper resource="suppliers" action="canView">
                                                         <IconButton size="small" onClick={() => handleView(supplier)} color="info">
                                                             <VisibilityIcon />
                                                         </IconButton>
-                                                    </PermissionWrapper>
                                                 </Tooltip>
                                                 <Tooltip title="Edit">
-                                                    <PermissionWrapper resource="suppliers" action="canEdit">
                                                         <IconButton size="small" onClick={() => handleEdit(supplier)} color="primary">
                                                             <EditIcon />
                                                         </IconButton>
-                                                    </PermissionWrapper>
                                                 </Tooltip>
                                                 <Tooltip title="Delete">
-                                                    <PermissionWrapper resource="suppliers" action="canDelete">
                                                         <IconButton size="small" onClick={() => handleDelete(supplier)} color="error">
                                                             <DeleteIcon />
                                                         </IconButton>
-                                                    </PermissionWrapper>
                                                 </Tooltip>
+
+                                                
                                             </Box>
                                         </TableCell>
+
+                                        <TableCell>
+                                        <Link
+                                            href={`/suppliers/${supplier.id}`}
+                                            color="primary"
+                                        >
+                                            View
+                                        </Link>
+                                    </TableCell>
                                     </TableRow>
 
                                     {/* Expanded contacts row */}
                                     <TableRow>
-                                        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={10}>
+                                        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={11}>
                                             <Collapse in={expandedRows.has(supplier.id)} timeout="auto" unmountOnExit>
-                                                <ContactsTable contacts={supplier.contacts} supplierId={supplier.id} />
+                                                {/* Only show ContactsTable if isCompany is true */}
+                                                {supplier.isCompany && (
+                                                    <ContactsTable contacts={supplier.contacts} supplierId={supplier.id} />
+                                                )}
                                             </Collapse>
                                         </TableCell>
                                     </TableRow>
@@ -783,6 +808,7 @@ const SupplierTable = () => {
                     onRowsPerPageChange={handleChangeRowsPerPage}
                 />
             </Paper>
+
 
             <ConfirmationDialog
                 open={confirmationOpen}

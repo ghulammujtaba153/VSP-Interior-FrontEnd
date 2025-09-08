@@ -88,13 +88,13 @@ const SubCategories = ({ id }) => {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
         <Typography variant="h6">Subcategories</Typography>
-        {/* <Button
+        <Button
           variant="contained"
           startIcon={<AddIcon />}
           onClick={handleAdd}
         >
           Add Subcategory
-        </Button> */}
+        </Button>
       </Box>
       {loading ? (
         <Loader />

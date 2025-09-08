@@ -30,7 +30,15 @@ const ViewCabinet = ({ open, setOpen, data }) => {
   };
 
   const renderDynamicProperties = (dynamicData) => {
-    if (!dynamicData || dynamicData.length === 0) {
+    const toArrayList = (data) => {
+      if (!data) return []
+      if (Array.isArray(data?.arrayList)) return data.arrayList
+      if (Array.isArray(data)) return data.map(it => ({ label: it.columnName ?? it.label, value: it.value }))
+      if (typeof data === 'object') return Object.entries(data).map(([label, value]) => ({ label, value }))
+      return []
+    }
+    const list = toArrayList(dynamicData)
+    if (!list || list.length === 0) {
       return (
         <Typography variant="body2" color="textSecondary" fontStyle="italic">
           No additional properties defined
@@ -49,7 +57,7 @@ const ViewCabinet = ({ open, setOpen, data }) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {dynamicData.map((item, index) => (
+              {list.map((item, index) => (
                 <TableRow 
                   key={index} 
                   sx={{ 
@@ -58,7 +66,7 @@ const ViewCabinet = ({ open, setOpen, data }) => {
                   }}
                 >
                   <TableCell component="th" scope="row" sx={{ fontWeight: 'medium' }}>
-                    {item.columnName || 'N/A'}
+                    {item.label || item.columnName || 'N/A'}
                   </TableCell>
                   <TableCell>
                     {item.value || 'N/A'}
@@ -176,7 +184,14 @@ const ViewCabinet = ({ open, setOpen, data }) => {
                 Additional Properties
               </Typography>
               <Typography variant="body2" color="textSecondary">
-                {data.dynamicData?.length || 0} propert{data.dynamicData?.length === 1 ? 'y' : 'ies'}
+                {(() => {
+                  const count = Array.isArray(data.dynamicData?.arrayList)
+                    ? data.dynamicData.arrayList.length
+                    : Array.isArray(data.dynamicData)
+                      ? data.dynamicData.length
+                      : Object.keys(data.dynamicData || {}).length;
+                  return `${count} propert${count === 1 ? 'y' : 'ies'}`;
+                })()}
               </Typography>
             </Box>
             <Box sx={{ mt: 2, width: '100%', overflowX: 'auto' }}>

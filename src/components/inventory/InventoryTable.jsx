@@ -11,6 +11,13 @@ import {
   Paper,
   CircularProgress,
   TextField,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination,
 } from "@mui/material";
 import { Visibility, Edit, Delete } from "@mui/icons-material";
 import InventoryModal from "./InventoryModal";
@@ -18,15 +25,14 @@ import { toast } from "react-toastify";
 import ViewInventoryModal from "./ViewInventoryModal";
 import PermissionWrapper from "../PermissionWrapper";
 import { useAuth } from "@/context/authContext";
-import { DataGrid } from "@mui/x-data-grid";
 import ImportCSV from "./ImportCSV";
 import ConfirmationDialog from "../ConfirmationDialog";
-import * as XLSX from "xlsx"; // ✅ Import XLSX
+import * as XLSX from "xlsx";
 
 const InventoryTable = () => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState([]);
-  const [rowCount, setRowCount] = useState(0); // ✅ total records count
+  const [rowCount, setRowCount] = useState(0);
   const [open, setOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const [viewOpen, setViewOpen] = useState(false);
@@ -34,12 +40,12 @@ const InventoryTable = () => {
   const { user } = useAuth();
   const [importCSV, setImportCSV] = useState(false);
 
-  // ✅ pagination + search
-  const [page, setPage] = useState(0); // DataGrid is 0-based
+  // Pagination + search
+  const [page, setPage] = useState(0);
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
-  // ✅ Confirmation dialog states
+  // Confirmation dialog states
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [confirmationConfig, setConfirmationConfig] = useState({
     title: "",
@@ -73,11 +79,11 @@ const InventoryTable = () => {
     });
   };
 
-  const fetchData = async () => {
+  const fetchData = async (currentPage = page, currentLimit = limit, searchTerm = search) => {
     setLoading(true);
     try {
       const res = await axios.get(
-        `${BASE_URL}/api/inventory/get?page=${page + 1}&limit=${limit}&search=${search}`
+        `${BASE_URL}/api/inventory/get?page=${currentPage + 1}&limit=${currentLimit}&search=${searchTerm}`
       );
       setData(res.data.inventory || []);
       setRowCount(res.data.total || 0);
@@ -89,17 +95,20 @@ const InventoryTable = () => {
   };
 
   useEffect(() => {
-    const delayDebounce = setTimeout(() => {
-      fetchData();
-    }, 500); // debounce search
+    fetchData();
+    // eslint-disable-next-line
+  }, []);
 
-    return () => clearTimeout(delayDebounce);
-  }, [page, limit, search]);
+  // Refetch data when page or limit changes
+  useEffect(() => {
+    fetchData(page, limit, search);
+    // eslint-disable-next-line
+  }, [page, limit]);
 
   const handleDelete = (inventoryRow) => {
     showConfirmation({
       title: "Delete Inventory Item",
-      message: `Are you sure you want to delete inventory item "${inventoryRow.name}" (${inventoryRow.itemCode})? This action cannot be undone and will remove all associated data.`,
+      message: `Are you sure you want to delete inventory item "${inventoryRow.name}"? This action cannot be undone and will remove all associated data.`,
       action: () => confirmDeleteInventory(inventoryRow.id),
       severity: "error",
     });
@@ -125,7 +134,7 @@ const InventoryTable = () => {
     return new Date(dateString).toISOString().slice(0, 10);
   };
 
-  // ✅ Export to Excel
+  // Export to Excel
   const handleExportExcel = () => {
     showConfirmation({
       title: "Export Inventory to Excel",
@@ -138,15 +147,16 @@ const InventoryTable = () => {
   const confirmExportExcel = () => {
     const exportData = data.map((item) => ({
       ID: item.id,
-      "Item Code": item.itemCode,
       Name: item.name,
+      Description: item.description,
       Category: item.category,
       Unit: item.unit,
       Quantity: item.quantity,
+      "Total Stocks": item.totalStocks,
       Price: item.costPrice,
-      "Minimun Threshold": item.minThreshold,
-      "Maximum Threshold": item.maxThreshold,
       Supplier: item.supplier?.companyName || "N/A",
+      Status: item.status,
+      Notes: item.notes,
       Date: item.createdAt ? formatDate(item.createdAt) : "N/A",
     }));
 
@@ -158,10 +168,31 @@ const InventoryTable = () => {
   };
 
   const handleResetSearch = () => {
-    setSearchInput('')
-    setSearch('')
-    setPage(0)
-  }
+    setSearchInput('');
+    setSearch('');
+    setPage(0);
+    fetchData(0, limit, '');
+  };
+
+  // Search event handlers
+  const handleSearchChange = (event) => {
+    setSearchInput(event.target.value);
+  };
+
+  const handleSearchApply = () => {
+    setPage(0);
+    setSearch(searchInput);
+    fetchData(0, limit, searchInput);
+  };
+
+  const handleSearchKeyPress = (event) => {
+    if (event.key === 'Enter') {
+      handleSearchApply();
+    }
+  };
+
+  // Pagination logic for Table
+  const paginatedData = data;
 
   if (loading && data.length === 0) {
     return (
@@ -171,60 +202,6 @@ const InventoryTable = () => {
     );
   }
 
-  const columns = [
-    { field: "id", headerName: "ID", flex: 1 },
-    { field: "itemCode", headerName: "Item Code", flex: 1.2 },
-    { field: "name", headerName: "Name", flex: 1.5 },
-    { field: "category", headerName: "Category", flex: 1 },
-    { field: "unit", headerName: "Unit", flex: 1 },
-    { field: "quantity", headerName: "Quantity", flex: 1 },
-    { field: "costPrice", headerName: "Price", flex: 1 },
-    {
-      field: "createdAt",
-      headerName: "Date",
-      flex: 1,
-      renderCell: (params) => formatDate(params.value),
-    },
-    {
-      field: "actions",
-      headerName: "Actions",
-      flex: 1.2,
-      sortable: false,
-      filterable: false,
-      renderCell: (params) => (
-        <Box>
-          <PermissionWrapper resource="inventory" action="canView">
-            <IconButton
-              color="primary"
-              onClick={() => {
-                setViewData(params.row);
-                setViewOpen(true);
-              }}
-            >
-              <Visibility />
-            </IconButton>
-          </PermissionWrapper>
-          <PermissionWrapper resource="inventory" action="canEdit">
-            <IconButton
-              color="secondary"
-              onClick={() => {
-                setEditData(params.row);
-                setOpen(true);
-              }}
-            >
-              <Edit />
-            </IconButton>
-          </PermissionWrapper>
-          <PermissionWrapper resource="inventory" action="canDelete">
-            <IconButton color="error" onClick={() => handleDelete(params.row)}>
-              <Delete />
-            </IconButton>
-          </PermissionWrapper>
-        </Box>
-      ),
-    },
-  ];
-
   return (
     <Paper p={3} sx={{ p: 4 }}>
       {/* Header with Add + Export + Search */}
@@ -233,29 +210,25 @@ const InventoryTable = () => {
           Inventory Table
         </Typography>
         <Box display="flex" gap={1}>
-        <TextField
+          <TextField
             size="small"
             placeholder="Search inventory..."
             value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+            onChange={handleSearchChange}
+            onKeyPress={handleSearchKeyPress}
           />
-          <Button variant="outlined" color="primary" onClick={() => {
-              setPage(0) // reset to first page
-              setSearch(searchInput) // ✅ apply search
-            }}
-          >
+          <Button variant="contained" color="primary" onClick={handleSearchApply}>
             Apply
           </Button>
           <Button
-          variant="outlined"
-          color="secondary"
-          onClick={handleResetSearch}
-        >
-          Reset
-        </Button>
+            variant="outlined"
+            color="secondary"
+            onClick={handleResetSearch}
+          >
+            Reset
+          </Button>
         </Box>
         <Box display="flex" gap={1}>
-          
           <Button variant="outlined" color="primary" onClick={handleImportCSV}>
             Import Excel
           </Button>
@@ -275,27 +248,96 @@ const InventoryTable = () => {
         </Box>
       </Box>
 
-      <Paper>
-        <DataGrid
-          rows={data.map((item) => ({
-            ...item,
-            supplierName: item.supplier?.companyName || "N/A",
-            id: item.id,
-          }))}
-          columns={columns}
-          autoHeight
-          pagination
-          paginationMode="server"
-          rowCount={rowCount}
-          page={page}
-          pageSize={limit}
-          rowsPerPageOptions={[5, 10, 20]}
-          onPageChange={(newPage) => setPage(newPage)}
-          onPageSizeChange={(newLimit) => setLimit(newLimit)}
-          disableRowSelectionOnClick
-          loading={loading}
-        />
-      </Paper>
+      {/* Inventory Table */}
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ minWidth: 80, fontWeight: 'bold' }}>ID</TableCell>
+              <TableCell sx={{ minWidth: 160, fontWeight: 'bold' }}>Name</TableCell>
+              <TableCell sx={{ minWidth: 220, fontWeight: 'bold' }}>Description</TableCell>
+              <TableCell sx={{ minWidth: 120, fontWeight: 'bold' }}>Category</TableCell>
+              <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Unit</TableCell>
+              <TableCell sx={{ minWidth: 160, fontWeight: 'bold' }}>Supplier</TableCell>
+              <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Price</TableCell>
+              <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Quantity</TableCell>
+              <TableCell sx={{ minWidth: 120, fontWeight: 'bold' }}>Total Stocks</TableCell>
+              <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Status</TableCell>
+              <TableCell sx={{ minWidth: 180, fontWeight: 'bold' }}>Notes</TableCell>
+              <TableCell sx={{ minWidth: 120, fontWeight: 'bold' }}>Date</TableCell>
+              <TableCell sx={{ minWidth: 190, fontWeight: 'bold' }}>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {paginatedData.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell sx={{ minWidth: 80 }}>{item.id}</TableCell>
+                <TableCell sx={{ minWidth: 160 }}>{item.name}</TableCell>
+                <TableCell sx={{ minWidth: 220 }}>{item.description}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{item.category}</TableCell>
+                <TableCell sx={{ minWidth: 100 }}>{item.unit}</TableCell>
+                <TableCell sx={{ minWidth: 160 }}>{item.supplier?.name || "N/A"}</TableCell>
+                <TableCell sx={{ minWidth: 100 }}>{item.costPrice}</TableCell>
+                <TableCell sx={{ minWidth: 100 }}>{item.quantity}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{item.totalStocks}</TableCell>
+                <TableCell sx={{ minWidth: 100 }}>
+                  <span style={{
+                    padding: "2px 8px",
+                    borderRadius: "12px",
+                    background: item.status === "active" ? "#e6f4ea" : "#f3f4f6",
+                    color: item.status === "active" ? "#15803d" : "#6b7280",
+                    fontWeight: 500,
+                    fontSize: "0.85em"
+                  }}>
+                    {item.status}
+                  </span>
+                </TableCell>
+                <TableCell sx={{ minWidth: 180 }}>{item.notes}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{formatDate(item.createdAt)}</TableCell>
+                <TableCell sx={{ minWidth: 190 }}>
+                  <Box>
+                    <IconButton
+                      color="primary"
+                      onClick={() => {
+                        setViewData(item);
+                        setViewOpen(true);
+                      }}
+                    >
+                      <Visibility />
+                    </IconButton>
+                    <IconButton
+                      color="secondary"
+                      onClick={() => {
+                        setEditData(item);
+                        setOpen(true);
+                      }}
+                    >
+                      <Edit />
+                    </IconButton>
+                    <IconButton color="error" onClick={() => handleDelete(item)}>
+                      <Delete />
+                    </IconButton>
+                  </Box>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      {/* Pagination Controls */}
+      <TablePagination
+        rowsPerPageOptions={[5, 10, 25, 50]}
+        component="div"
+        count={rowCount}
+        rowsPerPage={limit}
+        page={page}
+        onPageChange={(event, newPage) => setPage(newPage)}
+        onRowsPerPageChange={(event) => {
+          setLimit(parseInt(event.target.value, 10));
+          setPage(0);
+        }}
+      />
 
       <ImportCSV open={importCSV} onClose={() => setImportCSV(false)} fetchData={fetchData} />
 

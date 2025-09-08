@@ -60,11 +60,11 @@ const MainHome = () => {
       <Typography variant="h4" gutterBottom>
         Welcome, {user?.name || 'User'}!
       </Typography>
-      <Typography variant="subtitle1" gutterBottom>
+      {/* <Typography variant="subtitle1" gutterBottom>
         This is your protected home page. Submit site configuration below.
-      </Typography>
+      </Typography> */}
 
-      <NotificationSection/>
+      {/* <NotificationSection/> */}
 
       <AuditSection/>
 

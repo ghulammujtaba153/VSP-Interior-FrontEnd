@@ -18,11 +18,11 @@ import { useAuth } from "@/context/authContext";
 import ConfirmationDialog from '../ConfirmationDialog';
 
 
+
 const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
   const [isSubmit, setIsSubmit] = useState(false);
   const [suppliers, setSuppliers] = useState([]);
   const [formData, setFormData] = useState({
-    itemCode: "",
     name: "",
     description: "",
     category: "",
@@ -30,8 +30,9 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
     supplierId: "",
     costPrice: "",
     quantity: "",
-    minThreshold: "",
-    maxThreshold: "",
+    totalStocks: "",
+    notes: "",
+    status: "active",
   });
   const [loading, setLoading] = useState(true);
   const {user} = useAuth();
@@ -49,7 +50,6 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
   useEffect(() => {
     if (editData) {
       setFormData({
-        itemCode: editData.itemCode || "",
         name: editData.name || "",
         description: editData.description || "",
         category: editData.category || "",
@@ -57,12 +57,12 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
         supplierId: editData.supplierId || "",
         costPrice: editData.costPrice || "",
         quantity: editData.quantity || "",
-        minThreshold: editData.minThreshold || "",
-        maxThreshold: editData.maxThreshold || "",
+        totalStocks: editData.totalStocks || "",
+        notes: editData.notes || "",
+        status: editData.status || "active",
       });
     } else {
       setFormData({
-        itemCode: "",
         name: "",
         description: "",
         category: "",
@@ -70,8 +70,9 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
         supplierId: "",
         costPrice: "",
         quantity: "",
-        minThreshold: "",
-        maxThreshold: "",
+        totalStocks: "",
+        notes: "",
+        status: "active",
       });
     }
   }, [editData]);
@@ -193,18 +194,8 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
 
         <form onSubmit={handleSubmit}>
           <Grid container spacing={2}>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="Item Code"
-                name="itemCode"
-                value={formData.itemCode}
-                onChange={handleChange}
-                required
-              />
-            </Grid>
-
-            <Grid item xs={6}>
+            {/* Removed Item Code field */}
+            <Grid item xs={12}>
               <TextField
                 fullWidth
                 label="Name"
@@ -214,7 +205,6 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
                 required
               />
             </Grid>
-
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -224,7 +214,6 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
                 onChange={handleChange}
               />
             </Grid>
-
             <Grid item xs={6}>
               <TextField
                 fullWidth
@@ -232,9 +221,9 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
                 name="category"
                 value={formData.category}
                 onChange={handleChange}
+                required
               />
             </Grid>
-
             <Grid item xs={6}>
               <TextField
                 fullWidth
@@ -242,9 +231,9 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
                 name="unit"
                 value={formData.unit}
                 onChange={handleChange}
+                required
               />
             </Grid>
-
             <Grid item xs={12}>
               <TextField
                 select
@@ -257,12 +246,11 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
               >
                 {suppliers.map((supplier) => (
                   <MenuItem key={supplier.id} value={supplier.id}>
-                    {supplier.companyName}
+                    {supplier.name}
                   </MenuItem>
                 ))}
               </TextField>
             </Grid>
-
             <Grid item xs={6}>
               <TextField
                 fullWidth
@@ -274,7 +262,6 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
                 required
               />
             </Grid>
-
             <Grid item xs={6}>
               <TextField
                 fullWidth
@@ -286,26 +273,40 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
                 required
               />
             </Grid>
-
             <Grid item xs={6}>
               <TextField
                 fullWidth
-                label="Min Threshold"
-                name="minThreshold"
+                label="Total Stocks"
+                name="totalStocks"
                 type="number"
-                value={formData.minThreshold}
+                value={formData.totalStocks}
                 onChange={handleChange}
+                required
               />
             </Grid>
-
             <Grid item xs={6}>
               <TextField
+                select
                 fullWidth
-                label="Max Threshold"
-                name="maxThreshold"
-                type="number"
-                value={formData.maxThreshold}
+                label="Status"
+                name="status"
+                value={formData.status}
                 onChange={handleChange}
+                required
+              >
+                <MenuItem value="active">Active</MenuItem>
+                <MenuItem value="inactive">Inactive</MenuItem>
+              </TextField>
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Notes"
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                multiline
+                rows={2}
               />
             </Grid>
           </Grid>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
 import {
     Dialog,
     DialogTitle,
@@ -9,29 +8,31 @@ import {
     DialogActions,
     Button,
     TextField,
-    CircularProgress
+    CircularProgress,
+    Switch,
+    FormControlLabel
 } from "@mui/material";
 import axios from "axios";
 import { toast } from "react-toastify";
 import ConfirmationDialog from '../ConfirmationDialog';
-
 import { BASE_URL } from "@/configs/url";
 import { useAuth } from "@/context/authContext";
 import { MuiTelInput } from "mui-tel-input";
 
 const defaultData = {
-    companyName: "",
+    name: "",
     email: "",
     phone: "",
     address: "",
     postCode: "",
     notes: "",
+    isCompany: false,
 };
 
 const SupplierModal = ({ open, onClose, fetchSuppliers, selectedSupplier }) => {
     const [data, setData] = useState(defaultData);
     const [loading, setLoading] = useState(false);
-    const {user} = useAuth()
+    const { user } = useAuth();
 
     // Confirmation dialog states
     const [confirmationOpen, setConfirmationOpen] = useState(false);
@@ -52,7 +53,6 @@ const SupplierModal = ({ open, onClose, fetchSuppliers, selectedSupplier }) => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-
         setData((prev) => ({ ...prev, [name]: value }));
     };
 
@@ -73,14 +73,14 @@ const SupplierModal = ({ open, onClose, fetchSuppliers, selectedSupplier }) => {
         if (isCreateMode) {
             showConfirmation({
                 title: 'Create New Supplier',
-                message: `Are you sure you want to create a new supplier "${data.companyName}"?`,
+                message: `Are you sure you want to create a new supplier "${data.name}"?`,
                 action: () => submitSupplier(),
                 severity: 'info'
             });
         } else if (isEditMode) {
             showConfirmation({
                 title: 'Update Supplier',
-                message: `Are you sure you want to update supplier "${data.companyName}"? This will modify the existing supplier information.`,
+                message: `Are you sure you want to update supplier "${data.name}"? This will modify the existing supplier information.`,
                 action: () => submitSupplier(),
                 severity: 'warning'
             });
@@ -92,9 +92,7 @@ const SupplierModal = ({ open, onClose, fetchSuppliers, selectedSupplier }) => {
 
         try {
             toast.loading(selectedSupplier ? "Updating supplier..." : "Creating supplier...");
-
-            
-            data.userId = user.id
+            data.userId = user.id;
 
             if (selectedSupplier) {
                 await axios.put(`${BASE_URL}/api/suppliers/update/${selectedSupplier.id}`, data);
@@ -106,9 +104,10 @@ const SupplierModal = ({ open, onClose, fetchSuppliers, selectedSupplier }) => {
                 toast.success("Supplier created successfully");
             }
 
-            fetchSuppliers(); // refresh table
-            onClose(); // close modal
+            fetchSuppliers();
+            onClose();
         } catch (error) {
+            console.error(error);
             toast.dismiss();
             toast.error(error.response?.data?.message || "Something went wrong");
         } finally {
@@ -123,10 +122,21 @@ const SupplierModal = ({ open, onClose, fetchSuppliers, selectedSupplier }) => {
                 <TextField
                     fullWidth
                     margin="dense"
-                    label="Company Name"
-                    name="companyName"
-                    value={data.companyName}
+                    label="Name"
+                    name="name"
+                    value={data.name}
                     onChange={handleChange}
+                />
+                <FormControlLabel
+                    control={
+                        <Switch
+                            checked={data.isCompany}
+                            onChange={(_, checked) => setData(prev => ({ ...prev, isCompany: checked }))}
+                            color="primary"
+                        />
+                    }
+                    label="Is Company?"
+                    sx={{ mb: 1 }}
                 />
                 <TextField
                     fullWidth
@@ -140,7 +150,6 @@ const SupplierModal = ({ open, onClose, fetchSuppliers, selectedSupplier }) => {
                     fullWidth
                     margin="dense"
                     label="Phone Number"
-                                       
                     name="phone"
                     value={data.phone}
                     onChange={(value) => setData({ ...data, phone: value })}
