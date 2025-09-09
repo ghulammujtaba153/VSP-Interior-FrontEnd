@@ -29,10 +29,13 @@ import { BASE_URL } from "@/configs/url";
 import { toast } from "react-toastify";
 import { useAuth } from "@/context/authContext";
 import ConfirmationDialog from '../ConfirmationDialog';
+import { useParams } from "next/navigation";
 
 const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
+  const {id} = useParams();
+
+  console.log("cbinet modal", id)
   const [formData, setFormData] = useState({
-    cabinetCategoryId: "",
     cabinetSubCategoryId: "",
     code: "",
     description: "",
@@ -65,13 +68,13 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
     }
   };
 
-  const fetchSubCategories = async (categoryId) => {
-    if (!categoryId) {
+  const fetchSubCategories = async (id) => {
+    if (!id) {
       setSubCategories([]);
       return;
     }
     try {
-      const response = await axios.get(`${BASE_URL}/api/cabinet-subcategories/get/${categoryId}`);
+      const response = await axios.get(`${BASE_URL}/api/cabinet-subcategories/get/${id}`);
       setSubCategories(response.data || []);
     } catch (error) {
       toast.error("Failed to fetch subcategories");
@@ -85,15 +88,14 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
   }, [open]);
 
   useEffect(() => {
-    if (formData.cabinetCategoryId) {
-      fetchSubCategories(formData.cabinetCategoryId);
+    if (id) {
+      fetchSubCategories(id);
     }
-  }, [formData.cabinetCategoryId]);
+  }, [id]);
 
   useEffect(() => {
     if (editData) {
       setFormData({
-        cabinetCategoryId: editData.cabinetCategoryId || "",
         cabinetSubCategoryId: editData.cabinetSubCategoryId || "",
         code: editData.code || "",
         description: editData.description || "",
@@ -112,7 +114,6 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
       }
     } else {
       setFormData({
-        cabinetCategoryId: "",
         cabinetSubCategoryId: "",
         code: "",
         description: "",
@@ -129,14 +130,6 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
       ...prev,
       [name]: value,
     }));
-
-    // Reset subcategory when category changes
-    if (name === 'cabinetCategoryId') {
-      setFormData(prev => ({
-        ...prev,
-        cabinetSubCategoryId: "",
-      }));
-    }
   };
 
   const handleStatusChange = (e) => {
@@ -191,10 +184,6 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
   };
 
   const validateForm = () => {
-    if (!formData.cabinetCategoryId) {
-      toast.error("Please select a category");
-      return false;
-    }
     if (!formData.cabinetSubCategoryId) {
       toast.error("Please select a subcategory");
       return false;
@@ -245,7 +234,7 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
         ...formData,
         userId: user.id,
         code: formData.code,
-        cabinetCategoryId: parseInt(formData.cabinetCategoryId),
+        cabinetCategoryId: parseInt(id),
         cabinetSubCategoryId: parseInt(formData.cabinetSubCategoryId),
         dynamicData: dynamicData,
       };
@@ -290,33 +279,14 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
       </DialogTitle>
       <DialogContent>
         <Grid container spacing={3} sx={{ mt: 1 }}>
-          {/* Category and Subcategory Selection */}
+          {/* Subcategory Selection Only */}
           <Grid item xs={12}>
             <Typography variant="subtitle1" gutterBottom color="primary">
-              Category Information
+              Subcategory Information
             </Typography>
           </Grid>
-          
-          <Grid item xs={6}>
+          <Grid item xs={12}>
             <FormControl fullWidth required>
-              <InputLabel>Category</InputLabel>
-              <Select
-                name="cabinetCategoryId"
-                value={formData.cabinetCategoryId}
-                onChange={handleChange}
-                label="Category"
-              >
-                {categories.map((category) => (
-                  <MenuItem key={category.id} value={category.id}>
-                    {category.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={6}>
-            <FormControl fullWidth required disabled={!formData.cabinetCategoryId}>
               <InputLabel>Subcategory</InputLabel>
               <Select
                 name="cabinetSubCategoryId"
