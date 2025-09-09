@@ -195,7 +195,7 @@ const ClientsTable = () => {
   // Fetch all clients for export (without pagination)
   const fetchAllClients = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/api/client/get?page=${page}&limit=${totalCount}`); // Large limit to get all
+      const response = await axios.get(`${BASE_URL}/api/client/get`); // Large limit to get all
       return response.data.data;
     } catch (error) {
       toast.error("Failed to fetch clients for export");

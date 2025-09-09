@@ -333,7 +333,7 @@ const CabinetImport = ({ id, setIsInProgress }) => {
       }
       const res = await axios.post(`${BASE_URL}/api/cabinet-subcategories/import`, payload)
       if (res.status === 201) {
-        toast.success("Subcategories uploaded successfully")
+        toast.success(res.data.message)
         setSubCategoryList(res.data.cabinetSubCategory) // <-- Save subcategories with ids
         setSubcategoriesUploaded(true) // Mark as uploaded
       }
@@ -405,17 +405,18 @@ const CabinetImport = ({ id, setIsInProgress }) => {
       console.log("SubCategory Map:", subCatMap)
       console.log("Sample import row:", importRows[0])
       console.log("Total rows to import:", importRows.length)
+      let res;
 
       // ✅ Split into chunks (20 by 20)
       const chunkSize = 20
       for (let i = 0; i < importRows.length; i += chunkSize) {
         const chunk = importRows.slice(i, i + chunkSize)
 
-        const res = await axios.post(`${BASE_URL}/api/cabinet/import`, { data: chunk })
+        res = await axios.post(`${BASE_URL}/api/cabinet/import`, { data: chunk })
 
         if (res.status !== 201) {
           toast.dismiss()
-          toast.error(`Failed to import rows ${i + 1} - ${i + chunk.length}`)
+          toast.error(res.data.message)
           return
         }
 
@@ -423,7 +424,7 @@ const CabinetImport = ({ id, setIsInProgress }) => {
       }
 
       toast.dismiss()
-      toast.success("All data imported successfully")
+      toast.success(res.data.message)
       setStep(3) // Move to completion step
     } catch (error) {
       toast.dismiss()

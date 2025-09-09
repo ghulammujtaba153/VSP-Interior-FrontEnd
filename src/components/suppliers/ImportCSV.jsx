@@ -322,13 +322,13 @@ const ImportModal = ({ open, onClose, fetchSuppliers }) => {
         };
       });
 
-      await axios.post(`${BASE_URL}/api/suppliers/import`, {
+      const res = await axios.post(`${BASE_URL}/api/suppliers/import`, {
         userId: user.id,
         suppliers: suppliersPayload,
       });
 
       toast.dismiss();
-      toast.success("Suppliers imported successfully");
+      toast.success(res.data.message);
       fetchSuppliers();
       onClose();
     } catch (error) {

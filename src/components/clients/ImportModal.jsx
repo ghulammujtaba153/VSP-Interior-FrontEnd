@@ -437,11 +437,14 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
     try {
       toast.loading(`Importing ${validRows.length} clients in ${totalBatches} batches...`);
 
+      let res;
+      
       for (let i = 0; i < totalBatches; i++) {
         const batch = validRows.slice(i * batchSize, (i + 1) * batchSize);
         
+        
         try {
-          await axios.post(`${BASE_URL}/api/client/import`, {
+          res=await axios.post(`${BASE_URL}/api/client/import`, {
             userId: user.id,
             clients: batch,
           }, {
@@ -461,9 +464,10 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
       }
 
       toast.dismiss();
+
       
-      if (successCount === validRows.length) {
-        toast.success(`Successfully imported all ${successCount} clients!`);
+      if (res.status == 201) {
+        toast.success(res.data.message || `Successfully imported all ${successCount} clients!`);
       } else {
         toast.warning(`Imported ${successCount} out of ${validRows.length} clients. Some batches may have failed.`);
       }

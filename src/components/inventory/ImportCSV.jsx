@@ -253,13 +253,13 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
         return mapped;
       });
 
-      await axios.post(`${BASE_URL}/api/inventory/import`, {
+      const res=await axios.post(`${BASE_URL}/api/inventory/import`, {
         userId: user.id,
         inventory: backendRows,
       });
 
       toast.dismiss();
-      toast.success("Inventory imported successfully");
+      toast.success(res.data.message);
       fetchData();
       onClose();
     } catch (error) {

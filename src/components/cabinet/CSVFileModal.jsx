@@ -357,13 +357,13 @@ const CSVFileModal = ({ open, onClose, onSuccess }) => {
         };
       });
 
-      await axios.post(`${BASE_URL}/api/cabinet/csv`, {
+      const res=await axios.post(`${BASE_URL}/api/cabinet/csv`, {
         userId: user.id,
         cabinets: cabinetsToUpload,
       });
 
       toast.dismiss();
-      toast.success("Data inserted successfully");
+      toast.success(res.data.message);
       onSuccess();
       onClose();
     } catch (error) {

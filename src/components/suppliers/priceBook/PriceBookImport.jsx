@@ -212,14 +212,14 @@ const PriceBookImport = () => {
         status: String(row.Status || 'Active').toLowerCase(),
       }))
 
-      await axios.post(`${BASE_URL}/api/pricebook/import`, {
+      const res= await axios.post(`${BASE_URL}/api/pricebook/import`, {
         userId: user?.id,
         supplierId,
         items,
       });
 
       toast.dismiss();
-      toast.success("PriceBook imported successfully!");
+      toast.success(res.data.message);
       clearFile();
     } catch (err) {
       console.error(err);
