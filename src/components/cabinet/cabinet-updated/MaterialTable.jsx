@@ -76,20 +76,24 @@ const MaterialTable = ({id}) => {
       const res = await axios.get(
         `${BASE_URL}/api/cabinet/get/${id}?page=${page + 1}&limit=${limit}&search=${search}`
       )
-      setData(res.data.cabinet || res.data.data || [])
+      const cabinets = res.data.cabinet || res.data.data || []
+      setData(cabinets)
       setRowCount(res.data.total || res.data.pagination?.totalItems || 0)
-      
-      // Extract dynamic columns from the first item's dynamicData (supports arrayList/object/legacy array)
-      if (res.data.cabinet && res.data.cabinet.length > 0) {
-        const firstItem = res.data.cabinet[0]
-        const list = getArrayList(firstItem?.dynamicData)
-        if (list.length > 0) {
-          const columns = list.map(item => item.label)
-          setDynamicColumns(columns)
-        } else {
-          setDynamicColumns([])
+
+      // Collect all dynamic field names from all cabinets
+      const columnsSet = new Set()
+      cabinets.forEach(cabinet => {
+        let list = []
+        if (Array.isArray(cabinet.dynamicData)) {
+          list = cabinet.dynamicData.map(f => f.columnName || f.label).filter(Boolean)
+        } else if (cabinet.dynamicData && Array.isArray(cabinet.dynamicData.arrayList)) {
+          list = cabinet.dynamicData.arrayList.map(f => f.label).filter(Boolean)
+        } else if (typeof cabinet.dynamicData === 'object') {
+          list = Object.keys(cabinet.dynamicData)
         }
-      }
+        list.forEach(col => columnsSet.add(col))
+      })
+      setDynamicColumns(Array.from(columnsSet))
     } catch (error) {
       console.error('Error fetching cabinets:', error)
       toast.error('Failed to fetch cabinets')
@@ -510,6 +514,7 @@ const MaterialTable = ({id}) => {
         editData={editData}
         setEditData={setEditData}
         onSuccess={fetchCabinets}
+        existingDynamicColumns={dynamicColumns} // <-- Pass as prop
       />
       <ViewCabinet open={viewOpen} setOpen={setViewOpen} data={viewData} />
 

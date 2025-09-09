@@ -31,10 +31,10 @@ import { useAuth } from "@/context/authContext";
 import ConfirmationDialog from '../ConfirmationDialog';
 import { useParams } from "next/navigation";
 
-const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
+const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess, existingDynamicColumns = [] }) => {
   const {id} = useParams();
 
-  console.log("cbinet modal", id)
+  console.log("cbinet modal", existingDynamicColumns)
   const [formData, setFormData] = useState({
     cabinetSubCategoryId: "",
     code: "",
@@ -85,7 +85,7 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
     if (open) {
       fetchCategories();
     }
-  }, [open]);
+  }, [open, id]);
 
   useEffect(() => {
     if (id) {
@@ -123,6 +123,21 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
       setDynamicFields([]);
     }
   }, [editData]);
+
+  // When modal opens, if no dynamicFields and existingDynamicColumns present, pre-populate fields
+  useEffect(() => {
+    if (open && dynamicFields.length === 0 && existingDynamicColumns.length > 0) {
+      // Pre-populate all dynamic columns as empty fields
+      setDynamicFields(
+        existingDynamicColumns.map(col => ({
+          id: Math.random().toString(36).substr(2, 9),
+          name: col,
+          value: ""
+        }))
+      );
+    }
+  // Only run when modal opens or columns change
+  }, [open, existingDynamicColumns]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -208,7 +223,7 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
     if (isCreateMode) {
       showConfirmation({
         title: 'Create New Cabinet',
-        message: `Are you sure you want to create a new cabinet with code "${formData.code}" in category "${categories.find(c => c.id === formData.cabinetCategoryId)?.name}"?`,
+        message: `Are you sure you want to create a new cabinet with code "${formData.code}"?`,
         action: () => submitCabinet(),
         severity: 'info'
       });
@@ -364,7 +379,7 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
             <Divider sx={{ my: 2 }} />
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
               <Typography variant="subtitle1" color="primary">
-                Additional Properties
+                Additional Column
               </Typography>
               <Button
                 variant="outlined"
@@ -373,7 +388,7 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
                 onClick={addDynamicField}
                 size="small"
               >
-                Add Field
+                Add Column
               </Button>
             </Box>
             <Typography variant="body2" color="textSecondary" gutterBottom>
@@ -381,7 +396,7 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
             </Typography>
           </Grid>
 
-          {/* Dynamic Fields */}
+          {/* Render all fields as input fields */}
           {dynamicFields.length > 0 && (
             <Grid item xs={12}>
               <Box display="flex" flexDirection="column" gap={2}>
@@ -436,10 +451,10 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess }) => {
                 borderRadius={2}
               >
                 <Typography variant="body2" color="textSecondary" gutterBottom>
-                  No additional properties added yet
+                  No additional column added yet
                 </Typography>
                 <Typography variant="caption" color="textSecondary">
-                  Click "Add Field" to add custom properties like color, style, finish, etc.
+                  Click "Add Column" to add custom properties like color, style, finish, etc.
                 </Typography>
               </Box>
             </Grid>
