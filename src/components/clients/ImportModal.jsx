@@ -190,7 +190,9 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
   const templateData = [
     {
       companyName: "Modern Kitchen Designs LLC",
+      isCompany: true,
       emailAddress: "contact@modernkitchens.com",
+      
       phoneNumber: "+1-555-0123",
       address: "123 Design Avenue, Kitchen City, State 12345",
       postCode: "12345",
@@ -199,6 +201,7 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
     },
     {
       companyName: "Home Renovation Pros",
+      isCompany: true,
       emailAddress: "info@homerenovationpros.com", 
       phoneNumber: "+1-555-0456",
       address: "456 Renovation Street, Home Valley, State 67890",
@@ -208,6 +211,7 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
     },
     {
       companyName: "Luxury Cabinet Solutions",
+      isCompany: true,
       emailAddress: "sales@luxurycabinets.net",
       phoneNumber: "+1-555-0789",
       address: "789 Luxury Lane, Cabinet Heights, State 54321",

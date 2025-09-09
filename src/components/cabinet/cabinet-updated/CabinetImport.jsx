@@ -40,7 +40,7 @@ import axios from "axios"
 import { BASE_URL } from "@/configs/url"
 import { useParams } from "next/navigation"
 
-const CabinetImport = ({ id }) => {
+const CabinetImport = ({ id, setIsInProgress }) => {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState(1)
@@ -245,6 +245,13 @@ const CabinetImport = ({ id }) => {
     }
   }, [isInProgress])
 
+  // Add this effect to notify parent about progress
+  useEffect(() => {
+    if (typeof setIsInProgress === "function") {
+      setIsInProgress(isInProgress);
+    }
+  }, [isInProgress, setIsInProgress]);
+
   const startEditing = (subcategory, rowIndex, column, value) => {
     setEditingCell({ subcategory, rowIndex, column })
     setEditValue(value)
@@ -298,7 +305,6 @@ const CabinetImport = ({ id }) => {
 
   // Add this function to extract only subcategory fields
   const getSubcategoryRows = () => {
-    // Only keep Code, Sub Code, Description columns
     const subCols = columns.filter(col =>
       ["code", "sub code", "description"].includes(col.toLowerCase())
     )
@@ -425,6 +431,36 @@ const CabinetImport = ({ id }) => {
       toast.error("Error importing data")
     } 
   }
+
+  useEffect(() => {
+    const handleInternalNavigation = (e) => {
+      // Only intercept if in progress
+      if (isInProgress) {
+        // Find anchor or button with navigation intent
+        let target = e.target;
+        while (target && !target.getAttribute("href")) {
+          target = target.parentElement;
+        }
+        if (target && target.getAttribute("href")) {
+          e.preventDefault();
+          setPendingNavigation(target.getAttribute("href"));
+          setCancelConfirmOpen(true);
+        }
+      }
+    };
+
+    // Attach to sidebar/menu container (replace '#sidebar' with your sidebar/menu id/class)
+    const sidebar = document.querySelector("#sidebar");
+    if (sidebar) {
+      sidebar.addEventListener("click", handleInternalNavigation, true);
+    }
+
+    return () => {
+      if (sidebar) {
+        sidebar.removeEventListener("click", handleInternalNavigation, true);
+      }
+    };
+  }, [isInProgress]);
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>

@@ -39,9 +39,9 @@ const SubCategoriesPage = () => {
         onChange={handleTabChange}
         sx={{ mb: 2 }}
       >
-        <Tab label="Sub Categories" />
-        <Tab label="Table" />
-        <Tab label="Import Data" />
+        <Tab label="Subcategories" />
+        <Tab label="Material Table" />
+        <Tab label="Cabinet Import" />
       </Tabs>
       {tabIndex === 0 && <SubCategories id={id} />}
       {tabIndex === 1 && <MaterialTable id={id} />}

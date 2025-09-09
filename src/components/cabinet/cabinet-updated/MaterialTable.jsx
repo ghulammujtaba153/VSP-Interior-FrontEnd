@@ -30,6 +30,10 @@ import { useAuth } from '@/context/authContext'
 // import CSVFileModal from './CSVFileModal'
 import * as XLSX from 'xlsx'
 import ConfirmationDialog from '@/components/ConfirmationDialog'
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 
 const MaterialTable = ({id}) => {
   const [loading, setLoading] = useState(true)
@@ -58,6 +62,12 @@ const MaterialTable = ({id}) => {
     action: null,
     severity: 'warning'
   })
+
+  // Export dialog states
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [exportSubCodes, setExportSubCodes] = useState([]);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [selectedSubCode, setSelectedSubCode] = useState('all');
 
   
   const fetchCabinets = async () => {
@@ -130,27 +140,41 @@ const MaterialTable = ({id}) => {
     }
   }
 
-  useEffect(() => {
-    fetchCabinets()
-  }, [page, limit, search]) // ✅ only runs when Apply updates `search`
+  // Fetch all cabinets for export (no pagination)
+  const fetchAllCabinets = async () => {
+    setExportLoading(true);
+    try {
+      const res = await axios.get(`${BASE_URL}/api/cabinet/get/${id}?page=1&limit=10000`);
+      setExportLoading(false);
+      return res.data.cabinet || res.data.data || [];
+    } catch (error) {
+      setExportLoading(false);
+      toast.error('Failed to fetch cabinets for export');
+      return [];
+    }
+  };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A'
-    return new Date(dateString).toLocaleDateString()
-  }
+  // Open export dialog and fetch all sub codes
+  const handleExportExcel = async () => {
+    setExportDialogOpen(true);
+    setExportLoading(true);
+    const allData = await fetchAllCabinets();
+    // Extract unique sub codes
+    const subCodes = Array.from(new Set(allData.map(item => item.cabinetSubCategory?.name).filter(Boolean)));
+    setExportSubCodes(subCodes);
+    setExportLoading(false);
+  };
 
-  // ✅ Export to Excel
-  const handleExportExcel = () => {
-    showConfirmation({
-      title: 'Export Cabinets to Excel',
-      message: `Are you sure you want to export ${data.length} cabinet records to Excel? This will download a file with all cabinet data including categories and dynamic properties.`,
-      action: () => confirmExportExcel(),
-      severity: 'info'
-    })
-  }
-
-  const confirmExportExcel = () => {
-    const exportData = data.map((cabinet) => {
+  // Export filtered data
+  const handleExportConfirm = async () => {
+    setExportLoading(true);
+    const allData = await fetchAllCabinets();
+    let exportData = allData;
+    if (selectedSubCode !== 'all') {
+      exportData = allData.filter(item => item.cabinetSubCategory?.name === selectedSubCode);
+    }
+    // Prepare export
+    const formatted = exportData.map((cabinet) => {
       const baseData = {
         ID: cabinet.id,
         'Code': cabinet.code,
@@ -160,23 +184,31 @@ const MaterialTable = ({id}) => {
         'Status': cabinet.status || 'N/A',
         'Created Date': cabinet.createdAt ? formatDate(cabinet.createdAt) : 'N/A',
         'Updated Date': cabinet.updatedAt ? formatDate(cabinet.updatedAt) : 'N/A'
-      }
-      
+      };
       // Add dynamic properties
       if (cabinet.dynamicData && Array.isArray(cabinet.dynamicData)) {
         cabinet.dynamicData.forEach(item => {
-          baseData[item.columnName] = item.value || 'N/A'
-        })
+          baseData[item.columnName] = item.value || 'N/A';
+        });
       }
-      
-      return baseData
-    })
+      return baseData;
+    });
+    const worksheet = XLSX.utils.json_to_sheet(formatted);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Cabinets');
+    XLSX.writeFile(workbook, selectedSubCode === 'all' ? 'cabinets_all.xlsx' : `cabinets_${selectedSubCode}.xlsx`);
+    setExportLoading(false);
+    setExportDialogOpen(false);
+    toast.success('Cabinet data exported successfully');
+  };
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Cabinets')
-    XLSX.writeFile(workbook, 'cabinets.xlsx')
-    toast.success('Cabinet data exported successfully')
+  useEffect(() => {
+    fetchCabinets()
+  }, [page, limit, search]) // ✅ only runs when Apply updates `search`
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A'
+    return new Date(dateString).toLocaleDateString()
   }
 
   const handleResetSearch = () => {
@@ -499,6 +531,58 @@ const MaterialTable = ({id}) => {
         }
         cancelText='Cancel'
       />
+
+      {/* Export Dialog */}
+      <Dialog open={exportDialogOpen} onClose={() => setExportDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Export Cabinets</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 2 }}>
+            Select a Sub Code to export only its data, or choose "All" to export all cabinets.
+          </Typography>
+          {exportLoading ? (
+            <Typography>Loading...</Typography>
+          ) : (
+            <Box>
+              <Button
+                variant={selectedSubCode === 'all' ? 'contained' : 'outlined'}
+                color="primary"
+                sx={{ mb: 1, mr: 1 }}
+                onClick={() => setSelectedSubCode('all')}
+              >
+                Export All
+              </Button>
+              {exportSubCodes.map((subCode, idx) => (
+                <Button
+                  key={subCode}
+                  variant={selectedSubCode === subCode ? 'contained' : 'outlined'}
+                  color="secondary"
+                  sx={{ mb: 1, mr: 1 }}
+                  onClick={() => setSelectedSubCode(subCode)}
+                >
+                  {subCode}
+                </Button>
+              ))}
+              <Typography variant="caption" sx={{ display: 'block', mt: 2 }}>
+                {selectedSubCode === 'all'
+                  ? `Exporting all cabinets (${rowCount} items)`
+                  : `Exporting cabinets for Sub Code "${selectedSubCode}"`
+                }
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setExportDialogOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleExportConfirm}
+            disabled={exportLoading}
+          >
+            Export
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   )
 }

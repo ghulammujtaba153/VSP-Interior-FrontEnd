@@ -229,7 +229,7 @@ const ClientsTable = () => {
           client.contacts.forEach((contact, index) => {
             exportData.push({
               "Client ID": client.id,
-              "Company Name": client.companyName,
+              "Name": client.companyName,
               "Client Email": client.emailAddress,
               "Client Phone": client.phoneNumber,
               "Address": client.address,
@@ -251,7 +251,7 @@ const ClientsTable = () => {
           // For clients without contacts, create a single row
           exportData.push({
             "Client ID": client.id,
-            "Company Name": client.companyName,
+            "Name": client.companyName,
             "Client Email": client.emailAddress,
             "Client Phone": client.phoneNumber,
             "Address": client.address,
@@ -689,7 +689,7 @@ const ClientsTable = () => {
               <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
                 <TableCell width="50px"></TableCell>
                 <TableCell sx={{ minWidth: 100 }}><strong>Client ID</strong></TableCell>
-                <TableCell sx={{ minWidth: 260 }}><strong>Company Name</strong></TableCell>
+                <TableCell sx={{ minWidth: 260 }}><strong>Name</strong></TableCell>
                 <TableCell sx={{ minWidth: 220 }}><strong>Email</strong></TableCell>
                 <TableCell sx={{ minWidth: 160 }}><strong>Phone</strong></TableCell>
                 <TableCell sx={{ minWidth: 300 }}><strong>Address</strong></TableCell>
@@ -705,13 +705,16 @@ const ClientsTable = () => {
                   {/* Main client row */}
                   <TableRow hover>
                     <TableCell>
-                      <IconButton
-                        size="small"
-                        onClick={() => toggleRowExpansion(client.id)}
-                        color="primary"
-                      >
-                        {expandedRows.has(client.id) ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                      </IconButton>
+                      {/* Only show expand icon if isCompany is true */}
+                      {client.isCompany ? (
+                        <IconButton
+                          size="small"
+                          onClick={() => toggleRowExpansion(client.id)}
+                          color="primary"
+                        >
+                          {expandedRows.has(client.id) ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                        </IconButton>
+                      ) : null}
                     </TableCell>
                     <TableCell>{client.id}</TableCell>
                     <TableCell>
@@ -759,13 +762,16 @@ const ClientsTable = () => {
                     </TableCell>
                     <TableCell>
                       <Box display="flex" gap={0.5}>
-                        <PermissionWrapper resource="clients" action="canView">
-                          <Tooltip title="Add Contact">
-                            <IconButton size="small" color="success" onClick={() => handleAddContact(client.id)}>
-                              <PersonAddAlt1Icon />
-                            </IconButton>
-                          </Tooltip>
-                        </PermissionWrapper>
+                        {/* Only show Add Contact if isCompany is true */}
+                        {client.isCompany && (
+                          <PermissionWrapper resource="clients" action="canView">
+                            <Tooltip title="Add Contact">
+                              <IconButton size="small" color="success" onClick={() => handleAddContact(client.id)}>
+                                <PersonAddAlt1Icon />
+                              </IconButton>
+                            </Tooltip>
+                          </PermissionWrapper>
+                        )}
                         <PermissionWrapper resource="clients" action="canView">
                           <Tooltip title="View">
                             <IconButton size="small" onClick={() => handleView(client)} color="info">
@@ -791,14 +797,16 @@ const ClientsTable = () => {
                     </TableCell>
                   </TableRow>
 
-                  {/* Expanded contacts row */}
-                  <TableRow>
-                    <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={10}>
-                      <Collapse in={expandedRows.has(client.id)} timeout="auto" unmountOnExit>
-                        <ContactsTable contacts={client.contacts} clientId={client.id} />
-                      </Collapse>
-                    </TableCell>
-                  </TableRow>
+                  {/* Expanded contacts row: only show if isCompany is true */}
+                  {client.isCompany && (
+                    <TableRow>
+                      <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={10}>
+                        <Collapse in={expandedRows.has(client.id)} timeout="auto" unmountOnExit>
+                          <ContactsTable contacts={client.contacts} clientId={client.id} />
+                        </Collapse>
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </React.Fragment>
               ))}
             </TableBody>

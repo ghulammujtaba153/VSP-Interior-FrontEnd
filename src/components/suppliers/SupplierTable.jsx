@@ -308,7 +308,7 @@ const SupplierTable = () => {
                         exportData.push({
                             "Supplier ID": supplier.id,
                             "Name": supplier.name,
-                            "Is Company": supplier.isCompany ? "Yes" : "No",
+                            
                             "Supplier Email": supplier.email,
                             "Supplier Phone": supplier.phone,
                             "Address": supplier.address,
@@ -331,7 +331,7 @@ const SupplierTable = () => {
                     exportData.push({
                         "Supplier ID": supplier.id,
                         "Name": supplier.name,
-                        "Is Company": supplier.isCompany ? "Yes" : "No",
+                        
                         "Supplier Email": supplier.email,
                         "Supplier Phone": supplier.phone,
                         "Address": supplier.address,
@@ -680,15 +680,13 @@ const SupplierTable = () => {
                                 <TableCell width="50px"></TableCell>
                                 <TableCell sx={{ minWidth: 100 }}><strong>Supplier ID</strong></TableCell>
                                 <TableCell sx={{ minWidth: 100 }}><strong>Name</strong></TableCell>
-                                <TableCell sx={{ minWidth: 100 }}><strong>Is Company</strong></TableCell>
                                 <TableCell sx={{ minWidth: 220 }}><strong>Email</strong></TableCell>
                                 <TableCell sx={{ minWidth: 160 }}><strong>Phone</strong></TableCell>
                                 <TableCell sx={{ minWidth: 300 }}><strong>Address</strong></TableCell>
                                 <TableCell sx={{ minWidth: 100 }}><strong>Post Code</strong></TableCell>
                                 <TableCell sx={{ minWidth: 100 }}><strong>Contacts</strong></TableCell>
                                 <TableCell sx={{ minWidth: 100 }}><strong>Status</strong></TableCell>
-                                <TableCell sx={{ minWidth: 180 }}><strong>Actions</strong></TableCell>
-                                <TableCell sx={{ minWidth: 100 }}><strong>View</strong></TableCell>
+                                <TableCell sx={{ minWidth: 350 }}><strong>Actions</strong></TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -711,14 +709,7 @@ const SupplierTable = () => {
                                                 {supplier.name}
                                             </Typography>
                                         </TableCell>
-                                        <TableCell>
-                                            <Chip
-                                                label={supplier.isCompany ? "Yes" : "No"}
-                                                size="small"
-                                                color={supplier.isCompany ? "primary" : "default"}
-                                                variant="outlined"
-                                            />
-                                        </TableCell>
+                                        
                                         <TableCell>{supplier.email}</TableCell>
                                         <TableCell>{supplier.phone}</TableCell>
                                         <TableCell>{supplier.address}</TableCell>
@@ -743,14 +734,13 @@ const SupplierTable = () => {
                                         </TableCell>
                                         <TableCell>
                                             <Box display="flex" gap={0.5}>
-                                                {/* Only show Add Contact if isCompany is true */}
-                                                {supplier.isCompany && (
+                                                
                                                     <Tooltip title="Add Contact">
                                                         <IconButton size="small" color="success" onClick={() => handleAddContact(supplier)}>
                                                             <PersonAddAlt1Icon />
                                                         </IconButton>
                                                     </Tooltip>
-                                                )}
+                                                
                                                 <Tooltip title="View">
                                                         <IconButton size="small" onClick={() => handleView(supplier)} color="info">
                                                             <VisibilityIcon />
@@ -766,29 +756,26 @@ const SupplierTable = () => {
                                                             <DeleteIcon />
                                                         </IconButton>
                                                 </Tooltip>
+                                                <Link href={`/suppliers/${supplier.id}`} passHref>
+                                                                        <Button size="small" variant="outlined" color="primary">
+                                                                          Manage Price Book
+                                                                        </Button>
+                                                                      </Link>
 
                                                 
                                             </Box>
                                         </TableCell>
 
-                                        <TableCell>
-                                        <Link
-                                            href={`/suppliers/${supplier.id}`}
-                                            color="primary"
-                                        >
-                                            View
-                                        </Link>
-                                    </TableCell>
+
                                     </TableRow>
 
                                     {/* Expanded contacts row */}
                                     <TableRow>
                                         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={11}>
                                             <Collapse in={expandedRows.has(supplier.id)} timeout="auto" unmountOnExit>
-                                                {/* Only show ContactsTable if isCompany is true */}
-                                                {supplier.isCompany && (
+                                                
                                                     <ContactsTable contacts={supplier.contacts} supplierId={supplier.id} />
-                                                )}
+                                                
                                             </Collapse>
                                         </TableCell>
                                     </TableRow>

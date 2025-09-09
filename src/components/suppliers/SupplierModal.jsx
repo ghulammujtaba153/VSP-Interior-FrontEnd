@@ -26,7 +26,6 @@ const defaultData = {
     address: "",
     postCode: "",
     notes: "",
-    isCompany: false,
 };
 
 const SupplierModal = ({ open, onClose, fetchSuppliers, selectedSupplier }) => {
@@ -127,17 +126,7 @@ const SupplierModal = ({ open, onClose, fetchSuppliers, selectedSupplier }) => {
                     value={data.name}
                     onChange={handleChange}
                 />
-                <FormControlLabel
-                    control={
-                        <Switch
-                            checked={data.isCompany}
-                            onChange={(_, checked) => setData(prev => ({ ...prev, isCompany: checked }))}
-                            color="primary"
-                        />
-                    }
-                    label="Is Company?"
-                    sx={{ mb: 1 }}
-                />
+                
                 <TextField
                     fullWidth
                     margin="dense"
