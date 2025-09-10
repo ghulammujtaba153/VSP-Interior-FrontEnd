@@ -20,7 +20,8 @@ import {
   TableHead,
   TableRow,
   TablePagination,
-  TableSortLabel
+  TableSortLabel,
+  MenuItem,
 } from '@mui/material'
 import { Visibility, Edit, Delete, Add } from '@mui/icons-material'
 import CabinetModal from '@components/cabinet/CabinetModal'
@@ -34,6 +35,7 @@ import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
+
 
 const MaterialTable = ({id}) => {
   const [loading, setLoading] = useState(true)
@@ -50,6 +52,8 @@ const MaterialTable = ({id}) => {
   const [orderBy, setOrderBy] = useState('id')
   const [order, setOrder] = useState('asc')
   const [dynamicColumns, setDynamicColumns] = useState([])
+  
+
 
   const [searchInput, setSearchInput] = useState('') // typing state
   const [search, setSearch] = useState('') // applied state
@@ -68,6 +72,8 @@ const MaterialTable = ({id}) => {
   const [exportSubCodes, setExportSubCodes] = useState([]);
   const [exportLoading, setExportLoading] = useState(false);
   const [selectedSubCode, setSelectedSubCode] = useState('all');
+  const [subCodeFilter, setSubCodeFilter] = useState('all');
+  const [uniqueSubCodes, setUniqueSubCodes] = useState([]);
 
   
   const fetchCabinets = async () => {
@@ -94,6 +100,10 @@ const MaterialTable = ({id}) => {
         list.forEach(col => columnsSet.add(col))
       })
       setDynamicColumns(Array.from(columnsSet))
+
+      // Collect unique sub codes for filter dropdown
+      const subCodes = Array.from(new Set(cabinets.map(item => item.cabinetSubCategory?.name).filter(Boolean)));
+      setUniqueSubCodes(subCodes);
     } catch (error) {
       console.error('Error fetching cabinets:', error)
       toast.error('Failed to fetch cabinets')
@@ -265,6 +275,11 @@ const MaterialTable = ({id}) => {
     return 'N/A'
   }
 
+  // Filter data by subCodeFilter
+  const filteredData = subCodeFilter === 'all'
+    ? data
+    : data.filter(item => item.cabinetSubCategory?.name === subCodeFilter);
+
   if (loading) return <Loader />
 
   return (
@@ -274,9 +289,6 @@ const MaterialTable = ({id}) => {
         <Typography variant='h5' fontWeight='bold'>
           Material Management
         </Typography>
-        
-        
-
         <Box display='flex' gap={2}>
           <Button
             variant='outlined'
@@ -285,23 +297,6 @@ const MaterialTable = ({id}) => {
           >
             Export Excel
           </Button>
-
-          {/* <Button
-            variant='outlined'
-            color='primary'
-            onClick={() => {
-              showConfirmation({
-                title: 'Upload CSV/XLSX',
-                message:
-                  'Are you sure you want to upload cabinet data from CSV/XLSX? This will add new cabinet records to your database.',
-                action: () => setCsvModalOpen(true),
-                severity: 'info'
-              })
-            }}
-          >
-            Upload CSV/XLSX
-          </Button> */}
-
           <Button
             variant='contained'
             color='primary'
@@ -316,34 +311,53 @@ const MaterialTable = ({id}) => {
         </Box>
       </Box>
 
+      {/* Sub Code Filter Dropdown */}
+      <Box display="flex" alignItems="center" gap={2} mb={2}>
+        <Typography variant="body2" fontWeight="bold">Filter by Sub Code:</Typography>
+        <TextField
+          select
+          size="small"
+          value={subCodeFilter}
+          onChange={e => {
+            setSubCodeFilter(e.target.value)
+            setPage(0)
+          }}
+          sx={{ minWidth: 180 }}
+        >
+          <MenuItem value="all">All</MenuItem>
+          {uniqueSubCodes.map(subCode => (
+            <MenuItem key={subCode} value={subCode}>{subCode}</MenuItem>
+          ))}
+        </TextField>
+      </Box>
+
       {/* Search + Apply */}
       <Box display="flex" gap={1} mb={2}>
-          <TextField
-            label="Search by code, description"
-            size="small"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            sx={{ width: '300px' }}
-            placeholder="Search..."
-          />
-          <Button
-            variant="contained"
-            onClick={() => {
-              setPage(0) // reset to first page
-              setSearch(searchInput) // ✅ apply search
-            }}
-          >
-            Apply
-          </Button>
-
-          <Button
-            variant="outlined"
-            color="secondary"
-            onClick={handleResetSearch}
-          >
-            Reset
-          </Button>
-        </Box>
+        <TextField
+          label="Search by code, description"
+          size="small"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          sx={{ width: '300px' }}
+          placeholder="Search..."
+        />
+        <Button
+          variant="contained"
+          onClick={() => {
+            setPage(0)
+            setSearch(searchInput)
+          }}
+        >
+          Apply
+        </Button>
+        <Button
+          variant="outlined"
+          color="secondary"
+          onClick={handleResetSearch}
+        >
+          Reset
+        </Button>
+      </Box>
 
       {/* Custom Table */}
       <Paper elevation={1}>
@@ -395,7 +409,7 @@ const MaterialTable = ({id}) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {data.map((cabinet) => (
+              {filteredData.map((cabinet) => (
                 <TableRow
                   key={cabinet.id}
                   sx={{ '&:nth-of-type(odd)': { backgroundColor: '#fafafa' } }}
@@ -496,7 +510,7 @@ const MaterialTable = ({id}) => {
         <TablePagination
           rowsPerPageOptions={[5, 10, 20, 50]}
           component="div"
-          count={rowCount}
+          count={filteredData.length}
           rowsPerPage={limit}
           page={page}
           onPageChange={handleChangePage}

@@ -7,12 +7,14 @@ import SubCategories from '@/components/cabinet/cabinet-updated/SubCategories'
 import { useParams } from 'next/navigation'
 import { Tabs, Tab, Box, Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography } from '@mui/material'
 
+
 const SubCategoriesPage = () => {
   const { id } = useParams()
   const [tabIndex, setTabIndex] = useState(0)
   const [isInProgress, setIsInProgress] = useState(false)
   const [pendingTab, setPendingTab] = useState(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  
 
   // Intercept tab change
   const handleTabChange = (e, newValue) => {

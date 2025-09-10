@@ -15,6 +15,7 @@ import '@/app/globals.css'
 // Generated Icon CSS Imports
 import '@assets/iconify-icons/generated-icons.css'
 import { AuthProvider, config } from '@/context/authContext'
+import { ProgressProvider } from '@/context/progressAuth'
 
 export const metadata = {
   title: `VSP  Interior`,
@@ -34,6 +35,7 @@ const RootLayout = async props => {
       <body className='flex is-full min-bs-full flex-auto flex-col'>
         <InitColorSchemeScript attribute='data' defaultMode={systemMode} />
         <AuthProvider>
+          <ProgressProvider>
           {children}
           <ToastContainer
             position="top-right"
@@ -47,6 +49,7 @@ const RootLayout = async props => {
             pauseOnHover
             theme="light"
           />
+          </ProgressProvider>
         </AuthProvider>
       </body>
     </html>
