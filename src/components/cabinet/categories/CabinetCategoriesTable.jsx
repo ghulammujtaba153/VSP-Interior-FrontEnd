@@ -58,8 +58,9 @@ const CabinetCategoriesTable = () => {
       setLoading(true);
       console.log("fetching data", currentPage, currentRowsPerPage, search);
       const response = await axios.get(`${BASE_URL}/api/cabinet-categories/get?page=${currentPage + 1}&limit=${currentRowsPerPage}&search=${search}`);
-      setData(response.data.data || response.data);
-      setTotalCount(response.data.pagination?.totalItems || response.data.length || 0);
+      setData(response.data.cabinetCategories);
+
+      setTotalCount(response.data.total);
     } catch (error) {
       toast.error(error.response?.data?.message || "Something went wrong");
     } finally {

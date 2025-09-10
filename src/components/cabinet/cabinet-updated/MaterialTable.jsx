@@ -82,9 +82,9 @@ const MaterialTable = ({id}) => {
       const res = await axios.get(
         `${BASE_URL}/api/cabinet/get/${id}?page=${page + 1}&limit=${limit}&search=${search}`
       )
-      const cabinets = res.data.cabinet || res.data.data || []
+      const cabinets = res.data.cabinets || []
       setData(cabinets)
-      setRowCount(res.data.total || res.data.pagination?.totalItems || 0)
+      setRowCount(res.data.total )
 
       // Collect all dynamic field names from all cabinets
       const columnsSet = new Set()
