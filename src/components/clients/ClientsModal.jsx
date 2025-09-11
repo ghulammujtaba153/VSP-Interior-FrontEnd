@@ -134,24 +134,31 @@ const ClientsModal = ({ open, handleClose, editClient, refreshClients }) => {
 
           <FormControlLabel
             control={
-              <input
-                type="checkbox"
-                checked={client.isCompany}
-                onChange={e => setClient({ ...client, isCompany: e.target.checked })}
-                style={{
-                  width: 22,
-                  height: 22,
-                  marginRight: 12, // adds gap between checkbox and label
-                  accentColor: "#1976d2", // optional: matches MUI primary color
-                }}
-              />
+              <div style={{ display: "flex", gap: 24 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <input
+                    type="radio"
+                    name="clientType"
+                    checked={!client.isCompany}
+                    onChange={() => setClient({ ...client, isCompany: false })}
+                    style={{ accentColor: "#1976d2" }}
+                  />
+                  <span style={{ fontSize: 16 }}>Individual Client</span>
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <input
+                    type="radio"
+                    name="clientType"
+                    checked={client.isCompany}
+                    onChange={() => setClient({ ...client, isCompany: true })}
+                    style={{ accentColor: "#1976d2" }}
+                  />
+                  <span style={{ fontSize: 16 }}>Company</span>
+                </label>
+              </div>
             }
-            label={
-              <span style={{ marginLeft: 4, fontSize: 16 }}>
-                Is Company?
-              </span>
-            }
-            sx={{ mb: 2, alignItems: "center" }} // adds bottom margin and vertical alignment
+            label=""
+            sx={{ mb: 2, alignItems: "center" }}
           />
 
           <TextField

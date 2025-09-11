@@ -52,6 +52,7 @@ const MaterialTable = ({id}) => {
   const [orderBy, setOrderBy] = useState('id')
   const [order, setOrder] = useState('asc')
   const [dynamicColumns, setDynamicColumns] = useState([])
+  const [subCategories, setSubCategories] = useState([])
   
 
 
@@ -76,15 +77,18 @@ const MaterialTable = ({id}) => {
   const [uniqueSubCodes, setUniqueSubCodes] = useState([]);
 
   
-  const fetchCabinets = async () => {
-    setLoading(true)
+  // Update fetchCabinets to accept subCodeFilter
+  const fetchCabinets = async (subCode = subCodeFilter) => {
+    setLoading(true);
     try {
+      // Add subCode as a query param if not 'all'
+      let subCodeParam = subCode && subCode !== 'all' ? `&subCode=${encodeURIComponent(subCode)}` : '';
       const res = await axios.get(
-        `${BASE_URL}/api/cabinet/get/${id}?page=${page + 1}&limit=${limit}&search=${search}`
-      )
-      const cabinets = res.data.cabinets || []
-      setData(cabinets)
-      setRowCount(res.data.total )
+        `${BASE_URL}/api/cabinet/get/${id}?page=${page + 1}&limit=${limit}&search=${search}&subCode=${subCodeParam}`
+      );
+      const cabinets = res.data.cabinets || [];
+      setData(cabinets);
+      setRowCount(res.data.total);
 
       // Collect all dynamic field names from all cabinets
       const columnsSet = new Set()
@@ -101,9 +105,14 @@ const MaterialTable = ({id}) => {
       })
       setDynamicColumns(Array.from(columnsSet))
 
-      // Collect unique sub codes for filter dropdown
-      const subCodes = Array.from(new Set(cabinets.map(item => item.cabinetSubCategory?.name).filter(Boolean)));
-      setUniqueSubCodes(subCodes);
+
+      const response = await axios.get(`${BASE_URL}/api/cabinet-subcategories/get/${id}`);
+
+// ✅ Extract only the unique "name" values
+const subCodes = [...new Set(response.data.map(item => item.name))];
+
+setUniqueSubCodes(subCodes);
+
     } catch (error) {
       console.error('Error fetching cabinets:', error)
       toast.error('Failed to fetch cabinets')
@@ -158,9 +167,9 @@ const MaterialTable = ({id}) => {
   const fetchAllCabinets = async () => {
     setExportLoading(true);
     try {
-      const res = await axios.get(`${BASE_URL}/api/cabinet/get/${id}?page=1&limit=10000`);
+      const res = await axios.get(`${BASE_URL}/api/cabinet/get/${id}?page=1&limit=500&search=${search}`);
       setExportLoading(false);
-      return res.data.cabinet || res.data.data || [];
+      return res.data.cabinets;
     } catch (error) {
       setExportLoading(false);
       toast.error('Failed to fetch cabinets for export');
@@ -210,7 +219,7 @@ const MaterialTable = ({id}) => {
     const worksheet = XLSX.utils.json_to_sheet(formatted);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Cabinets');
-    XLSX.writeFile(workbook, selectedSubCode === 'all' ? 'Cabinet Items VSP.xlsx' : `cabinets_${selectedSubCode}.xlsx`);
+    XLSX.writeFile(workbook, selectedSubCode === 'all' ? 'Cabinet Items VSP.xlsx' : `Cabinets ${selectedSubCode}.xlsx`);
     setExportLoading(false);
     setExportDialogOpen(false);
     toast.success('Cabinet data exported successfully');
@@ -319,8 +328,9 @@ const MaterialTable = ({id}) => {
           size="small"
           value={subCodeFilter}
           onChange={e => {
-            setSubCodeFilter(e.target.value)
-            setPage(0)
+            setSubCodeFilter(e.target.value);
+            setPage(0);
+            fetchCabinets(e.target.value); // <-- Call API when dropdown changes
           }}
           sx={{ minWidth: 180 }}
         >
@@ -409,7 +419,7 @@ const MaterialTable = ({id}) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredData.map((cabinet) => (
+              {data.map((cabinet) => (
                 <TableRow
                   key={cabinet.id}
                   sx={{ '&:nth-of-type(odd)': { backgroundColor: '#fafafa' } }}
@@ -510,7 +520,7 @@ const MaterialTable = ({id}) => {
         <TablePagination
           rowsPerPageOptions={[5, 10, 20, 50]}
           component="div"
-          count={filteredData.length}
+          count={rowCount}
           rowsPerPage={limit}
           page={page}
           onPageChange={handleChangePage}

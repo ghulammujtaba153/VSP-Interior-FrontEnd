@@ -27,6 +27,9 @@ const SupplierCategoryPage = () => {
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState([])
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('')
+
   // Modal states
   const [open, setOpen] = useState(false)
   const [selectedRow, setSelectedRow] = useState(null)
@@ -37,7 +40,6 @@ const SupplierCategoryPage = () => {
     price: '',
     status: ''
   })
-  
 
   // Fetch category
   const fetchCategory = async () => {
@@ -85,15 +87,13 @@ const SupplierCategoryPage = () => {
     toast.loading('Please wait...')
     try {
       if (selectedRow) {
-        // Update existing
         await axios.put(`${BASE_URL}/api/pricebook/update/${selectedRow.id}`, formData)
         toast.success('Item updated successfully')
       } else {
-        // Create new
         await axios.post(`${BASE_URL}/api/pricebook/create`, {
-        ...formData,
-        priceBookCategoryId: id
-      })
+          ...formData,
+          priceBookCategoryId: id
+        })
         toast.success('Item added successfully')
       }
       toast.dismiss()
@@ -112,34 +112,36 @@ const SupplierCategoryPage = () => {
   }
 
   // Export XLS
-  // Export XLS
-const handleExport = () => {
-  if (!data || data.length === 0) {
-    toast.error('No data to export')
-    return
+  const handleExport = () => {
+    if (!data || data.length === 0) {
+      toast.error('No data to export')
+      return
+    }
+
+    const exportData = data.map(item => ({
+      ID: item.id,
+      Name: item.name,
+      Description: item.description,
+      Unit: item.unit,
+      Price: item.price,
+      Status: item.status,
+      Category: item.PriceBookCategory ? item.PriceBookCategory.name : '',
+      CreatedAt: item.createdAt,
+      UpdatedAt: item.updatedAt
+    }))
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData)
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'PriceBook')
+    XLSX.writeFile(
+      workbook,
+      `${data[0]?.PriceBookCategory?.Supplier.name || 'Supplier'} - ${
+        data[0]?.PriceBookCategory?.name || 'Category'
+      } VSP.xlsx`
+    )
   }
 
-  // Map the data to include category name instead of id
-  const exportData = data.map(item => ({
-    ID: item.id,
-    Name: item.name,
-    Description: item.description,
-    Unit: item.unit,
-    Price: item.price,
-    Status: item.status,
-    Category: item.PriceBookCategory ? item.PriceBookCategory.name : '', // <-- category name
-    CreatedAt: item.createdAt,
-    UpdatedAt: item.updatedAt
-  }))
-
-  const worksheet = XLSX.utils.json_to_sheet(exportData)
-  const workbook = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'PriceBook')
-  XLSX.writeFile(workbook, ` ${data[0]?.PriceBookCategory?.Supplier.name} + ${data[0]?.PriceBookCategory?.name} VSP.xlsx`)
-}
-
-
-  // Columns for DataGrid
+  // Columns
   const columns = [
     { field: 'id', headerName: 'ID', width: 90 },
     { field: 'name', headerName: 'Name', flex: 1 },
@@ -164,14 +166,24 @@ const handleExport = () => {
     }
   ]
 
+  // Filtered rows
+  const filteredData = data.filter(item =>
+    Object.values(item).some(
+      value =>
+        value &&
+        value.toString().toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  )
+
   if (loading) return <Loader />
 
   return (
     <div className='p-4' component={Paper}>
-      <Box display='flex' justifyContent='space-between' mb={2}>
+      <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
         <Button variant='contained' color='primary' onClick={() => window.history.back()}>
           Back
         </Button>
+        
         <Box>
           <Button variant='contained' color='success' onClick={handleExport} sx={{ mr: 2 }}>
             Export XLS
@@ -182,10 +194,23 @@ const handleExport = () => {
         </Box>
       </Box>
 
+
       <h1 className='text-lg font-bold mb-4'>Supplier Category Page</h1>
+      <Box className="my-2" display="flex" alignItems="center">
+        <TextField
+          label='Search...'
+          variant='outlined'
+          size='small'
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          sx={{ mx: 2, flex: 1, maxWidth: 300 }}
+        />
+
+      </Box>
+
       <div style={{ height: 500, width: '100%' }}>
         <DataGrid
-          rows={data}
+          rows={filteredData}
           columns={columns}
           pageSizeOptions={[5, 10, 20]}
           initialState={{
