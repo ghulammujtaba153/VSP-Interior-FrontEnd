@@ -331,7 +331,6 @@ const SupplierTable = () => {
                     exportData.push({
                         "Supplier ID": supplier.id,
                         "Name": supplier.name,
-                        
                         "Supplier Email": supplier.email,
                         "Supplier Phone": supplier.phone,
                         "Address": supplier.address,
@@ -354,7 +353,7 @@ const SupplierTable = () => {
             const worksheet = XLSX.utils.json_to_sheet(exportData);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Suppliers & Contacts");
-            XLSX.writeFile(workbook, "suppliers_with_contacts.xlsx");
+            XLSX.writeFile(workbook, "Suppliers + Contacts VSP.xlsx");
 
             toast.dismiss();
             toast.success(`Successfully exported ${allSuppliers.length} suppliers with contacts to Excel`);
@@ -371,7 +370,7 @@ const SupplierTable = () => {
     }
 
     // Export contacts for a specific supplier
-    const exportContactsToExcel = (contacts, supplierId) => {
+    const exportContactsToExcel = (contacts, supplierId, supplierName) => {
         try {
             if (!contacts || contacts.length === 0) {
                 toast.warning('No contacts to export');
@@ -394,7 +393,7 @@ const SupplierTable = () => {
             const worksheet = XLSX.utils.json_to_sheet(exportData);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, "Contacts");
-            XLSX.writeFile(workbook, `supplier_contacts_${supplierId}.xlsx`);
+            XLSX.writeFile(workbook, `Supplier + Contacts ${supplierName} VSP.xlsx`);
 
             toast.success(`Successfully exported ${contacts.length} contacts to Excel`);
         } catch (error) {
@@ -466,7 +465,7 @@ const SupplierTable = () => {
                             variant="outlined"
                             color="info"
                             startIcon={<DownloadIcon />}
-                            onClick={() => exportContactsToExcel(contacts, supplierId)}
+                            onClick={() => exportContactsToExcel(contacts, supplierId, suppliers.find(s => s.id === supplierId)?.name || supplierId)}
                         >
                             Export Contacts
                         </Button>

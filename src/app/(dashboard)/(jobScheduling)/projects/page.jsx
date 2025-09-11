@@ -1,12 +1,13 @@
 "use client"
 
-import ProjectForm from '@/components/projects/ProjectTable'
+
+import ProjectTable from '@/components/projects/ProjectTable'
 import React from 'react'
 
 const page = () => {
   return (
     <div>
-        <ProjectForm/>
+        <ProjectTable/>
       
     </div>
   )

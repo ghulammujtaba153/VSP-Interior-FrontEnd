@@ -163,7 +163,7 @@ const InventoryTable = () => {
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
-    XLSX.writeFile(workbook, "inventory.xlsx");
+    XLSX.writeFile(workbook, "Inventory VSP.xlsx");
     toast.success("Inventory data exported successfully");
   };
 

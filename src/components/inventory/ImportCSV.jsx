@@ -133,7 +133,7 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
     const ws = XLSX.utils.json_to_sheet(templateData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Inventory Template");
-    XLSX.writeFile(wb, "inventory_template.xlsx");
+    XLSX.writeFile(wb, "Inventory VSP.xlsx");
     toast.success("Inventory template downloaded successfully!");
   };
 

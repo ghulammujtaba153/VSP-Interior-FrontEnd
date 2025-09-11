@@ -103,7 +103,7 @@ const PriceBookImport = () => {
     const ws = XLSX.utils.json_to_sheet(templateData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "PriceBook Template");
-    XLSX.writeFile(wb, "pricebook_template.xlsx");
+    XLSX.writeFile(wb, "Supplier Pricebook VSP.xlsx");
     toast.success("PriceBook template downloaded successfully!");
   };
 

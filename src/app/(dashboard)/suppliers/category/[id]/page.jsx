@@ -135,7 +135,7 @@ const handleExport = () => {
   const worksheet = XLSX.utils.json_to_sheet(exportData)
   const workbook = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(workbook, worksheet, 'PriceBook')
-  XLSX.writeFile(workbook, 'PriceBook.xlsx')
+  XLSX.writeFile(workbook, ` ${data[0]?.PriceBookCategory?.Supplier.name} + ${data[0]?.PriceBookCategory?.name} VSP.xlsx`)
 }
 
 

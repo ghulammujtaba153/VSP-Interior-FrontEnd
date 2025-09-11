@@ -230,6 +230,7 @@ const ClientsTable = () => {
             exportData.push({
               "Client ID": client.id,
               "Name": client.companyName,
+              "Is Company": client.isCompany,
               "Client Email": client.emailAddress,
               "Client Phone": client.phoneNumber,
               "Address": client.address,
@@ -252,6 +253,7 @@ const ClientsTable = () => {
           exportData.push({
             "Client ID": client.id,
             "Name": client.companyName,
+            "Is Company": client.isCompany,
             "Client Email": client.emailAddress,
             "Client Phone": client.phoneNumber,
             "Address": client.address,

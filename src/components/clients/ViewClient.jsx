@@ -26,6 +26,8 @@ const ViewClient = ({ open, onClose, client }) => {
     const [contacts, setContacts] = useState([]);
     const {user} = useAuth()
 
+    console.log("client", client);
+
     useEffect(() => {
         if (client && client.contacts) {
             setContacts(client.contacts.map(contact => ({ ...contact }))); // Clone
@@ -65,7 +67,7 @@ const ViewClient = ({ open, onClose, client }) => {
             <DialogContent dividers>
                 <Grid container spacing={2}>
                     <Grid item xs={6}>
-                        <Typography variant="subtitle2">Company Name</Typography>
+                        <Typography variant="subtitle2">Name</Typography>
                         <Typography>{client.companyName}</Typography>
                     </Grid>
                     <Grid item xs={6}>
@@ -88,9 +90,17 @@ const ViewClient = ({ open, onClose, client }) => {
                         <Typography variant="subtitle2">Account Status</Typography>
                         <Typography>{client.accountStatus}</Typography>
                     </Grid>
-                    <Grid item xs={12}>
+                    <Grid item xs={6}>
                         <Typography variant="subtitle2">Notes</Typography>
                         <Typography>{client.notes || 'N/A'}</Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                        <Typography variant="subtitle2">Is Company</Typography>
+                        <Typography>
+                          {typeof client.isCompany === "boolean"
+                            ? client.isCompany ? "Yes" : "No"
+                            : "N/A"}
+                        </Typography>
                     </Grid>
 
                     <Grid item xs={12}>

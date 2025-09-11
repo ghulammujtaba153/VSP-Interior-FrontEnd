@@ -124,7 +124,7 @@ const ClientsModal = ({ open, handleClose, editClient, refreshClients }) => {
         <DialogContent dividers>
           <TextField
             fullWidth
-            label='Company Name'
+            label='Name'
             name='companyName'
             value={client.companyName}
             onChange={handleChange}
@@ -134,13 +134,24 @@ const ClientsModal = ({ open, handleClose, editClient, refreshClients }) => {
 
           <FormControlLabel
             control={
-              <Switch
+              <input
+                type="checkbox"
                 checked={client.isCompany}
                 onChange={e => setClient({ ...client, isCompany: e.target.checked })}
-                color='primary'
+                style={{
+                  width: 22,
+                  height: 22,
+                  marginRight: 12, // adds gap between checkbox and label
+                  accentColor: "#1976d2", // optional: matches MUI primary color
+                }}
               />
             }
-            label='Is Company?'
+            label={
+              <span style={{ marginLeft: 4, fontSize: 16 }}>
+                Is Company?
+              </span>
+            }
+            sx={{ mb: 2, alignItems: "center" }} // adds bottom margin and vertical alignment
           />
 
           <TextField

@@ -174,7 +174,7 @@ const ImportModal = ({ open, onClose, fetchSuppliers }) => {
     const ws = XLSX.utils.json_to_sheet(templateData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Suppliers Template");
-    XLSX.writeFile(wb, "suppliers_template.xlsx");
+    XLSX.writeFile(wb, "Suppliers VSP.xlsx");
     toast.success("Suppliers template downloaded successfully!");
   };
 

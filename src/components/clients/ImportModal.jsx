@@ -43,7 +43,8 @@ import CircularProgress from "@mui/material/CircularProgress";
 
 // ✅ Required fields (notes removed)
 const requiredFields = [
-  "companyName",
+  "Name",
+  "isCompany",
   "emailAddress",
   "phoneNumber",
   "address",
@@ -81,7 +82,7 @@ const validateRowsBatch = (data, batchSize = 1000) => {
   return new Promise((resolve) => {
     let errors = {};
     let seenEmails = new Set();
-    let seenCompanyNames = new Set();
+    let seenNames = new Set();
     let processedRows = 0;
 
     const processBatch = () => {
@@ -129,19 +130,19 @@ const validateRowsBatch = (data, batchSize = 1000) => {
           }
         }
 
-        // 7. Duplicate company name in file
-        if (row.companyName) {
-          const lowerCompany = row.companyName.toLowerCase();
-          if (seenCompanyNames.has(lowerCompany)) {
-            rowErrors.push("Duplicate company name in file");
+        // 7. Duplicate Name in file
+        if (row.Name) {
+          const lowerName = row.Name.toLowerCase();
+          if (seenNames.has(lowerName)) {
+            rowErrors.push("Duplicate Name in file");
           } else {
-            seenCompanyNames.add(lowerCompany);
+            seenNames.add(lowerName);
           }
         }
 
-        // 8. Company name length validation
-        if (row.companyName && row.companyName.length < 2) {
-          rowErrors.push("Company name must be at least 2 characters");
+        // 8. Name length validation
+        if (row.Name && row.Name.length < 2) {
+          rowErrors.push("Name must be at least 2 characters");
         }
 
         // 9. Address length validation
@@ -189,10 +190,9 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
   // Sample template data for clients
   const templateData = [
     {
-      companyName: "Modern Kitchen Designs LLC",
+      Name: "Modern Kitchen Designs LLC",
       isCompany: true,
       emailAddress: "contact@modernkitchens.com",
-      
       phoneNumber: "+1-555-0123",
       address: "123 Design Avenue, Kitchen City, State 12345",
       postCode: "12345",
@@ -200,7 +200,7 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
       notes: "Premium residential kitchen design services"
     },
     {
-      companyName: "Home Renovation Pros",
+      Name: "Home Renovation Pros",
       isCompany: true,
       emailAddress: "info@homerenovationpros.com", 
       phoneNumber: "+1-555-0456",
@@ -210,7 +210,7 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
       notes: "Full-service home renovation and remodeling"
     },
     {
-      companyName: "Luxury Cabinet Solutions",
+      Name: "Luxury Cabinet Solutions",
       isCompany: true,
       emailAddress: "sales@luxurycabinets.net",
       phoneNumber: "+1-555-0789",
@@ -286,7 +286,7 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
     const ws = XLSX.utils.json_to_sheet(templateData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Clients Template");
-    XLSX.writeFile(wb, "clients_template.xlsx");
+    XLSX.writeFile(wb, "Clients VSP.xlsx");
     toast.success("Clients template downloaded successfully!");
   }, []);
 
@@ -430,21 +430,27 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
       return;
     }
 
+    // Map Name to companyName for backend
+    const mappedRows = validRows.map(row => ({
+      ...row,
+      companyName: row.Name,
+    }));
+
     const batchSize = 100; // Process in smaller batches
-    const totalBatches = Math.ceil(validRows.length / batchSize);
+    const totalBatches = Math.ceil(mappedRows.length / batchSize);
     let successCount = 0;
 
     try {
-      toast.loading(`Importing ${validRows.length} clients in ${totalBatches} batches...`);
+      toast.loading(`Importing ${mappedRows.length} clients in ${totalBatches} batches...`);
 
       let res;
       
       for (let i = 0; i < totalBatches; i++) {
-        const batch = validRows.slice(i * batchSize, (i + 1) * batchSize);
+        const batch = mappedRows.slice(i * batchSize, (i + 1) * batchSize);
         
         
         try {
-          res=await axios.post(`${BASE_URL}/api/client/import`, {
+          res = await axios.post(`${BASE_URL}/api/client/import`, {
             userId: user.id,
             clients: batch,
           }, {
@@ -455,7 +461,7 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
           
           // Update progress
           toast.loading(
-            `Imported ${successCount}/${validRows.length} clients (Batch ${i + 1}/${totalBatches})`
+            `Imported ${successCount}/${mappedRows.length} clients (Batch ${i + 1}/${totalBatches})`
           );
         } catch (batchError) {
           console.error(`Batch ${i + 1} failed:`, batchError);
@@ -469,7 +475,7 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
       if (res.status == 201) {
         toast.success(res.data.message || `Successfully imported all ${successCount} clients!`);
       } else {
-        toast.warning(`Imported ${successCount} out of ${validRows.length} clients. Some batches may have failed.`);
+        toast.warning(`Imported ${successCount} out of ${mappedRows.length} clients. Some batches may have failed.`);
       }
       
       refreshClients();
