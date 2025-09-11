@@ -190,7 +190,7 @@ const CSVFileModal = ({ open, onClose, onSuccess }) => {
     const ws = XLSX.utils.json_to_sheet(templateData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Cabinet Template");
-    XLSX.writeFile(wb, "cabinet_template.xlsx");
+    XLSX.writeFile(wb, "Cabinet VSP.xlsx");
     toast.success("Template downloaded successfully!");
   };
 

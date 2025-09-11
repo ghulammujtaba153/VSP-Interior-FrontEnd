@@ -210,7 +210,7 @@ const MaterialTable = ({id}) => {
     const worksheet = XLSX.utils.json_to_sheet(formatted);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Cabinets');
-    XLSX.writeFile(workbook, selectedSubCode === 'all' ? 'cabinets_all.xlsx' : `cabinets_${selectedSubCode}.xlsx`);
+    XLSX.writeFile(workbook, selectedSubCode === 'all' ? 'Cabinet Items VSP.xlsx' : `cabinets_${selectedSubCode}.xlsx`);
     setExportLoading(false);
     setExportDialogOpen(false);
     toast.success('Cabinet data exported successfully');

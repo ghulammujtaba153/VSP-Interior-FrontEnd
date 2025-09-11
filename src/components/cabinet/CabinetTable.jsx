@@ -153,7 +153,7 @@ const CabinetTable = () => {
     const worksheet = XLSX.utils.json_to_sheet(exportData)
     const workbook = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Cabinets')
-    XLSX.writeFile(workbook, 'cabinets.xlsx')
+    XLSX.writeFile(workbook, 'Cabinet VSP.xlsx')
     toast.success('Cabinet data exported successfully')
   }
 

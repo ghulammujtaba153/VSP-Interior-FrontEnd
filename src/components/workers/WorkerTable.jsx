@@ -84,7 +84,7 @@ const WorkerTable = () => {
       const worksheet = XLSX.utils.json_to_sheet(formatted);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Workers");
-      XLSX.writeFile(workbook, "workers.xlsx");
+      XLSX.writeFile(workbook, "Workers VSP.xlsx");
       toast.dismiss();
       toast.success("Workers exported successfully!");
     } catch (error) {

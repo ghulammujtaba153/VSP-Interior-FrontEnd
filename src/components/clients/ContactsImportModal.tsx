@@ -244,7 +244,7 @@ const ContactsImportModal = ({ open, onClose, clientId, refreshContacts }) => {
     
     // Generate filename with timestamp
     const timestamp = new Date().toISOString().split('T')[0];
-    const filename = `contacts_import_template_${timestamp}.xlsx`;
+    const filename = `Clients Contact VSP.xlsx`;
     
     XLSX.writeFile(workbook, filename);
     toast.success('Template downloaded successfully!');

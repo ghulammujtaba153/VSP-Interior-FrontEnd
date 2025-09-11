@@ -276,7 +276,7 @@ const ClientsTable = () => {
       const worksheet = XLSX.utils.json_to_sheet(exportData);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Clients & Contacts");
-      XLSX.writeFile(workbook, "clients_with_contacts.xlsx");
+      XLSX.writeFile(workbook, "Clients + Contacts VSP.xlsx");
 
       toast.dismiss();
       toast.success(`Successfully exported ${allClients.length} clients with contacts to Excel`);
@@ -294,6 +294,10 @@ const ClientsTable = () => {
         return;
       }
 
+      // Find client name by clientId
+      const client = clients.find(c => c.id === clientId);
+      const clientName = client?.companyName || client?.Name || clientId;
+
       // Create export data for contacts
       const exportData = contacts.map((contact, index) => ({
         "Contact #": index + 1,
@@ -310,7 +314,7 @@ const ClientsTable = () => {
       const worksheet = XLSX.utils.json_to_sheet(exportData);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Contacts");
-      XLSX.writeFile(workbook, `contacts_client_${clientId}.xlsx`);
+      XLSX.writeFile(workbook, `${clientName} Contacts VSP.xlsx`);
 
       toast.success(`Successfully exported ${contacts.length} contacts to Excel`);
     } catch (error) {

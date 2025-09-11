@@ -179,7 +179,7 @@ const ImportCSV = ({ open, onClose, fetchWorkers }) => {
     const ws = XLSX.utils.json_to_sheet(templateData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Workers Template");
-    XLSX.writeFile(wb, "workers_template.xlsx");
+    XLSX.writeFile(wb, "Workers VSP.xlsx");
     toast.success("Workers template downloaded successfully!");
   };
 
