@@ -48,8 +48,6 @@ const ProjectTable = () => {
       const res = await axios.get(
         `${BASE_URL}/api/projects/get?page=${page + 1}&limit=${rowsPerPage}&search=${searchQuery}`
       )
-
-      // ✅ Use the new response format from backend
       setData(res.data.projects || [])
       setTotalCount(res.data.total || 0)
     } catch (error) {
@@ -174,11 +172,16 @@ const ProjectTable = () => {
                     )}
                   </TableCell>
                   <TableCell align='center'>
-                    <IconButton color='primary' onClick={() => handleView(project.id)}>
-                      <VisibilityIcon />
+                    <IconButton color='primary'>
+                      <Link href={`/projects/${project.id}`} passHref>
+                       <VisibilityIcon />
+
+                      </Link>
                     </IconButton>
                     <IconButton color='secondary' onClick={() => handleEdit(project.id)}>
-                      <EditIcon />
+                      <Link href={`/projects/form?id=${project.id}`} passHref>
+                        <EditIcon />
+                      </Link>
                     </IconButton>
                     <IconButton color='error' onClick={() => handleDelete(project.id)}>
                       <DeleteIcon />
