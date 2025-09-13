@@ -134,8 +134,13 @@ const VerticalMenu = ({ scrollMenu }) => {
           Workers
         </MenuItem>
 
-        <MenuItem href='/projects' icon={<i className='tabler-users' />}>
+        <MenuItem href='/projects' icon={<i className='tabler-file-text' />}>
           Projects
+        </MenuItem>
+
+
+        <MenuItem href='/quotes' icon={<i className='tabler-report' />}>
+          Quotes
         </MenuItem>
 
         <SubMenu label='Tender' icon={<i className='tabler-file-text' />}></SubMenu>

@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { BASE_URL } from '@/configs/url'
 import React, { useState, useEffect } from 'react'
@@ -118,41 +118,59 @@ const AuditSection = () => {
   }, [fromDate, toDate, audits])
 
   // Helper functions
-  const getActionColor = (action) => {
+  const getActionColor = action => {
     switch (action) {
-      case 'create': return 'success'
-      case 'update': return 'warning'
-      case 'delete': return 'error'
-      case 'login': return 'info'
-      default: return 'default'
+      case 'create':
+        return 'success'
+      case 'update':
+        return 'warning'
+      case 'delete':
+        return 'error'
+      case 'login':
+        return 'info'
+      default:
+        return 'default'
     }
   }
 
   const getActionIcon = (action, tableName) => {
     switch (action) {
-      case 'create': return <AddIcon />
-      case 'update': return <EditIcon />
-      case 'delete': return <DeleteIcon />
-      case 'login': return <LoginIcon />
-      default: return <PersonIcon />
+      case 'create':
+        return <AddIcon />
+      case 'update':
+        return <EditIcon />
+      case 'delete':
+        return <DeleteIcon />
+      case 'login':
+        return <LoginIcon />
+      default:
+        return <PersonIcon />
     }
   }
 
-  const getTableIcon = (tableName) => {
+  const getTableIcon = tableName => {
     switch (tableName) {
-      case 'users': return <PersonIcon />
-      case 'clients': return <BusinessIcon />
-      case 'suppliers': return <BusinessIcon />
-      case 'inventory': return <InventoryIcon />
-      case 'cabinet': return <CabinetIcon />
-      case 'roles': return <RoleIcon />
-      case 'contacts': 
-      case 'supplierContacts': return <ContactIcon />
-      default: return <PersonIcon />
+      case 'users':
+        return <PersonIcon />
+      case 'clients':
+        return <BusinessIcon />
+      case 'suppliers':
+        return <BusinessIcon />
+      case 'inventory':
+        return <InventoryIcon />
+      case 'cabinet':
+        return <CabinetIcon />
+      case 'roles':
+        return <RoleIcon />
+      case 'contacts':
+      case 'supplierContacts':
+        return <ContactIcon />
+      default:
+        return <PersonIcon />
     }
   }
 
-  const formatDate = (dateString) => {
+  const formatDate = dateString => {
     return new Date(dateString).toLocaleString()
   }
 
@@ -196,7 +214,7 @@ const AuditSection = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+      <Box display='flex' justifyContent='center' alignItems='center' minHeight='400px'>
         <CircularProgress />
       </Box>
     )
@@ -204,7 +222,7 @@ const AuditSection = () => {
 
   if (error) {
     return (
-      <Alert severity="error" sx={{ m: 2 }}>
+      <Alert severity='error' sx={{ m: 2 }}>
         {error}
       </Alert>
     )
@@ -218,47 +236,46 @@ const AuditSection = () => {
   return (
     <Box sx={{ p: 3 }}>
       {/* Header */}
-      <Typography variant="h4" component="h1" gutterBottom sx={{ mb: 4 }}>
+      <Typography variant='h4' component='h1' gutterBottom sx={{ mb: 4 }}>
         System Audit
       </Typography>
 
       {/* Date Filter Section */}
       <Card sx={{ mb: 4 }}>
         <CardContent>
-          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography variant='h6' gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <FilterIcon />
             Filter by Date Range
           </Typography>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="center">
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems='center'>
             <TextField
-              type="date"
-              label="From Date"
+              type='date'
+              label='From Date'
               value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
+              onChange={e => setFromDate(e.target.value)}
               InputLabelProps={{ shrink: true }}
-              size="small"
+              size='small'
             />
             <TextField
-              type="date"
-              label="To Date"
+              type='date'
+              label='To Date'
               value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
+              onChange={e => setToDate(e.target.value)}
               InputLabelProps={{ shrink: true }}
-              size="small"
+              size='small'
             />
             <Button
-              variant="outlined"
+              variant='outlined'
               onClick={clearFilters}
               startIcon={<ClearIcon />}
               disabled={!fromDate && !toDate}
-              size="small"
+              size='small'
             >
               Clear Filters
             </Button>
-            <Typography variant="body2" color="text.secondary">
-              {filteredAudits.length !== audits.length && 
-                `Showing ${filteredAudits.length} of ${audits.length} records`
-              }
+            <Typography variant='body2' color='text.secondary'>
+              {filteredAudits.length !== audits.length &&
+                `Showing ${filteredAudits.length} of ${audits.length} records`}
             </Typography>
           </Stack>
         </CardContent>
@@ -266,54 +283,30 @@ const AuditSection = () => {
 
       {/* Stats Cards Section */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <Card sx={{ textAlign: 'center', bgcolor: 'primary.main', color: 'white' }}>
-            <CardContent>
-              <Typography variant="h4">{stats.total}</Typography>
-              <Typography variant="body2">Total Activities</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <Card sx={{ textAlign: 'center', bgcolor: 'success.main', color: 'white' }}>
-            <CardContent>
-              <Typography variant="h4">{stats.create}</Typography>
-              <Typography variant="body2">Created</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <Card sx={{ textAlign: 'center', bgcolor: 'warning.main', color: 'white' }}>
-            <CardContent>
-              <Typography variant="h4">{stats.update}</Typography>
-              <Typography variant="body2">Updated</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <Card sx={{ textAlign: 'center', bgcolor: 'error.main', color: 'white' }}>
-            <CardContent>
-              <Typography variant="h4">{stats.delete}</Typography>
-              <Typography variant="body2">Deleted</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={2.4}>
-          <Card sx={{ textAlign: 'center', bgcolor: 'info.main', color: 'white' }}>
-            <CardContent>
-              <Typography variant="h4">{stats.login}</Typography>
-              <Typography variant="body2">Logins</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+        {[
+          { value: stats.total, label: 'Total Activities', color: 'primary' },
+          { value: stats.create, label: 'Created', color: 'success' },
+          { value: stats.update, label: 'Updated', color: 'warning' },
+          { value: stats.delete, label: 'Deleted', color: 'error' },
+          { value: stats.login, label: 'Logins', color: 'info' }
+        ].map((item, index) => (
+          <Grid item xs={12} sm={6} md={2.4} key={index} sx={{ flexGrow: 1 }}>
+            <Card sx={{ textAlign: 'center', bgcolor: `${item.color}.main`, color: 'white' }}>
+              <CardContent>
+                <Typography variant='h4'>{item.value}</Typography>
+                <Typography variant='body2'>{item.label}</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
       </Grid>
 
       <Grid container spacing={3}>
         {/* Recent Activity Section */}
-        <Grid item xs={12} lg={6}>
+        <Grid item xs={12} lg={6} sx={{ width: "100%" }}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant='h6' gutterBottom>
                 Recent Activity
               </Typography>
               <List>
@@ -327,16 +320,16 @@ const AuditSection = () => {
                       </ListItemAvatar>
                       <ListItemText
                         primary={
-                          <Box display="flex" alignItems="center" gap={1}>
-                            <Typography component="span" variant="body1">
+                          <Box display='flex' alignItems='center' gap={1}>
+                            <Typography component='span' variant='body1'>
                               {audit.User.name}
                             </Typography>
                             <Chip
                               label={audit.action.toUpperCase()}
                               color={getActionColor(audit.action)}
-                              size="small"
+                              size='small'
                             />
-                            <Typography component="span" variant="body2" color="text.secondary">
+                            <Typography component='span' variant='body2' color='text.secondary'>
                               in {audit.tableName}
                             </Typography>
                           </Box>
@@ -353,27 +346,25 @@ const AuditSection = () => {
         </Grid>
 
         {/* Activity by Table Section */}
-        <Grid item xs={12} lg={6}>
-          <Card>
+        <Grid item xs={12} lg={6} sx={{ width: "100%" }}>
+          <Card sx={{ width: "100%" }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant='h6' gutterBottom>
                 Activity by Module
               </Typography>
               <List>
                 {Object.entries(auditsByTable).map(([tableName, tableAudits]) => (
                   <ListItem key={tableName}>
                     <ListItemAvatar>
-                      <Avatar>
-                        {getTableIcon(tableName)}
-                      </Avatar>
+                      <Avatar>{getTableIcon(tableName)}</Avatar>
                     </ListItemAvatar>
                     <ListItemText
                       primary={
-                        <Box display="flex" alignItems="center" justifyContent="space-between">
-                          <Typography variant="body1" sx={{ textTransform: 'capitalize' }}>
+                        <Box display='flex' alignItems='center' justifyContent='space-between'>
+                          <Typography variant='body1' sx={{ textTransform: 'capitalize' }}>
                             {tableName.replace(/([A-Z])/g, ' $1').trim()}
                           </Typography>
-                          <Badge badgeContent={tableAudits.length} color="primary" />
+                          <Badge badgeContent={tableAudits.length} color='primary' />
                         </Box>
                       }
                     />
@@ -385,72 +376,74 @@ const AuditSection = () => {
         </Grid>
 
         {/* Detailed Audit Log Section */}
-        <Grid item xs={12}>
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Detailed Audit Log
-              </Typography>
-              
-              {Object.entries(auditsByAction).map(([action, actionAudits]) => (
-                <Accordion key={action} sx={{ mb: 1 }}>
-                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Box display="flex" alignItems="center" gap={2}>
-                      <Chip
-                        label={`${action.toUpperCase()} (${actionAudits.length})`}
-                        color={getActionColor(action)}
-                        icon={getActionIcon(action)}
-                      />
-                    </Box>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <TableContainer component={Paper} variant="outlined">
-                      <Table size="small">
-                        <TableHead>
-                          <TableRow>
-                            <TableCell>User</TableCell>
-                            <TableCell>Table</TableCell>
-                            <TableCell>Date</TableCell>
-                            <TableCell>Details</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {actionAudits.map((audit) => (
-                            <TableRow key={audit.id} hover>
-                              <TableCell>
-                                <Box display="flex" alignItems="center" gap={1}>
-                                  <Avatar sx={{ width: 24, height: 24 }}>
-                                    <PersonIcon fontSize="small" />
-                                  </Avatar>
-                                  {audit.User.name}
-                                </Box>
-                              </TableCell>
-                              <TableCell>
-                                <Chip
-                                  label={audit.tableName}
-                                  variant="outlined"
-                                  size="small"
-                                  icon={getTableIcon(audit.tableName)}
-                                />
-                              </TableCell>
-                              <TableCell>{formatDate(audit.createdAt)}</TableCell>
-                              <TableCell>
-                                <Tooltip title="View Details">
-                                  <IconButton size="small">
-                                    <ExpandMoreIcon />
-                                  </IconButton>
-                                </Tooltip>
-                              </TableCell>
+        <Grid container bgcolor={'red.50'} spacing={3} sx={{ width: '100%' }}>
+          <Grid item xs={12} sx={{ width: "100%" }}>
+            <Card  >
+              <CardContent>
+                <Typography variant='h6' gutterBottom>
+                  Detailed Audit Log
+                </Typography>
+
+                {Object.entries(auditsByAction).map(([action, actionAudits]) => (
+                  <Accordion key={action} sx={{ mb: 1 }}>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                      <Box display='flex' alignItems='center' gap={2}>
+                        <Chip
+                          label={`${action.toUpperCase()} (${actionAudits.length})`}
+                          color={getActionColor(action)}
+                          icon={getActionIcon(action)}
+                        />
+                      </Box>
+                    </AccordionSummary>
+                    <AccordionDetails>
+                      <TableContainer component={Paper} variant='outlined'>
+                        <Table size='small'>
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>User</TableCell>
+                              <TableCell>Table</TableCell>
+                              <TableCell>Date</TableCell>
+                              <TableCell>Details</TableCell>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </TableContainer>
-                  </AccordionDetails>
-                </Accordion>
-              ))}
-            </CardContent>
-          </Card>
+                          </TableHead>
+                          <TableBody>
+                            {actionAudits.map(audit => (
+                              <TableRow key={audit.id} hover>
+                                <TableCell>
+                                  <Box display='flex' alignItems='center' gap={1}>
+                                    <Avatar sx={{ width: 24, height: 24 }}>
+                                      <PersonIcon fontSize='small' />
+                                    </Avatar>
+                                    {audit.User.name}
+                                  </Box>
+                                </TableCell>
+                                <TableCell>
+                                  <Chip
+                                    label={audit.tableName}
+                                    variant='outlined'
+                                    size='small'
+                                    icon={getTableIcon(audit.tableName)}
+                                  />
+                                </TableCell>
+                                <TableCell>{formatDate(audit.createdAt)}</TableCell>
+                                <TableCell>
+                                  <Tooltip title='View Details'>
+                                    <IconButton size='small'>
+                                      <ExpandMoreIcon />
+                                    </IconButton>
+                                  </Tooltip>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </AccordionDetails>
+                  </Accordion>
+                ))}
+              </CardContent>
+            </Card>
+          </Grid>
         </Grid>
       </Grid>
     </Box>
