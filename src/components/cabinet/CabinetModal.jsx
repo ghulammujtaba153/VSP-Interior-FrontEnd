@@ -22,8 +22,9 @@ import {
   IconButton,
   Card,
   CardContent,
+  Paper,
 } from "@mui/material";
-import { Add, Delete } from "@mui/icons-material";
+import { Add, Delete, Edit } from "@mui/icons-material";
 import axios from "axios";
 import { BASE_URL } from "@/configs/url";
 import { toast } from "react-toastify";
@@ -34,7 +35,10 @@ import { useParams } from "next/navigation";
 const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess, existingDynamicColumns = [] }) => {
   const {id} = useParams();
 
-  console.log("cbinet modal", existingDynamicColumns)
+  console.log("cabinet modal", existingDynamicColumns)
+  console.log("editData", editData)
+
+  
   const [formData, setFormData] = useState({
     cabinetSubCategoryId: "",
     code: "",
@@ -95,23 +99,28 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess, existin
 
   useEffect(() => {
     if (editData) {
+
+      console.log("editData in useEffect", editData)
       setFormData({
         cabinetSubCategoryId: editData.cabinetSubCategoryId || "",
         code: editData.code || "",
         description: editData.description || "",
-        dynamicData: editData.dynamicData || [],
+        dynamicData: editData.dynamicData ,
         status: editData.status || "active",
       });
-      
-      // Convert dynamicData array to dynamicFields array
-      if (editData.dynamicData && Array.isArray(editData.dynamicData)) {
-        const fields = editData.dynamicData.map((item, index) => ({
-          id: Math.random().toString(36).substr(2, 9),
-          name: item.columnName || "",
+
+      // Fixed dynamic field mapping for arrayList format
+      let fields = [];
+      if (editData.dynamicData && editData.dynamicData.arrayList) {
+        fields = editData.dynamicData.arrayList.map((item, index) => ({
+          id: `existing_${index}`,
+          name: item.label || "",
           value: item.value || ""
         }));
-        setDynamicFields(fields);
       }
+
+      console.log("fields", fields)
+      setDynamicFields(fields);
     } else {
       setFormData({
         cabinetSubCategoryId: "",
@@ -120,24 +129,25 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess, existin
         dynamicData: [],
         status: "active",
       });
+
+      console.log("fields empty", )
       setDynamicFields([]);
     }
   }, [editData]);
 
   // When modal opens, if no dynamicFields and existingDynamicColumns present, pre-populate fields
   useEffect(() => {
-    if (open && dynamicFields.length === 0 && existingDynamicColumns.length > 0) {
-      // Pre-populate all dynamic columns as empty fields
+    if (open && !editData && dynamicFields.length === 0 && existingDynamicColumns.length > 0) {
+      // Pre-populate all dynamic columns as empty fields only for new items
       setDynamicFields(
-        existingDynamicColumns.map(col => ({
-          id: Math.random().toString(36).substr(2, 9),
+        existingDynamicColumns.map((col, index) => ({
+          id: `new_${index}`,
           name: col,
           value: ""
         }))
       );
     }
-  // Only run when modal opens or columns change
-  }, [open, existingDynamicColumns]);
+  }, [open, existingDynamicColumns, editData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -157,7 +167,7 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess, existin
   // Dynamic field management
   const addDynamicField = () => {
     const newField = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: `new_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
       name: "",
       value: ""
     };
@@ -180,7 +190,7 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess, existin
     dynamicFields.forEach(field => {
       if (field.name && field.name.trim()) {
         dynamicData.push({
-          columnName: field.name.trim(),
+          label: field.name.trim(),
           value: field.value || ""
         });
       }
@@ -286,186 +296,244 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess, existin
   };
 
   return (
-    <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={() => setOpen(false)} maxWidth="lg" fullWidth>
       <DialogTitle>
-        <Typography variant="h6">
-          {editData ? "Edit Item" : "Add New Item"}
-        </Typography>
+        <Box display="flex" alignItems="center" justifyContent="space-between">
+          <Typography variant="h5" component="h2" fontWeight="bold">
+            {editData ? "Edit Cabinet" : "Add New Cabinet"}
+          </Typography>
+          <Chip 
+            icon={<Edit />}
+            label={editData ? "Edit Mode" : "Create Mode"}
+            color={editData ? "warning" : "success"}
+            variant="outlined"
+          />
+        </Box>
       </DialogTitle>
-      <DialogContent>
-        <Grid container spacing={3} sx={{ mt: 1 }}>
-          {/* Subcategory Selection Only */}
-          <Grid item xs={12}>
-            <Typography variant="subtitle1" gutterBottom color="primary">
-              Subcategory Information
-            </Typography>
-          </Grid>
-          <Grid item xs={12}>
-            <FormControl fullWidth required>
-              <InputLabel>Subcategory</InputLabel>
-              <Select
-                name="cabinetSubCategoryId"
-                value={formData.cabinetSubCategoryId}
-                onChange={handleChange}
-                label="Subcategory"
-              >
-                {subCategories.map((subCategory) => (
-                  <MenuItem key={subCategory.id} value={subCategory.id}>
-                    {subCategory.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
+      <DialogContent dividers>
+        <Box sx={{ p: 2 }}>
+          <Grid container spacing={4}>
+            {/* Subcategory Selection */}
+            <Grid item xs={12}>
+              <Paper elevation={2} sx={{ p: 3, backgroundColor: '#f8f9fa' }}>
+                <Typography variant="h6" gutterBottom color="primary" sx={{ fontWeight: 600 }}>
+                  📂 Category Information
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <FormControl fullWidth required>
+                      <InputLabel>Subcategory</InputLabel>
+                      <Select
+                        name="cabinetSubCategoryId"
+                        value={formData.cabinetSubCategoryId}
+                        onChange={handleChange}
+                        label="Subcategory"
+                      >
+                        {subCategories.map((subCategory) => (
+                          <MenuItem key={subCategory.id} value={subCategory.id}>
+                            {subCategory.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </Grid>
+              </Paper>
+            </Grid>
 
-          <Grid item xs={12}>
-            <Divider sx={{ my: 2 }} />
-            <Typography variant="subtitle1" gutterBottom color="primary">
-              Cabinet Details
-            </Typography>
-          </Grid>
+            {/* Cabinet Details */}
+            <Grid item xs={12}>
+              <Paper elevation={2} sx={{ p: 3, backgroundColor: '#f8f9fa' }}>
+                <Typography variant="h6" gutterBottom color="primary" sx={{ fontWeight: 600 }}>
+                  🗄️ Cabinet Details
+                </Typography>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      name="code"
+                      label="Cabinet Code"
+                      fullWidth
+                      required
+                      value={formData.code}
+                      onChange={handleChange}
+                      placeholder="Enter cabinet code"
+                      variant="outlined"
+                    />
+                  </Grid>
 
-          <Grid item xs={6}>
-            <TextField
-              name="code"
-              label="Cabinet Code"
-              type="String"
-              fullWidth
-              required
-              value={formData.code}
-              onChange={handleChange}
-              placeholder="Enter cabinet code"
-            />
-          </Grid>
+                  <Grid item xs={12} md={6}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={formData.status === "active"}
+                          onChange={handleStatusChange}
+                          color="primary"
+                        />
+                      }
+                      label={
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <Typography variant="body1" fontWeight={500}>Status</Typography>
+                          <Chip 
+                            label={formData.status} 
+                            color={formData.status === "active" ? "success" : "error"}
+                            size="small"
+                            variant="filled"
+                          />
+                        </Box>
+                      }
+                    />
+                  </Grid>
 
-          <Grid item xs={6}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={formData.status === "active"}
-                  onChange={handleStatusChange}
-                  color="primary"
-                />
-              }
-              label={
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Typography variant="body2">Status</Typography>
-                  <Chip 
-                    label={formData.status} 
-                    color={formData.status === "active" ? "success" : "default"}
-                    size="small"
-                  />
+                  <Grid item xs={12}>
+                    <TextField
+                      name="description"
+                      label="Description"
+                      fullWidth
+                      required
+                      multiline
+                      rows={3}
+                      value={formData.description}
+                      onChange={handleChange}
+                      placeholder="Enter cabinet description"
+                      variant="outlined"
+                    />
+                  </Grid>
+                </Grid>
+              </Paper>
+            </Grid>
+
+            {/* Dynamic Fields Section */}
+            <Grid item xs={12}>
+              <Paper elevation={2} sx={{ p: 3, backgroundColor: '#f8f9fa' }}>
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                  <Box>
+                    <Typography variant="h6" color="primary" sx={{ fontWeight: 600 }}>
+                      ⚙️ Additional Properties
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Add custom properties for this cabinet (optional)
+                    </Typography>
+                  </Box>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    startIcon={<Add />}
+                    onClick={addDynamicField}
+                    size="medium"
+                    sx={{ 
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      fontWeight: 600
+                    }}
+                  >
+                    Add Property
+                  </Button>
                 </Box>
-              }
-            />
-          </Grid>
 
-          <Grid item xs={12}>
-            <TextField
-              name="description"
-              label="Description"
-              fullWidth
-              required
-              multiline
-              rows={3}
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Enter cabinet description"
-            />
-          </Grid>
-
-          {/* Dynamic Fields Section */}
-          <Grid item xs={12}>
-            <Divider sx={{ my: 2 }} />
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="subtitle1" color="primary">
-                Additional Column
-              </Typography>
-              <Button
-                variant="outlined"
-                color="primary"
-                startIcon={<Add />}
-                onClick={addDynamicField}
-                size="small"
-              >
-                Add Column
-              </Button>
-            </Box>
-            <Typography variant="body2" color="textSecondary" gutterBottom>
-              Add custom properties for this cabinet (optional)
-            </Typography>
-          </Grid>
-
-          {/* Render all fields as input fields */}
-          {dynamicFields.length > 0 && (
-            <Grid item xs={12}>
-              <Box display="flex" flexDirection="column" gap={2}>
-                {dynamicFields.map((field, index) => (
-                  <Card key={field.id} variant="outlined">
-                    <CardContent sx={{ py: 2, px: 2 }}>
-                      <Grid container spacing={2} alignItems="center">
-                        <Grid item xs={5}>
-                          <TextField
-                            label="Field Name"
-                            fullWidth
-                            size="small"
-                            value={field.name}
-                            onChange={(e) => updateDynamicField(field.id, 'name', e.target.value)}
-                            placeholder="e.g., Color, Style, Finish"
-                          />
-                        </Grid>
-                        <Grid item xs={5}>
-                          <TextField
-                            label="Field Value"
-                            fullWidth
-                            size="small"
-                            value={field.value}
-                            onChange={(e) => updateDynamicField(field.id, 'value', e.target.value)}
-                            placeholder="e.g., Brown, Modern, Matte"
-                          />
-                        </Grid>
-                        <Grid item xs={2} display="flex" justifyContent="center">
-                          <IconButton
-                            color="error"
-                            onClick={() => removeDynamicField(field.id)}
-                            size="small"
-                          >
-                            <Delete />
-                          </IconButton>
-                        </Grid>
-                      </Grid>
-                    </CardContent>
-                  </Card>
-                ))}
-              </Box>
+                {/* Render all fields as input fields */}
+                {dynamicFields.length > 0 ? (
+                  <Box display="flex" flexDirection="column" gap={2}>
+                    {dynamicFields.map((field, index) => (
+                      <Card key={field.id} variant="outlined" sx={{ 
+                        borderRadius: 2,
+                        '&:hover': {
+                          boxShadow: 3,
+                          transition: 'box-shadow 0.3s ease'
+                        }
+                      }}>
+                        <CardContent sx={{ p: 3 }}>
+                          <Grid container spacing={3} alignItems="center">
+                            <Grid item xs={12} sm={1}>
+                              <Typography 
+                                variant="body2" 
+                                color="primary" 
+                                fontWeight={600}
+                                textAlign="center"
+                              >
+                                #{index + 1}
+                              </Typography>
+                            </Grid>
+                            <Grid item xs={12} sm={5}>
+                              <TextField
+                                label="Property Name"
+                                fullWidth
+                                value={field.name}
+                                onChange={(e) => updateDynamicField(field.id, 'name', e.target.value)}
+                                placeholder="e.g., Color, Style, Finish"
+                                variant="outlined"
+                                size="medium"
+                              />
+                            </Grid>
+                            <Grid item xs={12} sm={5}>
+                              <TextField
+                                label="Property Value"
+                                fullWidth
+                                value={field.value}
+                                onChange={(e) => updateDynamicField(field.id, 'value', e.target.value)}
+                                placeholder="e.g., Brown, Modern, Matte"
+                                variant="outlined"
+                                size="medium"
+                              />
+                            </Grid>
+                            <Grid item xs={12} sm={1} display="flex" justifyContent="center">
+                              <IconButton
+                                color="error"
+                                onClick={() => removeDynamicField(field.id)}
+                                size="medium"
+                                sx={{
+                                  '&:hover': {
+                                    backgroundColor: '#ffebee',
+                                  }
+                                }}
+                              >
+                                <Delete />
+                              </IconButton>
+                            </Grid>
+                          </Grid>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </Box>
+                ) : (
+                  <Box 
+                    p={4} 
+                    textAlign="center" 
+                    border="2px dashed" 
+                    borderColor="divider" 
+                    borderRadius={3}
+                    sx={{
+                      backgroundColor: '#fafafa',
+                      '&:hover': {
+                        backgroundColor: '#f5f5f5',
+                        transition: 'background-color 0.3s ease'
+                      }
+                    }}
+                  >
+                    <Typography variant="h6" color="textSecondary" gutterBottom>
+                      No additional properties added yet
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      Click "Add Property" to add custom attributes like color, style, finish, etc.
+                    </Typography>
+                  </Box>
+                )}
+              </Paper>
             </Grid>
-          )}
-
-          {dynamicFields.length === 0 && (
-            <Grid item xs={12}>
-              <Box 
-                p={3} 
-                textAlign="center" 
-                border="2px dashed" 
-                borderColor="divider" 
-                borderRadius={2}
-              >
-                <Typography variant="body2" color="textSecondary" gutterBottom>
-                  No additional column added yet
-                </Typography>
-                <Typography variant="caption" color="textSecondary">
-                  Click "Add Column" to add custom properties like color, style, finish, etc.
-                </Typography>
-              </Box>
-            </Grid>
-          )}
-        </Grid>
+          </Grid>
+        </Box>
       </DialogContent>
-      <DialogActions sx={{ p: 2, gap: 1 }}>
+      <DialogActions sx={{ p: 3, gap: 2, backgroundColor: '#fafafa' }}>
         <Button 
           onClick={() => setOpen(false)} 
           variant="outlined"
           disabled={loading}
+          size="large"
+          sx={{ 
+            borderRadius: 2,
+            textTransform: 'none',
+            fontWeight: 600,
+            minWidth: 100
+          }}
         >
           Cancel
         </Button>
@@ -473,8 +541,15 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess, existin
           variant="contained" 
           onClick={handleSubmit}
           disabled={loading}
+          size="large"
+          sx={{ 
+            borderRadius: 2,
+            textTransform: 'none',
+            fontWeight: 600,
+            minWidth: 100
+          }}
         >
-          {editData ? "Update" : "Save"}
+          {editData ? "Update Cabinet" : "Save Cabinet"}
         </Button>
       </DialogActions>
 

@@ -108,75 +108,70 @@ const ViewCabinet = ({ open, setOpen, data }) => {
               Basic Information
             </Typography>
           </Grid>
-          
-          <Grid item xs={6}>
-            <Typography variant="subtitle2" color="textSecondary">Cabinet Code</Typography>
-            <Typography variant="body1" fontWeight="medium">
-              {data.code || 'N/A'}
-            </Typography>
+
+
+          <Grid item xs={12} >
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" color="textSecondary">Cabinet Code</Typography>
+              <Typography variant="body1" fontWeight="medium">
+                {data.code || 'N/A'}
+              </Typography>
+            </Box>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" color="textSecondary">Status</Typography>
+              <Chip 
+                label={data.status || 'N/A'} 
+                color={data.status === 'active' ? 'success' : 'default'} 
+                size="small"
+              />
+            </Box>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" color="textSecondary">Description</Typography>
+              <Typography variant="body1" sx={{ wordBreak: 'break-word' }}>
+                {data.description || 'No description provided'}
+              </Typography>
+            </Box>
           </Grid>
-          
-          <Grid item xs={6}>
-            <Typography variant="subtitle2" color="textSecondary">Status</Typography>
-            <Chip 
-              label={data.status || 'N/A'} 
-              color={data.status === 'active' ? 'success' : 'default'} 
-              size="small"
-            />
-          </Grid>
+
 
           <Grid item xs={12}>
-            <Typography variant="subtitle2" color="textSecondary">Description</Typography>
-            <Typography variant="body1" sx={{ wordBreak: 'break-word' }}>
-              {data.description || 'No description provided'}
-            </Typography>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" color="textSecondary">Category</Typography>
+              {data.cabinetCategory ? (
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Chip 
+                    label={data.cabinetCategory.name} 
+                    color="primary" 
+                    variant="outlined"
+                    size="small"
+                  />
+                  <Typography variant="body2" color="textSecondary">
+                    (ID: {data.cabinetCategoryId})
+                  </Typography>
+                </Box>
+              ) : (
+                <Typography variant="body2" color="textSecondary">Not assigned</Typography>
+              )}
+            </Box>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" color="textSecondary">Subcategory</Typography>
+              {data.cabinetSubCategory ? (
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Chip 
+                    label={data.cabinetSubCategory.name} 
+                    color="secondary" 
+                    variant="outlined"
+                    size="small"
+                  />
+                  <Typography variant="body2" color="textSecondary">
+                    (ID: {data.cabinetSubCategoryId})
+                  </Typography>
+                </Box>
+              ) : (
+                <Typography variant="body2" color="textSecondary">Not assigned</Typography>
+              )}
+            </Box>
           </Grid>
-
-          <Grid item xs={12}>
-            <Divider sx={{ my: 2 }} />
-            <Typography variant="h6" color="primary" gutterBottom>
-              Category Information
-            </Typography>
-          </Grid>
-
-          <Grid item xs={6}>
-            <Typography variant="subtitle2" color="textSecondary">Category</Typography>
-            {data.cabinetCategory ? (
-              <Box display="flex" alignItems="center" gap={1}>
-                <Chip 
-                  label={data.cabinetCategory.name} 
-                  color="primary" 
-                  variant="outlined"
-                  size="small"
-                />
-                <Typography variant="body2" color="textSecondary">
-                  (ID: {data.cabinetCategoryId})
-                </Typography>
-              </Box>
-            ) : (
-              <Typography variant="body2" color="textSecondary">Not assigned</Typography>
-            )}
-          </Grid>
-
-          <Grid item xs={6}>
-            <Typography variant="subtitle2" color="textSecondary">Subcategory</Typography>
-            {data.cabinetSubCategory ? (
-              <Box display="flex" alignItems="center" gap={1}>
-                <Chip 
-                  label={data.cabinetSubCategory.name} 
-                  color="secondary" 
-                  variant="outlined"
-                  size="small"
-                />
-                <Typography variant="body2" color="textSecondary">
-                  (ID: {data.cabinetSubCategoryId})
-                </Typography>
-              </Box>
-            ) : (
-              <Typography variant="body2" color="textSecondary">Not assigned</Typography>
-            )}
-          </Grid>
-
           <Grid item xs={12}>
             <Divider sx={{ my: 2 }} />
             <Box display="flex" justifyContent="space-between" alignItems="center">
@@ -198,45 +193,44 @@ const ViewCabinet = ({ open, setOpen, data }) => {
               {renderDynamicProperties(data.dynamicData)}
             </Box>
           </Grid>
-
           <Grid item xs={12}>
             <Divider sx={{ my: 2 }} />
             <Typography variant="h6" color="primary" gutterBottom>
               System Information
             </Typography>
           </Grid>
-
-          <Grid item xs={6}>
-            <Typography variant="subtitle2" color="textSecondary">Created At</Typography>
-            <Typography variant="body2" fontFamily="monospace">
-              {formatDate(data.createdAt)}
-            </Typography>
-          </Grid>
-
-          <Grid item xs={6}>
-            <Typography variant="subtitle2" color="textSecondary">Updated At</Typography>
-            <Typography variant="body2" fontFamily="monospace">
-              {formatDate(data.updatedAt)}
-            </Typography>
-          </Grid>
-
-          {data.createdBy && (
-            <Grid item xs={6}>
-              <Typography variant="subtitle2" color="textSecondary">Created By</Typography>
-              <Typography variant="body2">
-                {data.createdBy.name || data.createdBy.email || 'N/A'}
+          <Grid item xs={12} md={6}>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" color="textSecondary">Created At</Typography>
+              <Typography variant="body2" fontFamily="monospace">
+                {formatDate(data.createdAt)}
               </Typography>
-            </Grid>
-          )}
-
-          {data.updatedBy && (
-            <Grid item xs={6}>
-              <Typography variant="subtitle2" color="textSecondary">Updated By</Typography>
-              <Typography variant="body2">
-                {data.updatedBy.name || data.updatedBy.email || 'N/A'}
+            </Box>
+            {data.createdBy && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" color="textSecondary">Created By</Typography>
+                <Typography variant="body2">
+                  {data.createdBy.name || data.createdBy.email || 'N/A'}
+                </Typography>
+              </Box>
+            )}
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" color="textSecondary">Updated At</Typography>
+              <Typography variant="body2" fontFamily="monospace">
+                {formatDate(data.updatedAt)}
               </Typography>
-            </Grid>
-          )}
+            </Box>
+            {data.updatedBy && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" color="textSecondary">Updated By</Typography>
+                <Typography variant="body2">
+                  {data.updatedBy.name || data.updatedBy.email || 'N/A'}
+                </Typography>
+              </Box>
+            )}
+          </Grid>
         </Grid>
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>

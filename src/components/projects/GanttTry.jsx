@@ -1,33 +1,36 @@
-// "use client"
+"use client";
 
-// import { Gantt, Task } from "gantt-task-react"
-// import "gantt-task-react/dist/index.css"
+import { Scheduler } from "@aldabil/react-scheduler";
 
-// export default function GanttTry() {
-//   const tasks: Task[] = [
-//     {
-//       start: new Date(),
-//       end: new Date(new Date().setDate(new Date().getDate() + 7)),
-//       name: "Task 1",
-//       id: "1",
-//       type: "task",
-//       progress: 50,
-//       isDisabled: false,
-//     },
-//     {
-//       start: new Date(),
-//       end: new Date(new Date().setDate(new Date().getDate() + 14)),
-//       name: "Task 2",
-//       id: "2",
-//       type: "task",
-//       progress: 20,
-//       isDisabled: false,
-//     },
-//   ]
+export default function SchedulerTry() {
+  const events = [
+    {
+      event_id: 1,
+      title: "Task 1",
+      start: new Date(),
+      end: new Date(new Date().setDate(new Date().getDate() + 7)),
+    },
+    {
+      event_id: 2,
+      title: "Task 2",
+      start: new Date(),
+      end: new Date(new Date().setDate(new Date().getDate() + 14)),
+    },
+  ];
 
-//   return (
-//     <div style={{ height: "500px" }}>
-//       <Gantt tasks={tasks} />
-//     </div>
-//   )
-// }
+  return (
+    <div style={{ height: 600 }}>
+      <Scheduler
+        view="week"
+        events={events}
+        week={{
+          startHour: 8,
+          endHour: 20,
+        }}
+        month={{
+          weekStartOn: 1,
+        }}
+      />
+    </div>
+  );
+}

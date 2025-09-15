@@ -40,6 +40,11 @@ import axios from "axios"
 import { BASE_URL } from "@/configs/url"
 import { useParams } from "next/navigation"
 
+// Utility to normalize header names (lowercase, trimmed)
+function normalizeHeader(header) {
+  return header?.toString().trim().toLowerCase();
+}
+
 const CabinetImport = ({ id, setIsInProgress }) => {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -89,12 +94,22 @@ const CabinetImport = ({ id, setIsInProgress }) => {
           return
         }
 
-        // Extract headers (first row)
-        // Normalize: trim, collapse spaces, remove line breaks
-        function normalizeHeader(h) {
-          return h?.toString().replace(/\s+/g, " ").replace(/\r?\n|\r/g, "").trim().toLowerCase()
+        // Extract headers (first row) with custom blank handling
+        let blankCount = 0;
+        const headers = [];
+        for (let idx = 0; idx < jsonData[0].length; idx++) {
+          const header = jsonData[0][idx];
+          if (!header || header.toString().trim() === "") {
+            blankCount++;
+            if (blankCount >= 2) {
+              break; // Stop parsing further columns after two consecutive blanks
+            }
+            headers.push(`To be named ${idx + 1}`);
+          } else {
+            blankCount = 0; // Reset counter if a non-blank column is found
+            headers.push(header.toString().trim());
+          }
         }
-        const headers = jsonData[0].map(header => header?.toString().trim() || "")
         const normalizedHeaders = headers.map(normalizeHeader)
         const requiredColumns = ["code", "sub code", "description"]
         const missingColumns = requiredColumns.filter(col => 
@@ -380,7 +395,7 @@ const CabinetImport = ({ id, setIsInProgress }) => {
           ) {
             // Preserve the original column name and value in order
             arrayList.push({
-              label: col,
+              label: col || "missing name",
               value: row[col] || ""
             })
           }
@@ -702,7 +717,7 @@ const CabinetImport = ({ id, setIsInProgress }) => {
                 <TableHead>
                   <TableRow>
                     {columns.map((col, idx) => (
-                      <TableCell key={idx}>{col || "(empty)"}</TableCell>
+                      <TableCell key={idx}>{col || "missing name"}</TableCell>
                     ))}
                     <TableCell>Actions</TableCell>
                   </TableRow>

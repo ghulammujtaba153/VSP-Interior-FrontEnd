@@ -63,7 +63,7 @@ const Page = () => {
       <Box sx={{ mt: 3 }}>
         {tabValue === 0 && <OverAllProject project={data} />}
         {tabValue === 1 && <GanttChart project={data} />}
-        {/* {tabValue === 2 && <GanttTry project={data}/>} */}
+        {tabValue === 2 && <GanttTry project={data}/>}
 
       </Box>
     </Box>
