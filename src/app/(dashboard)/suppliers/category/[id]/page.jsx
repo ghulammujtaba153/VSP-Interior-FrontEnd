@@ -6,7 +6,6 @@ import React, { useEffect, useState } from 'react'
 import { BASE_URL } from '@/configs/url'
 import axios from 'axios'
 import { toast } from 'react-toastify'
-import { DataGrid } from '@mui/x-data-grid'
 import {
   IconButton,
   Box,
@@ -16,7 +15,19 @@ import {
   DialogActions,
   Button,
   TextField,
-  Paper
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination,
+  Typography,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormControl
 } from '@mui/material'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
@@ -27,10 +38,14 @@ const SupplierCategoryPage = () => {
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState([])
 
-  // Search state
+  // Search
   const [searchQuery, setSearchQuery] = useState('')
 
-  // Modal states
+  // Pagination
+  const [page, setPage] = useState(0)
+  const [rowsPerPage, setRowsPerPage] = useState(10)
+
+  // Modal
   const [open, setOpen] = useState(false)
   const [selectedRow, setSelectedRow] = useState(null)
   const [formData, setFormData] = useState({
@@ -141,39 +156,13 @@ const SupplierCategoryPage = () => {
     )
   }
 
-  // Columns
-  const columns = [
-    { field: 'id', headerName: 'ID', width: 90 },
-    { field: 'name', headerName: 'Name', flex: 1 },
-    { field: 'description', headerName: 'Description', flex: 1 },
-    { field: 'unit', headerName: 'Unit', width: 120 },
-    { field: 'price', headerName: 'Price', width: 120 },
-    { field: 'status', headerName: 'Status', width: 150 },
-    {
-      field: 'actions',
-      headerName: 'Actions',
-      width: 150,
-      renderCell: params => (
-        <Box>
-          <IconButton color='primary' onClick={() => handleEdit(params.row)}>
-            <EditIcon />
-          </IconButton>
-          <IconButton color='error' onClick={() => handleDelete(params.row.id)}>
-            <DeleteIcon />
-          </IconButton>
-        </Box>
-      )
-    }
-  ]
-
   // Filtered rows
   const filteredData = data.filter(item =>
-    Object.values(item).some(
-      value =>
-        value &&
-        value.toString().toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    Object.values(item).some(value => value && value.toString().toLowerCase().includes(searchQuery.toLowerCase()))
   )
+
+  // Paginated rows
+  const paginatedData = filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
 
   if (loading) return <Loader />
 
@@ -183,7 +172,7 @@ const SupplierCategoryPage = () => {
         <Button variant='contained' color='primary' onClick={() => window.history.back()}>
           Back
         </Button>
-        
+
         <Box>
           <Button variant='contained' color='success' onClick={handleExport} sx={{ mr: 2 }}>
             Export XLS
@@ -194,9 +183,11 @@ const SupplierCategoryPage = () => {
         </Box>
       </Box>
 
+      <Typography variant='h6' fontWeight='bold' mb={2}>
+        Supplier Category Page
+      </Typography>
 
-      <h1 className='text-lg font-bold mb-4'>Supplier Category Page</h1>
-      <Box className="my-2" display="flex" alignItems="center">
+      <Box className='my-2' display='flex' alignItems='center'>
         <TextField
           label='Search...'
           variant='outlined'
@@ -205,20 +196,80 @@ const SupplierCategoryPage = () => {
           onChange={e => setSearchQuery(e.target.value)}
           sx={{ mx: 2, flex: 1, maxWidth: 300 }}
         />
-
       </Box>
 
-      <div style={{ height: 500, width: '100%' }}>
-        <DataGrid
-          rows={filteredData}
-          columns={columns}
-          pageSizeOptions={[5, 10, 20]}
-          initialState={{
-            pagination: { paginationModel: { pageSize: 10 } }
+      {/* Table */}
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>
+                <b>ID</b>
+              </TableCell>
+              <TableCell>
+                <b>Name</b>
+              </TableCell>
+              <TableCell>
+                <b>Description</b>
+              </TableCell>
+              <TableCell>
+                <b>Unit</b>
+              </TableCell>
+              <TableCell>
+                <b>Price</b>
+              </TableCell>
+              <TableCell>
+                <b>Status</b>
+              </TableCell>
+              <TableCell align='center'>
+                <b>Actions</b>
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {paginatedData.length > 0 ? (
+              paginatedData.map(row => (
+                <TableRow key={row.id}>
+                  <TableCell>{row.id}</TableCell>
+                  <TableCell>{row.name}</TableCell>
+                  <TableCell>{row.description}</TableCell>
+                  <TableCell>{row.unit}</TableCell>
+                  <TableCell>{row.price}</TableCell>
+                  <TableCell>{row.status}</TableCell>
+                  <TableCell align='center'>
+                    <IconButton color='primary' onClick={() => handleEdit(row)}>
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton color='error' onClick={() => handleDelete(row.id)}>
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} align='center'>
+                  No data found
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+
+        {/* Pagination */}
+        <TablePagination
+          component='div'
+          count={filteredData.length}
+          page={page}
+          onPageChange={(e, newPage) => setPage(newPage)}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={e => {
+            setRowsPerPage(parseInt(e.target.value, 10))
+            setPage(0)
           }}
-          disableRowSelectionOnClick
+          rowsPerPageOptions={[5, 10, 20]}
         />
-      </div>
+      </TableContainer>
 
       {/* Add/Edit Modal */}
       <Dialog open={open} onClose={handleClose}>
@@ -253,14 +304,20 @@ const SupplierCategoryPage = () => {
             value={formData.price}
             onChange={e => setFormData({ ...formData, price: e.target.value })}
           />
-          <TextField
-            label='Status'
-            fullWidth
-            margin='dense'
-            value={formData.status}
-            onChange={e => setFormData({ ...formData, status: e.target.value })}
-          />
+          <FormControl fullWidth margin='dense'>
+            <InputLabel>Status</InputLabel>
+            <Select
+              value={formData.status}
+              label='Status'
+              onChange={e => setFormData({ ...formData, status: e.target.value })}
+            >
+              <MenuItem value='Active'>Active</MenuItem>
+              <MenuItem value='Inactive'>Inactive</MenuItem>
+            </Select>
+          </FormControl>
         </DialogContent>
+
+        
         <DialogActions>
           <Button onClick={handleClose} color='inherit'>
             Cancel

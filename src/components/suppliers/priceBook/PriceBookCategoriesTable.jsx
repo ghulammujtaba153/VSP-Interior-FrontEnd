@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { BASE_URL } from "@/configs/url";
 import { toast } from "react-toastify";
-import { DataGrid } from "@mui/x-data-grid";
 import {
   IconButton,
   Box,
@@ -15,6 +14,15 @@ import {
   Button,
   TextField,
   Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  CircularProgress,
+  Typography,
+  TablePagination,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -24,6 +32,10 @@ import Link from "next/link";
 const PriceBookCategoriesTable = ({ id }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Pagination
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   // Modal states
   const [open, setOpen] = useState(false);
@@ -65,13 +77,13 @@ const PriceBookCategoriesTable = ({ id }) => {
   };
 
   const handleEdit = (category) => {
-    setSelectedCategory(category); // editing existing
+    setSelectedCategory(category);
     setCategoryName(category.name);
     setOpen(true);
   };
 
   const handleAdd = () => {
-    setSelectedCategory(null); // new category
+    setSelectedCategory(null);
     setCategoryName("");
     setOpen(true);
   };
@@ -80,19 +92,18 @@ const PriceBookCategoriesTable = ({ id }) => {
     toast.loading("Please wait...");
     try {
       if (selectedCategory) {
-        // Update
         await axios.put(
           `${BASE_URL}/api/pricebook-categories/update/${selectedCategory.id}`,
-          { name: categoryName,
-            supplierId: id
-           }
+          {
+            name: categoryName,
+            supplierId: id,
+          }
         );
         toast.success("Category updated successfully");
       } else {
-        // Add
         await axios.post(`${BASE_URL}/api/pricebook-categories/create`, {
           name: categoryName,
-          supplierId: id
+          supplierId: id,
         });
         toast.success("Category added successfully");
       }
@@ -111,39 +122,26 @@ const PriceBookCategoriesTable = ({ id }) => {
     setCategoryName("");
   };
 
-  // DataGrid columns
-  const columns = [
-    { field: "id", headerName: "ID", width: 120 },
-    { field: "name", headerName: "Name", flex: 1 },
-    {
-      field: "actions",
-      headerName: "Actions",
-      width: 180,
-      sortable: false,
-      renderCell: (params) => (
-        <Box>
-          <IconButton color="primary" onClick={() => handleEdit(params.row)}>
-            <EditIcon />
-          </IconButton>
-          <IconButton
-            color="error"
-            onClick={() => handleDelete(params.row.id)}
-          >
-            <DeleteIcon />
-          </IconButton>
-          <IconButton color="primary">
-            <Link href={`/suppliers/category/${params.row.id}`} passHref>
-              <RemoveRedEye />
-            </Link>
-          </IconButton>
-        </Box>
-      ),
-    },
-  ];
+  // Pagination handlers
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Slice data for current page
+  const paginatedData = categories.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
 
   return (
-    <div style={{ height: 400, width: "100%" }} component={Paper}>
-      <h2 className="text-lg font-bold mb-4">Price Book Categories</h2>
+    <Box>
+      <Typography variant="h6" fontWeight="bold" mb={2}>
+        Price Book Categories
+      </Typography>
       <Button
         variant="contained"
         color="primary"
@@ -152,16 +150,70 @@ const PriceBookCategoriesTable = ({ id }) => {
       >
         Add Category
       </Button>
-      <DataGrid
-        rows={categories}
-        columns={columns}
-        loading={loading}
-        pageSizeOptions={[5, 10, 20]}
-        initialState={{
-          pagination: { paginationModel: { pageSize: 10 } },
-        }}
-        disableRowSelectionOnClick
-      />
+
+      <TableContainer component={Paper}>
+        {loading ? (
+          <Box display="flex" justifyContent="center" p={3}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell><b>ID</b></TableCell>
+                  <TableCell><b>Name</b></TableCell>
+                  <TableCell align="center"><b>Actions</b></TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {paginatedData.length > 0 ? (
+                  paginatedData.map((row) => (
+                    <TableRow key={row.id}>
+                      <TableCell>{row.id}</TableCell>
+                      <TableCell>{row.name}</TableCell>
+                      <TableCell align="center">
+                        <IconButton
+                          color="primary"
+                          onClick={() => handleEdit(row)}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                        <IconButton
+                          color="error"
+                          onClick={() => handleDelete(row.id)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                        <Link href={`/suppliers/category/${row.id}`} passHref>
+                          <IconButton color="primary">
+                            <RemoveRedEye />
+                          </IconButton>
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} align="center">
+                      No categories found
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+            <TablePagination
+              component="div"
+              count={categories.length}
+              page={page}
+              onPageChange={handleChangePage}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              rowsPerPageOptions={[5, 10, 20]}
+            />
+          </>
+        )}
+      </TableContainer>
 
       {/* Add/Edit Modal */}
       <Dialog open={open} onClose={handleClose}>
@@ -188,7 +240,7 @@ const PriceBookCategoriesTable = ({ id }) => {
           </Button>
         </DialogActions>
       </Dialog>
-    </div>
+    </Box>
   );
 };
 
