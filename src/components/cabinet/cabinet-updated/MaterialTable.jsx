@@ -205,21 +205,28 @@ setUniqueSubCodes(subCodes);
         'Subcategory': cabinet.cabinetSubCategory?.name || 'N/A',
         'Description': cabinet.description || 'N/A',
         'Status': cabinet.status || 'N/A',
-        'Created Date': cabinet.createdAt ? formatDate(cabinet.createdAt) : 'N/A',
-        'Updated Date': cabinet.updatedAt ? formatDate(cabinet.updatedAt) : 'N/A'
+        
       };
       // Add dynamic properties
-      if (cabinet.dynamicData && Array.isArray(cabinet.dynamicData)) {
-        cabinet.dynamicData.forEach(item => {
-          baseData[item.columnName] = item.value || 'N/A';
+      if (cabinet.dynamicData && Array.isArray(cabinet.dynamicData.arrayList)) {
+        cabinet.dynamicData.arrayList.forEach(item => {
+          baseData[item.label] = item.value || 'N/A';
         });
       }
+
+      // 'Created Date': cabinet.createdAt ? formatDate(cabinet.createdAt) : 'N/A',
+        // 'Updated Date': cabinet.updatedAt ? formatDate(cabinet.updatedAt) : 'N/A'
+
+      baseData['Created Date'] = cabinet.createdAt ? new Date(cabinet.createdAt).toLocaleDateString() : 'N/A';
+      baseData['Updated Date'] = cabinet.updatedAt ? new Date(cabinet.updatedAt).toLocaleDateString() : 'N/A';
+
+
       return baseData;
     });
     const worksheet = XLSX.utils.json_to_sheet(formatted);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Cabinets');
-    XLSX.writeFile(workbook, selectedSubCode === 'all' ? 'Cabinet Items VSP.xlsx' : `Cabinets ${selectedSubCode}.xlsx`);
+    XLSX.writeFile(workbook, selectedSubCode === 'all' ? 'Cabinet Items VSP.xlsx' : `${selectedSubCode} Cabinets.xlsx`);
     setExportLoading(false);
     setExportDialogOpen(false);
     toast.success('Cabinet data exported successfully');
