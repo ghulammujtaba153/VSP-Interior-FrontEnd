@@ -1,36 +1,32 @@
 "use client";
 
-import { Scheduler } from "@aldabil/react-scheduler";
+import React from "react";
+import { Gantt, Task, ViewMode } from "gantt-task-react";
+import "gantt-task-react/dist/index.css";
 
-export default function SchedulerTry() {
-  const events = [
+export default function GanttTry() {
+  const tasks = [
     {
-      event_id: 1,
-      title: "Task 1",
+      id: "1",
+      name: "Task 1",
       start: new Date(),
       end: new Date(new Date().setDate(new Date().getDate() + 7)),
+      type: "task",
+      progress: 50,
     },
     {
-      event_id: 2,
-      title: "Task 2",
+      id: "2",
+      name: "Task 2",
       start: new Date(),
       end: new Date(new Date().setDate(new Date().getDate() + 14)),
+      type: "task",
+      progress: 20,
     },
   ];
 
   return (
-    <div style={{ height: 600 }}>
-      <Scheduler
-        view="week"
-        events={events}
-        week={{
-          startHour: 8,
-          endHour: 20,
-        }}
-        month={{
-          weekStartOn: 1,
-        }}
-      />
+    <div style={{ height: "600px", width: "100%" }}>
+      <Gantt tasks={tasks} viewMode={ViewMode.Week} />
     </div>
   );
 }

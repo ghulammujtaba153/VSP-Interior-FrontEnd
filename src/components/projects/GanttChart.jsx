@@ -1,144 +1,112 @@
 "use client";
 import { useState } from "react";
-import { Chart } from "react-google-charts";
+import { Gantt, ViewMode } from "gantt-task-react";
+import "gantt-task-react/dist/index.css";
 
 export default function GanttChart({ project }) {
   if (!project) return null;
 
-  const [viewMode, setViewMode] = useState("all"); // all | weekly | monthly
+  const [viewMode, setViewMode] = useState(ViewMode.Month);
 
-  // Google Gantt expects columns
-  const columns = [
-    { type: "string", label: "Task ID" },
-    { type: "string", label: "Task Name" },
-    { type: "string", label: "Resource" },
-    { type: "date", label: "Start Date" },
-    { type: "date", label: "End Date" },
-    { type: "number", label: "Duration" },
-    { type: "number", label: "Percent Complete" },
-    { type: "string", label: "Dependencies" },
-  ];
-
-  // Project timeline rows
-  const rows = [
-    [
-      "ShopDrawing",
-      "Shop Drawing Submission",
-      "Design",
-      new Date(project.shopDrawingSubmissionDate),
-      new Date(project.siteMeasureDate),
-      null,
-      100,
-      null,
-    ],
-    [
-      "Machining",
-      "Machining",
-      "Production",
-      new Date(project.machiningDate),
-      new Date(project.assemblyDate),
-      null,
-      70,
-      "ShopDrawing",
-    ],
-    [
-      "Assembly",
-      "Assembly",
-      "Production",
-      new Date(project.assemblyDate),
-      new Date(project.deliveryDate),
-      null,
-      30,
-      "Machining",
-    ],
-    [
-      "Delivery",
-      "Delivery",
-      "Logistics",
-      new Date(project.deliveryDate),
-      new Date(project.installationDate),
-      null,
-      0,
-      "Assembly",
-    ],
-    [
-      "Installation",
-      "Installation Phase",
-      "Installation",
-      new Date(project.installationDate),
-      new Date(project.installPhaseDate),
-      null,
-      0,
-      "Delivery",
-    ],
-  ];
-
-  // Filter logic
-  const today = new Date();
-  let filteredRows = rows;
-  const isValidDate = (d) => d instanceof Date && !isNaN(d);
-
-  if (viewMode === "weekly") {
-    const nextWeek = new Date();
-    nextWeek.setDate(today.getDate() + 7);
-    filteredRows = rows.filter((row) => {
-      const start = row[3];
-      const end = row[4];
-      return (
-        isValidDate(start) &&
-        isValidDate(end) &&
-        start <= nextWeek &&
-        end >= today
-      );
-    });
-  } else if (viewMode === "monthly") {
-    const nextMonth = new Date();
-    nextMonth.setMonth(today.getMonth() + 1);
-    filteredRows = rows.filter((row) => {
-      const start = row[3];
-      const end = row[4];
-      return (
-        isValidDate(start) &&
-        isValidDate(end) &&
-        start <= nextMonth &&
-        end >= today
-      );
-    });
-  }
-
-  const data = [columns, ...filteredRows];
-
-  const options = {
-    height: 500,
-    gantt: {
-      trackHeight: 35,
-      criticalPathEnabled: true, // highlight tasks with no slack
-      barCornerRadius: 4,
-      arrow: {
-        angle: 70,
-        width: 2,
-        color: "#555",
-        radius: 0,
-      },
+  const tasks = [
+    {
+      id: "ShopDrawing",
+      name: "Shop Drawing Submission",
+      type: "task",
+      start: new Date(project.shopDrawingSubmissionDate),
+      end: new Date(project.siteMeasureDate),
+      progress: 100,
+      project: "Design",
     },
-    tooltip: { isHtml: true },
+    {
+      id: "Machining",
+      name: "Machining",
+      type: "task",
+      start: new Date(project.machiningDate),
+      end: new Date(project.assemblyDate),
+      progress: 70,
+      dependencies: ["ShopDrawing"],
+      project: "Production",
+    },
+    {
+      id: "Assembly",
+      name: "Assembly",
+      type: "task",
+      start: new Date(project.assemblyDate),
+      end: new Date(project.deliveryDate),
+      progress: 30,
+      dependencies: ["Machining"],
+      project: "Production",
+    },
+    {
+      id: "Delivery",
+      name: "Delivery",
+      type: "task",
+      start: new Date(project.deliveryDate),
+      end: new Date(project.installationDate),
+      progress: 0,
+      dependencies: ["Assembly"],
+      project: "Logistics",
+    },
+    {
+      id: "Installation",
+      name: "Installation Phase",
+      type: "task",
+      start: new Date(project.installationDate),
+      end: new Date(project.installPhaseDate),
+      progress: 0,
+      dependencies: ["Delivery"],
+      project: "Installation",
+    },
+  ];
+
+  const getBarStyle = (project) => {
+    switch (project) {
+      case "Design":
+        return { backgroundColor: "#93c5fd" };
+      case "Production":
+        return { backgroundColor: "#86efac" };
+      case "Logistics":
+        return { backgroundColor: "#fde68a" };
+      case "Installation":
+        return { backgroundColor: "#fca5a5" };
+      default:
+        return {};
+    }
   };
 
   return (
     <div className="bg-white p-4 rounded shadow">
       {/* Filter Controls */}
       <div className="flex gap-2 mb-4">
-        {["all", "weekly", "monthly"].map((mode) => (
-          <button
-            key={mode}
-            onClick={() => setViewMode(mode)}
-            className={`px-3 py-1 rounded capitalize ${
-              viewMode === mode ? "bg-blue-600 text-white" : "bg-gray-200"
-            }`}
-          >
-            {mode}
-          </button>
-        ))}
+        <button
+          onClick={() => setViewMode(ViewMode.Day)}
+          className={`px-3 py-1 rounded ${
+            viewMode === ViewMode.Day ? "bg-blue-600 text-white" : "bg-gray-200"
+          }`}
+        >
+          Weekly (Day + Date)
+        </button>
+        <button
+          onClick={() => setViewMode(ViewMode.Month)}
+          className={`px-3 py-1 rounded ${
+            viewMode === ViewMode.Month
+              ? "bg-blue-600 text-white"
+              : "bg-gray-200"
+          }`}
+        >
+          Monthly
+        </button>
+        {/* <button
+          onClick={() => setViewMode(ViewMode.QuarterYear)}
+          className={`px-3 py-1 rounded ${
+            viewMode === ViewMode.QuarterYear
+              ? "bg-blue-600 text-white"
+              : "bg-gray-200"
+          }`}
+        >
+          All
+        </button> */}
       </div>
 
       {/* Legend */}
@@ -149,16 +117,18 @@ export default function GanttChart({ project }) {
         <span className="px-2 py-1 bg-red-200 rounded">Installation</span>
       </div>
 
-      {/* Scrollable X-axis */}
+      {/* Gantt Chart */}
       <div className="overflow-x-auto">
         <div className="min-w-[1000px]">
-          <Chart
-            chartType="Gantt"
-            width="100%"
-            height="500px"
-            data={data}
-            options={options}
-            loader={<div>Loading Gantt Chart...</div>}
+          <Gantt
+            tasks={tasks.map((task) => ({
+              ...task,
+              styles: getBarStyle(task.project),
+            }))}
+            viewMode={viewMode}
+            columnWidth={viewMode === ViewMode.Day ? 80 : 120} // wider for day+date
+            listCellWidth="200px"
+            locale="en-GB" // ensures day+date format like Mon 15
           />
         </div>
       </div>
