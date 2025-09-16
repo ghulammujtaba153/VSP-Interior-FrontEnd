@@ -57,7 +57,7 @@ const Page = () => {
       >
         <Tab label="Project Overview" />
         <Tab label="Project Timeline" />
-        {/* <Tab label="Tasks"  />  */}
+        <Tab label="Tasks Management"  /> 
       </Tabs>
 
       <Box sx={{ mt: 3 }}>
