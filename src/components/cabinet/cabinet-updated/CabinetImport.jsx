@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import React, { useState, useRef, useEffect } from "react"
 import {
@@ -61,10 +61,27 @@ const CabinetImport = ({ id, setIsInProgress }) => {
   const [subCategoryList, setSubCategoryList] = useState([])
   const [subcategoriesUploaded, setSubcategoriesUploaded] = useState(false)
   const fileInputRef = useRef(null)
+  const [template, setTemplate] = useState([])
 
   // Lock-in states
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false)
   const [pendingNavigation, setPendingNavigation] = useState(null)
+
+  // Fetch template from API
+  const fetchTemplate = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/api/cabinet/get/${id}`)
+      // Extract all labels from dynamicData.arrayList
+      const labels = res.data.cabinets[0]?.dynamicData?.arrayList.map(item => item.label) || []
+      setTemplate(labels)
+    } catch (error) {
+      console.error('Error fetching template:', error)
+    }
+  }
+
+  useEffect(() => {
+    fetchTemplate()
+  }, [id])
 
   // Handle file upload and parse excel
   const handleFileUpload = (e) => {
@@ -101,15 +118,13 @@ const CabinetImport = ({ id, setIsInProgress }) => {
           const header = jsonData[0][idx];
           if (!header || header.toString().trim() === "") {
             blankCount++;
-            if (blankCount >= 2) {
-              break; // Stop parsing further columns after two consecutive blanks
-            }
             headers.push(`To be named ${idx + 1}`);
           } else {
             blankCount = 0; // Reset counter if a non-blank column is found
             headers.push(header.toString().trim());
           }
         }
+
         const normalizedHeaders = headers.map(normalizeHeader)
         const requiredColumns = ["code", "sub code", "description"]
         const missingColumns = requiredColumns.filter(col => 
@@ -122,18 +137,48 @@ const CabinetImport = ({ id, setIsInProgress }) => {
           return
         }
 
+        // ✅ Template validation - FIXED
+        if (template && template.length > 0) {
+          // Remove required columns to get dynamic headers only
+          const dynamicHeaders = headers.filter(h => 
+            !requiredColumns.includes(normalizeHeader(h))
+          )
+          
+          const normalizedDynamicHeaders = dynamicHeaders.map(normalizeHeader)
+          const normalizedTemplate = template.map(normalizeHeader)
+
+          // Check if template columns exist in the uploaded file (order doesn't matter)
+          const missingInFile = normalizedTemplate.filter(t => 
+            !normalizedDynamicHeaders.includes(t)
+          )
+          
+          const extraInFile = normalizedDynamicHeaders.filter(h => 
+            !normalizedTemplate.includes(h)
+          )
+
+          if (missingInFile.length > 0 || extraInFile.length > 0) {
+            setError(
+              `Template mismatch:\n` +
+              (missingInFile.length > 0 ? `Missing: ${missingInFile.join(", ")}\n` : "") +
+              (extraInFile.length > 0 ? `Unexpected: ${extraInFile.join(", ")}` : "")
+            )
+            setLoading(false)
+            return
+          }
+        }
+
         // Convert to array of objects
         const descriptionIndex = normalizedHeaders.indexOf("description")
         const dataRows = jsonData.slice(1).map(row => {
           const obj = {}
           headers.forEach((header, index) => {
-            // If value is undefined or empty, set as "empty" (for columns after Description)
+            // If value is undefined or empty, set as empty string
             if (
               row[index] === undefined ||
               row[index] === null ||
-              (row[index] === "" && index > descriptionIndex)
+              row[index] === ""
             ) {
-              obj[header] = "empty"
+              obj[header] = ""
             } else {
               obj[header] = String(row[index])
             }
@@ -148,7 +193,7 @@ const CabinetImport = ({ id, setIsInProgress }) => {
           new Set(
             dataRows
               .map(row => row[codeHeader]?.toString().trim())
-              .filter(val => val && val.toLowerCase() !== "empty")
+              .filter(val => val && val !== "")
           )
         ).filter(Boolean)
 
@@ -393,9 +438,12 @@ const CabinetImport = ({ id, setIsInProgress }) => {
             col.toLowerCase() !== subCodeHeader.toLowerCase() &&
             col.toLowerCase() !== descriptionHeader.toLowerCase()
           ) {
+            // Handle empty column names by using the original header
+            const columnLabel = col || "unnamed_column"
+            
             // Preserve the original column name and value in order
             arrayList.push({
-              label: col || "missing name",
+              label: columnLabel,
               value: row[col] || ""
             })
           }

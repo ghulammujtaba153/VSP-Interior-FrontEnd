@@ -130,6 +130,10 @@ const VerticalMenu = ({ scrollMenu }) => {
           </PermissionWrapper> */}
         </SubMenu>
 
+        <MenuItem href='/quotes' icon={<i className='tabler-report' />}>
+          Tender/ Quotes
+        </MenuItem>
+
         <MenuItem href='/workers' icon={<i className='tabler-users' />}>
           Workers
         </MenuItem>
@@ -139,9 +143,7 @@ const VerticalMenu = ({ scrollMenu }) => {
         </MenuItem>
 
 
-        <MenuItem href='/quotes' icon={<i className='tabler-report' />}>
-          Quotes
-        </MenuItem>
+        
 
         <SubMenu label='Tender' icon={<i className='tabler-file-text' />}></SubMenu>
 
