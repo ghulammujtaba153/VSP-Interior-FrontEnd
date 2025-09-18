@@ -134,6 +134,11 @@ const VerticalMenu = ({ scrollMenu }) => {
           Tender/ Quotes
         </MenuItem>
 
+
+        <MenuItem href='/purchasing' icon={<i className='tabler-moneybag' />}>
+          Purchasing
+        </MenuItem>
+
         <MenuItem href='/workers' icon={<i className='tabler-users' />}>
           Workers
         </MenuItem>
@@ -147,7 +152,7 @@ const VerticalMenu = ({ scrollMenu }) => {
 
         <SubMenu label='Tender' icon={<i className='tabler-file-text' />}></SubMenu>
 
-        <SubMenu label='Purchasing' icon={<i className='tabler-shopping-cart' />}></SubMenu>
+        {/* <SubMenu label='Purchasing' icon={<i className='tabler-shopping-cart' />}></SubMenu> */}
 
         <SubMenu label='Job Schedule' icon={<i className='tabler-calendar' />}></SubMenu>
 
