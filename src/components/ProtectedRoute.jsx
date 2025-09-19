@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import { useAuth } from '@/context/authContext'
+import Loader from './loader/Loader'
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth()
@@ -24,7 +25,7 @@ const ProtectedRoute = ({ children }) => {
   }, [user, loading, router])
 
   if (loading || !checked) {
-    return <div>Loading...</div>
+    return <div><Loader/></div>
   }
 
   return children

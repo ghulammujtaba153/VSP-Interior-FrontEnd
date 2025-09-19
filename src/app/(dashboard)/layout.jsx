@@ -17,6 +17,7 @@ import ScrollToTop from '@core/components/scroll-to-top'
 
 // Util Imports
 import { getMode, getSystemMode } from '@core/utils/serverHelpers'
+import ProtectedRoute from '@/components/ProtectedRoute'
 
 const Layout = async props => {
   const { children } = props
@@ -27,6 +28,7 @@ const Layout = async props => {
   const systemMode = await getSystemMode()
 
   return (
+    <ProtectedRoute>
     <Providers direction={direction}>
       <LayoutWrapper
         systemMode={systemMode}
@@ -47,6 +49,7 @@ const Layout = async props => {
         </Button>
       </ScrollToTop>
     </Providers>
+    </ProtectedRoute>
   )
 }
 
