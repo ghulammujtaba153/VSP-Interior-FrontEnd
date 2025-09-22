@@ -1,11 +1,14 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import MaterialTable from '@/components/cabinet/cabinet-updated/MaterialTable'
 import CabinetImport from '@/components/cabinet/cabinet-updated/CabinetImport'
 import SubCategories from '@/components/cabinet/cabinet-updated/SubCategories'
 import { useParams } from 'next/navigation'
 import { Tabs, Tab, Box, Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography } from '@mui/material'
+import axios from 'axios'
+import { BASE_URL } from '@/configs/url'
+import Link from 'next/link'
 
 
 const SubCategoriesPage = () => {
@@ -14,6 +17,23 @@ const SubCategoriesPage = () => {
   const [isInProgress, setIsInProgress] = useState(false)
   const [pendingTab, setPendingTab] = useState(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [data, setData] = useState([]);
+
+
+
+  const fetchData = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/api/cabinet-categories/get/${id}`);
+      setData(res.data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  }
+
+
+  useEffect(() => {
+    fetchData();
+  }, []);
   
 
   // Intercept tab change
@@ -36,6 +56,8 @@ const SubCategoriesPage = () => {
 
   return (
     <Box>
+      <Link href="/cabinet/categories" style={{ textDecoration: 'none', color: '#1976d2' }}>&larr; Back to Categories</Link>
+      <Typography variant="h4" gutterBottom>{data.name}</Typography>
       <Tabs
         value={tabIndex}
         onChange={handleTabChange}
