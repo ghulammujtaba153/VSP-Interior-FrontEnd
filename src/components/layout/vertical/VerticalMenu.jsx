@@ -154,6 +154,24 @@ const VerticalMenu = ({ scrollMenu }) => {
           Projects
         </MenuItem>
 
+        <MenuItem href='/accounts' icon={<i className='tabler-cash' />}>
+          Accounts
+        </MenuItem>
+
+
+        <MenuItem href='/reports' icon={<i className='tabler-file-text' />}>
+          Reports
+        </MenuItem>
+
+        
+
+        <MenuItem href='/human-resource' icon={<i className='tabler-file-text' />}>
+          HR & Documentation
+        </MenuItem>
+
+
+        
+
 
         
 
@@ -163,11 +181,11 @@ const VerticalMenu = ({ scrollMenu }) => {
         <SubMenu label='Job Schedule' icon={<i className='tabler-calendar' />}></SubMenu>
 
 
-        <SubMenu label='Accounts' icon={<i className='tabler-cash' />}></SubMenu>
+        {/* <SubMenu label='Accounts' icon={<i className='tabler-cash' />}></SubMenu> */}
 
-        <SubMenu label='Reports' icon={<i className='tabler-file-text' />}></SubMenu>
+        {/* <SubMenu label='Reports' icon={<i className='tabler-file-text' />}></SubMenu> */}
 
-        <SubMenu label='HR & Documentation' icon={<i className='tabler-file-text' />}></SubMenu>
+        {/* <SubMenu label='HR & Documentation' icon={<i className='tabler-file-text' />}></SubMenu> */}
 
         <SubMenu label='Settings' icon={<i className='tabler-settings' />}></SubMenu>
       </Menu>
