@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useState } from "react";
 import {
   Box,
@@ -43,7 +42,7 @@ const CreateEditPO = () => {
     notes: "",
   });
 
-  const [lineItems, setLineItems] = ([
+  const [lineItems, setLineItems] = useState([
     {
       id: "1",
       itemId: "",
