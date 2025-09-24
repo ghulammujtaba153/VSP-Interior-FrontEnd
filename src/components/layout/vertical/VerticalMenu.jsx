@@ -98,25 +98,19 @@ const VerticalMenu = ({ scrollMenu }) => {
           </MenuItem>
         </PermissionWrapper>
 
-        <SubMenu
-          label='Inventory'
-          icon={<i className='tabler-file-text' />}
+        <PermissionWrapper resource='inventory'>
+          <MenuItem href='/inventory' icon={<i className='tabler-file-text' />}>
+            Inventory
+          </MenuItem>
+        </PermissionWrapper>
 
-          // suffix={<CustomChip label='5' size='small' color='error' round='true' />}
-        >
-          <PermissionWrapper resource='inventory'>
-            <MenuItem href='/inventory'>Inventory</MenuItem>
-          </PermissionWrapper>
-        </SubMenu>
+        <PermissionWrapper resource='cabinet'>
+          <MenuItem href='/cabinet/categories' icon={<i className='tabler-door' />}>
+            Cabinet
+          </MenuItem>
+        </PermissionWrapper>
 
-        <SubMenu label='Cabinet' icon={<i className='tabler-door' />}>
-          <PermissionWrapper resource='cabinet'>
-            <MenuItem href='/cabinet/categories'>Categories</MenuItem>
-          </PermissionWrapper>
-
-            
-
-          {/* <PermissionWrapper resource="cabinet">
+        {/* <PermissionWrapper resource="cabinet">
             <MenuItem href='/cabinet'>
               Material
             </MenuItem>
@@ -128,58 +122,44 @@ const VerticalMenu = ({ scrollMenu }) => {
               Cabinet
             </MenuItem>
           </PermissionWrapper> */}
-        </SubMenu>
 
         <MenuItem href='/quotes' icon={<i className='tabler-report' />}>
           Tender/ Quotes
         </MenuItem>
 
-
         <MenuItem href='/purchasing' icon={<i className='tabler-moneybag' />}>
           Purchasing
         </MenuItem>
 
+        <SubMenu label='Job Scheduling' icon={<i className='tabler-calendar' />}>
+          <MenuItem href='/workers' icon={<i className='tabler-users' />}>
+            Workers
+          </MenuItem>
+
+          <MenuItem href='/projects' icon={<i className='tabler-file-text' />}>
+            Projects
+          </MenuItem>
+        </SubMenu>
 
         <MenuItem href='/tracking-board' icon={<i className='tabler-chart-bar' />}>
           VSP TrackBoard
         </MenuItem>
 
-
-
-        <MenuItem href='/workers' icon={<i className='tabler-users' />}>
-          Workers
-        </MenuItem>
-
-        <MenuItem href='/projects' icon={<i className='tabler-file-text' />}>
-          Projects
-        </MenuItem>
+        
 
         <MenuItem href='/accounts' icon={<i className='tabler-cash' />}>
           Accounts
         </MenuItem>
 
-
         <MenuItem href='/reports' icon={<i className='tabler-file-text' />}>
           Reports
         </MenuItem>
-
-        
 
         <MenuItem href='/human-resource' icon={<i className='tabler-file-text' />}>
           HR & Documentation
         </MenuItem>
 
-
-        
-
-
-        
-
-
         {/* <SubMenu label='Purchasing' icon={<i className='tabler-shopping-cart' />}></SubMenu> */}
-
-        <SubMenu label='Job Schedule' icon={<i className='tabler-calendar' />}></SubMenu>
-
 
         {/* <SubMenu label='Accounts' icon={<i className='tabler-cash' />}></SubMenu> */}
 

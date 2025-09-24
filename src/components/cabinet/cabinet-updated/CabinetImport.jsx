@@ -132,7 +132,10 @@ const CabinetImport = ({ id, setIsInProgress }) => {
         )
         
         if (missingColumns.length > 0) {
-          setError(`Missing required columns: ${missingColumns.join(", ")}`)
+          setError(
+            `Missing required columns:\n` +
+            missingColumns.map(col => `• ${col}`).join('\n')
+          )
           setLoading(false)
           return
         }
