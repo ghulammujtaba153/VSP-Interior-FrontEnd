@@ -142,10 +142,10 @@ const ProjectTable = () => {
               {data.map(project => (
                 <TableRow key={project.id} hover>
                   <TableCell>{project.id}</TableCell>
-                  <TableCell>{project.name}</TableCell>
-                  <TableCell>{project.clientDetails?.companyName || 'N/A'}</TableCell>
-                  <TableCell>{project.description}</TableCell>
-                  <TableCell>
+                  <TableCell sx={{ minWidth: 200}}>{project.name}</TableCell>
+                  <TableCell sx={{ minWidth: 200}}>{project.clientDetails?.companyName || 'N/A'}</TableCell>
+                  <TableCell sx={{ minWidth: 200}}>{project.description}</TableCell>
+                  <TableCell sx={{ minWidth: 200}}>
                     {project.workers?.length > 0 ? (
                       <ul style={{ paddingLeft: 16 }}>
                         {project.workers.map(w => (
@@ -158,7 +158,7 @@ const ProjectTable = () => {
                       'No workers'
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ minWidth: 200}}>
                     {project.allocations?.length > 0 ? (
                       <ul style={{ paddingLeft: 16 }}>
                         {project.allocations.map(a => (
