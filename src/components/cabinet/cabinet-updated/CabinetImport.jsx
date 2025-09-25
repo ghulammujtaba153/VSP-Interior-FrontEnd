@@ -39,6 +39,7 @@ import { useRouter } from "next/navigation"
 import axios from "axios"
 import { BASE_URL } from "@/configs/url"
 import { useParams } from "next/navigation"
+import Notification from "@/components/Notification"
 
 // Utility to normalize header names (lowercase, trimmed)
 function normalizeHeader(header) {
@@ -62,6 +63,9 @@ const CabinetImport = ({ id, setIsInProgress }) => {
   const [subcategoriesUploaded, setSubcategoriesUploaded] = useState(false)
   const fileInputRef = useRef(null)
   const [template, setTemplate] = useState([])
+  const [open, setOpen] = useState(false)
+  const [message, setMessage] = useState("");
+
 
   // Lock-in states
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false)
@@ -162,8 +166,14 @@ const CabinetImport = ({ id, setIsInProgress }) => {
           if (missingInFile.length > 0 || extraInFile.length > 0) {
             setError(
               `Template mismatch:\n` +
-              (missingInFile.length > 0 ? `Missing: ${missingInFile.join(", ")}\n` : "") +
-              (extraInFile.length > 0 ? `Unexpected: ${extraInFile.join(", ")}` : "")
+              (missingInFile.length > 0
+                ? `Missing:\n${missingInFile.map(col => `• ${col.replace(/\r?\n|\r/g, " ")}`).join('\n')}\n`
+                : ""
+              ) +
+              (extraInFile.length > 0
+                ? `Unexpected:\n${extraInFile.map(col => `• ${col.replace(/\r?\n|\r/g, " ")}`).join('\n')}`
+                : ""
+              )
             )
             setLoading(false)
             return
@@ -211,7 +221,7 @@ const CabinetImport = ({ id, setIsInProgress }) => {
         setUniqueSubcategories(subs)
         setSubcategoriesUploaded(false) // Reset when new file is uploaded
 
-        toast.success(`File uploaded successfully. Found ${subs.length} unique Codes (subcategories)`)
+        toast.success(`File uploaded successfully. Found ${subs.length} unique Codes (subcategories) in the file.`)
       } catch (error) {
         console.error("Error parsing Excel:", error)
         setError("Failed to parse Excel file. Please ensure it's a valid format.")
@@ -383,6 +393,8 @@ const CabinetImport = ({ id, setIsInProgress }) => {
   // Add this function to handle subcategory upload
   const handleUploadSubcategories = async () => {
     if (uniqueSubcategories.length === 0) {
+      setMessage("No subcategories to upload")
+      setOpen(true)
       toast.error("No subcategories to upload")
       return
     }
@@ -396,11 +408,15 @@ const CabinetImport = ({ id, setIsInProgress }) => {
       }
       const res = await axios.post(`${BASE_URL}/api/cabinet-subcategories/import`, payload)
       if (res.status === 201) {
+         setMessage(res.data.message || "Subcategories uploaded successfully")
+      setOpen(true)
         toast.success(res.data.message)
         setSubCategoryList(res.data.cabinetSubCategory) // <-- Save subcategories with ids
         setSubcategoriesUploaded(true) // Mark as uploaded
       }
        else {
+          setMessage(res.data.message || "Failed to upload subcategories")
+      setOpen(true)
         toast.error("Failed to upload subcategories")
       }
     } catch (error) {
@@ -490,9 +506,12 @@ const CabinetImport = ({ id, setIsInProgress }) => {
       }
 
       toast.dismiss()
+      setMessage(res.data.message || "Import completed successfully")
+      setOpen(true)
       toast.success(res.data.message)
       setStep(3) // Move to completion step
     } catch (error) {
+
       toast.dismiss()
       console.log("Import error:", error)
       toast.error("Error importing data")
@@ -531,6 +550,17 @@ const CabinetImport = ({ id, setIsInProgress }) => {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
+
+      {
+        open && (
+          <Notification
+            open={open}
+            message={`${message}`}
+            type="warning"
+            onClose={() => setOpen(false)}
+          />
+        )
+      }
     
     <Button
       variant="text"
@@ -572,7 +602,7 @@ const CabinetImport = ({ id, setIsInProgress }) => {
       
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
+          <div style={{ whiteSpace: "pre-line" }}>{error}</div>
         </Alert>
       )}
 
@@ -632,7 +662,7 @@ const CabinetImport = ({ id, setIsInProgress }) => {
           {uniqueSubcategories.length > 0 && (
             <Paper sx={{ p: 3 }}>
               <Typography variant="h6" gutterBottom>
-                Found {uniqueSubcategories.length} Unique Codes (Subcategories)
+                Found {uniqueSubcategories.length} Unique Codes (Subcategories) in File
               </Typography>
               <List dense sx={{ maxHeight: 300, overflow: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
                 {uniqueSubcategories.map((sub, idx) => (

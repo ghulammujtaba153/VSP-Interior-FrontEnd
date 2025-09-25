@@ -56,7 +56,7 @@ const SubCategoriesPage = () => {
 
   return (
     <Box>
-      <Link href="/cabinet/categories" style={{ textDecoration: 'none', color: '#1976d2' }}>&larr; Back to Categories</Link>
+      <Link href="/cabinet/categories">&larr; Back to Categories</Link>
       <Typography variant="h4" gutterBottom>{data.name}</Typography>
       <Tabs
         value={tabIndex}
