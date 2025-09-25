@@ -426,9 +426,10 @@ const ProjectForm = () => {
                 <Grid container spacing={2}>
                   {/* First Row */}
                   <Grid item xs={12} md={4}>
-                    <FormControl fullWidth required>
+                    <FormControl fullWidth sx={{ minWidth: 300 }}>
                       <InputLabel>Worker</InputLabel>
                       <Select
+                        minWidth={120}
                         value={worker.workerId}
                         onChange={(e) =>
                           handleWorkerChange(index, "workerId", e.target.value)
@@ -535,7 +536,7 @@ const ProjectForm = () => {
                 
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={6}>
-                    <FormControl fullWidth required>
+                    <FormControl fullWidth required sx={{ minWidth: 300 }}>
                       <InputLabel>Material</InputLabel>
                       <Select
                         value={allocation.materialId}
