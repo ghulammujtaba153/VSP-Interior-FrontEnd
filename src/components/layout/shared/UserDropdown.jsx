@@ -116,15 +116,19 @@ const UserDropdown = () => {
                     </div>
                   </div>
                   <Divider className='mlb-1' />
-                  <Link href='/profile' className='mli-2 gap-3 flex items-center py-2' onClick={e => handleDropdownClose(e)}>
+                  <Link href='/profile' className='ml-5 gap-3 flex items-center py-2' onClick={e => handleDropdownClose(e)}>
                     <i className='tabler-user' />
                     <Typography color='text.primary'>My Profile</Typography>
                   </Link>
-                  {/* <MenuItem className='mli-2 gap-3' onClick={e => handleDropdownClose(e)}>
-                    <i className='tabler-settings' />
-                    <Typography color='text.primary'>Settings</Typography>
-                  </MenuItem>
                   <MenuItem className='mli-2 gap-3' onClick={e => handleDropdownClose(e)}>
+                    <Link href='/employee-leave' className='gap-3 flex items-center py-2' onClick={e => handleDropdownClose(e)}>
+                    <i className='tabler-settings' />
+                    <Typography color='text.primary'>Leave Section</Typography>
+                  </Link>
+                    
+                  </MenuItem>
+
+                  {/* <MenuItem className='mli-2 gap-3' onClick={e => handleDropdownClose(e)}>
                     <i className='tabler-currency-dollar' />
                     <Typography color='text.primary'>Pricing</Typography>
                   </MenuItem>

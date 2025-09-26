@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -10,73 +10,193 @@ import {
   CardHeader,
   CardContent,
   Avatar,
-  Badge,
   TextField,
-  IconButton,
   Button,
   Stack,
+  Switch,
+  Pagination,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import {
   Search,
   Add,
   Mail,
-  Phone,
-  LocationOn,
   CalendarToday,
+  Delete,
+  Edit,
 } from "@mui/icons-material";
+import Loader from "../loader/Loader";
+import { BASE_URL } from "@/configs/url";
+import axios from "axios";
+import UserModal from "../users/UserModal";
+import { toast } from "react-toastify";
+import { useAuth } from '@/context/authContext';
 
 const StaffProfiles = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [staff, setStaff] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [limit] = useState(6); // cards per page
+  const [totalPages, setTotalPages] = useState(1);
+  const { user } = useAuth();
 
-  const staffMembers = [
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      role: "Project Manager",
-      department: "Operations",
-      email: "sarah.johnson@company.com",
-      phone: "+1 (555) 123-4567",
-      location: "Sydney, NSW",
-      startDate: "2022-03-15",
-      status: "Active",
-      avatar: "/placeholder-avatar.jpg",
-    },
-    {
-      id: 2,
-      name: "Michael Chen",
-      role: "Site Supervisor",
-      department: "Construction",
-      email: "michael.chen@company.com",
-      phone: "+1 (555) 234-5678",
-      location: "Melbourne, VIC",
-      startDate: "2021-08-22",
-      status: "Active",
-      avatar: "/placeholder-avatar.jpg",
-    },
-    {
-      id: 3,
-      name: "Emma Williams",
-      role: "Safety Officer",
-      department: "Health & Safety",
-      email: "emma.williams@company.com",
-      phone: "+1 (555) 345-6789",
-      location: "Brisbane, QLD",
-      startDate: "2023-01-10",
-      status: "On Leave",
-      avatar: "/placeholder-avatar.jpg",
-    },
-  ];
+  // UserModal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState("create"); // "create" or "edit"
+  const [selectedUser, setSelectedUser] = useState(null);
 
-  const filteredStaff = staffMembers.filter(
-    (staff) =>
-      staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      staff.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      staff.department.toLowerCase().includes(searchTerm.toLowerCase())
+  // Delete confirmation dialog state
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+
+  const fetchStaff = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/api/user/get?page=${page}&limit=${limit}`
+      );
+      setStaff(response.data.data || response.data);
+      setTotalPages(response.data.totalPages || 1);
+    } catch (error) {
+      console.error("Error fetching staff:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStaff();
+    // eslint-disable-next-line
+  }, [page]);
+
+  const handleStatusToggle = async (id, currentStatus) => {
+    const newStatus = currentStatus === "active" ? "suspended" : "active";
+    toast.loading("Updating status...");
+    try {
+      await axios.put(`${BASE_URL}/api/user/update-status/${id}`, {
+        status: newStatus,
+        userId: user.id
+      });
+
+      
+      setStaff((prev) =>
+        prev.map((s) =>
+          s.id === id ? { ...s, status: newStatus } : s
+        )
+      );
+      toast.dismiss();
+      toast.success(`User status updated to ${newStatus}`);
+    } catch (error) {
+      toast.dismiss();
+      toast.error("Error updating status");
+    }
+  };
+
+  // Open modal for add or edit
+  const handleOpenModal = (mode, user = null) => {
+    setModalMode(mode);
+    setSelectedUser(user);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    setSelectedUser(null);
+  };
+
+  // Save user (add or edit)
+  const handleSaveUser = async (formData) => {
+    toast.loading("Saving user...");
+    try {
+      if (modalMode === "edit") {
+        await axios.put(`${BASE_URL}/api/user/update/${formData.id}`, formData);
+        toast.success("User updated successfully");
+      } else {
+        await axios.post(`${BASE_URL}/api/user/create`, formData);
+        toast.success("User created successfully");
+      }
+      fetchStaff();
+      handleCloseModal();
+    } catch (error) {
+      toast.error("Error saving user");
+    } finally {
+      toast.dismiss();
+    }
+  };
+
+  // Open confirmation dialog for deletion
+  const handleDeleteUser = (userRow) => {
+    setUserToDelete(userRow);
+    setConfirmationOpen(true);
+  };
+
+  // Confirm deletion
+  const confirmDeleteUser = async () => {
+    if (!userToDelete) return;
+    toast.loading("Deleting user...");
+    try {
+      await axios.delete(`${BASE_URL}/api/user/delete/${userToDelete.id}`);
+      fetchStaff();
+      toast.success("User deleted successfully");
+    } catch (error) {
+      toast.error("Error deleting user");
+    } finally {
+      toast.dismiss();
+      setConfirmationOpen(false);
+      setUserToDelete(null);
+    }
+  };
+
+  const handleConfirmationClose = () => {
+    setConfirmationOpen(false);
+    setUserToDelete(null);
+  };
+
+  const filteredStaff = staff.filter(
+    (member) =>
+      member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      member.Role?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if(loading) return <Loader/>
 
   return (
     <Container sx={{ py: 6 }}>
-      {/* Header with Search and Add Button */}
+      {/* User Modal for Add/Edit */}
+      <UserModal
+        open={modalOpen}
+        mode={modalMode}
+        userProfile={selectedUser}
+        onClose={handleCloseModal}
+        onSave={handleSaveUser}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={confirmationOpen} onClose={handleConfirmationClose}>
+        <DialogTitle>Delete Staff Member</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete{" "}
+            <b>{userToDelete?.name}</b>?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleConfirmationClose} color="inherit">
+            Cancel
+          </Button>
+          <Button onClick={confirmDeleteUser} color="error" variant="contained">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Header */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
         spacing={2}
@@ -110,41 +230,61 @@ const StaffProfiles = () => {
             variant="contained"
             startIcon={<Add />}
             color="primary"
+            onClick={() => handleOpenModal("create")}
           >
             Add Staff
           </Button>
         </Stack>
       </Stack>
 
-      {/* Staff Cards Grid */}
+      {/* Staff Cards */}
       <Grid container spacing={3}>
-        {filteredStaff.map((staff) => (
-          <Grid item xs={12} md={6} lg={4} key={staff.id}>
-            <Card sx={{ cursor: "pointer" }}>
+        {filteredStaff.map((member) => (
+          <Grid item xs={12} md={6} lg={4} key={member.id}>
+            <Card>
               <CardHeader
                 avatar={
-                  <Avatar
-                    alt={staff.name}
-                    src={staff.avatar}
-                  >
-                    {staff.name
-                      .split(" ")
+                  <Avatar>
+                    {member.name
+                      ?.split(" ")
                       .map((n) => n[0])
-                      .join("")}
+                      .join("")
+                      .toUpperCase()}
                   </Avatar>
                 }
                 action={
-                  <Badge
-                    color={staff.status === "Active" ? "success" : "warning"}
-                    badgeContent={staff.status}
-                  />
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    {/* Status Toggle */}
+                    <Typography variant="body2">
+                      {member.status === "active" ? "Active" : "Suspended"}
+                    </Typography>
+                    <Switch
+                      checked={member.status === "active"}
+                      onChange={() =>
+                        handleStatusToggle(member.id, member.status)
+                      }
+                      color="primary"
+                    />
+                    {/* Edit Button */}
+                    <IconButton
+                      color="primary"
+                      onClick={() => handleOpenModal("edit", member)}
+                    >
+                      <Edit />
+                    </IconButton>
+                    {/* Delete Button */}
+                    <IconButton
+                      color="error"
+                      onClick={() => handleDeleteUser(member)}
+                    >
+                      <Delete />
+                    </IconButton>
+                  </Stack>
                 }
-                title={
-                  <Typography variant="h6">{staff.name}</Typography>
-                }
+                title={<Typography variant="h6">{member.name}</Typography>}
                 subheader={
                   <Typography variant="body2" color="text.secondary">
-                    {staff.role}
+                    {member.Role?.name || "No Role"}
                   </Typography>
                 }
               />
@@ -152,29 +292,17 @@ const StaffProfiles = () => {
                 <Stack spacing={1}>
                   <Stack direction="row" spacing={1} alignItems="center">
                     <Mail fontSize="small" />
-                    <Typography variant="body2">{staff.email}</Typography>
-                  </Stack>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Phone fontSize="small" />
-                    <Typography variant="body2">{staff.phone}</Typography>
-                  </Stack>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <LocationOn fontSize="small" />
-                    <Typography variant="body2">{staff.location}</Typography>
+                    <Typography variant="body2">{member.email}</Typography>
                   </Stack>
                   <Stack direction="row" spacing={1} alignItems="center">
                     <CalendarToday fontSize="small" />
                     <Typography variant="body2">
-                      Started {new Date(staff.startDate).toLocaleDateString()}
+                      Joined{" "}
+                      {member.createdAt
+                        ? new Date(member.createdAt).toLocaleDateString("en-US")
+                        : ""}
                     </Typography>
                   </Stack>
-                  <Box pt={1}>
-                    <Badge
-                      color="primary"
-                      badgeContent={staff.department}
-                      sx={{ fontSize: 12 }}
-                    />
-                  </Box>
                 </Stack>
               </CardContent>
             </Card>
@@ -189,6 +317,19 @@ const StaffProfiles = () => {
           </Box>
         )}
       </Grid>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <Box mt={4} display="flex" justifyContent="center">
+          <Pagination
+            count={totalPages}
+            page={page}
+            onChange={(e, value) => setPage(value)}
+            color="primary"
+            shape="rounded"
+          />
+        </Box>
+      )}
     </Container>
   );
 };
