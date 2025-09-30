@@ -123,6 +123,11 @@ const VerticalMenu = ({ scrollMenu }) => {
             </MenuItem>
           </PermissionWrapper> */}
 
+
+        <MenuItem href='/project' icon={<i className='tabler-report' />}>
+          Project Setup
+        </MenuItem>
+
         <MenuItem href='/quotes' icon={<i className='tabler-report' />}>
           Tender/ Quotes
         </MenuItem>
