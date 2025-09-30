@@ -152,7 +152,7 @@ const CreateProjectStep4 = ({ allData }) => {
       </Card>
 
       {/* Debug Section */}
-      <Box mt={2} p={2} sx={{ backgroundColor: "#fff7e6" }}>
+      {/* <Box mt={2} p={2} sx={{ backgroundColor: "#fff7e6" }}>
         <Typography variant="caption" display="block">
           Debug: step2 type - {typeof step2}
         </Typography>
@@ -162,7 +162,7 @@ const CreateProjectStep4 = ({ allData }) => {
         <Typography variant="caption" display="block">
           Debug: step2 value - {JSON.stringify(step2)}
         </Typography>
-      </Box>
+      </Box> */}
     </Box>
   );
 };
