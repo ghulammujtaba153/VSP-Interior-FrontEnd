@@ -92,11 +92,10 @@ const rateTypes = [
 
 const CreateProjectStep2 = ({ records, setRecords }) => {
   const { user } = useAuth();
-
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const handleChange = (type, field, value) => {
-    if (user.Role.name != "Superadmin") {
+    if (user.Role.name !== "Superadmin") {
       setDialogOpen(true);
       return;
     }
@@ -142,21 +141,42 @@ const CreateProjectStep2 = ({ records, setRecords }) => {
     </Grid>
   );
 
-  const renderSection = (rateType) => (
-    <Card key={rateType.type} variant="outlined" sx={{ borderRadius: 2, boxShadow: 2 }}>
-      <CardContent>
-        <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-          {rateType.label}
-        </Typography>
-        <Divider sx={{ mb: 2 }} />
-        <Grid container spacing={2}>
-          {rateType.fields.map((field, fieldIndex) =>
-            renderField(rateType.type, field, fieldIndex)
-          )}
+ const renderSection = (rateType) => (
+  <Card key={rateType.type} variant="outlined" sx={{ borderRadius: 2, boxShadow: 2 }}>
+    <CardContent>
+      <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+        {rateType.label}
+      </Typography>
+      <Divider sx={{ mb: 2 }} />
+
+      {/* Render fields in a single row */}
+      <Grid container spacing={2} alignItems="center">
+        {/* First column: the label (e.g., "Material") */}
+        <Grid item xs={12} sm={3} sx={{minWidth: "200px"}}>
+          <Typography fontWeight="medium">{rateType.label}</Typography>
         </Grid>
-      </CardContent>
-    </Card>
-  );
+
+        {/* Other fields (markup, cost, sell, etc.) */}
+        {rateType.fields.map((field, fieldIndex) => (
+          <Grid item xs={12} sm={3} key={`${rateType.type}-${field.name}-${fieldIndex}`}>
+            <TextField
+              fullWidth
+              type="number"
+              label={field.label}
+              placeholder={field.placeholder}
+              value={getRecordValue(rateType.type, field.name)}
+              onChange={(e) => handleChange(rateType.type, field.name, e.target.value)}
+              inputProps={{ min: 0, step: "0.01" }}
+              size="small"
+              variant="outlined"
+            />
+          </Grid>
+        ))}
+      </Grid>
+    </CardContent>
+  </Card>
+);
+
 
   return (
     <Box sx={{ p: 3 }}>
@@ -165,7 +185,7 @@ const CreateProjectStep2 = ({ records, setRecords }) => {
       </Typography>
       <Grid container spacing={3}>
         {rateTypes.map((rateType) => (
-          <Grid item xs={12} md={6} key={rateType.type}>
+          <Grid item xs={12} sm={6} md={4} lg={3} key={rateType.type}>
             {renderSection(rateType)}
           </Grid>
         ))}

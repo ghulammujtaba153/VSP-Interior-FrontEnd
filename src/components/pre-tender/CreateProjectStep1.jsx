@@ -1,4 +1,4 @@
-"use client";
+// "use client";
 
 import { BASE_URL } from "@/configs/url";
 import axios from "axios";
@@ -59,8 +59,8 @@ const CreateProjectStep1 = ({ formData, setFormData }) => {
           Project Setup
         </Typography>
 
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+        <Grid container spacing={3} direction="column">
+          <Grid item xs={12}>
             <TextField
               fullWidth
               label="Project/Tender Name"
@@ -72,7 +72,7 @@ const CreateProjectStep1 = ({ formData, setFormData }) => {
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12}>
             <TextField
               fullWidth
               label="Site Location"
@@ -84,7 +84,7 @@ const CreateProjectStep1 = ({ formData, setFormData }) => {
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12}>
             <TextField
               fullWidth
               label="Access Notes"
@@ -96,7 +96,7 @@ const CreateProjectStep1 = ({ formData, setFormData }) => {
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12}>
             <FormControl fullWidth>
               <InputLabel>Client</InputLabel>
               <Select
@@ -127,7 +127,7 @@ const CreateProjectStep1 = ({ formData, setFormData }) => {
             </FormControl>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12}>
             <TextField
               fullWidth
               label="QS Name"
@@ -139,7 +139,7 @@ const CreateProjectStep1 = ({ formData, setFormData }) => {
             />
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12}>
             <TextField
               fullWidth
               label="QS Phone"

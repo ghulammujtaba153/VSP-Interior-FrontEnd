@@ -151,18 +151,7 @@ const CreateProjectStep4 = ({ allData }) => {
         </CardContent>
       </Card>
 
-      {/* Debug Section */}
-      {/* <Box mt={2} p={2} sx={{ backgroundColor: "#fff7e6" }}>
-        <Typography variant="caption" display="block">
-          Debug: step2 type - {typeof step2}
-        </Typography>
-        <Typography variant="caption" display="block">
-          Debug: step2 is array - {Array.isArray(step2) ? "Yes" : "No"}
-        </Typography>
-        <Typography variant="caption" display="block">
-          Debug: step2 value - {JSON.stringify(step2)}
-        </Typography>
-      </Box> */}
+      
     </Box>
   );
 };

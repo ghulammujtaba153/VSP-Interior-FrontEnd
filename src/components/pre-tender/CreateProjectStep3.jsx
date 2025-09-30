@@ -95,11 +95,11 @@ const CreateProjectStep3 = ({ records, setRecords }) => {
 
             <Grid container spacing={2}>
               {/* Supplier */}
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   select
                   fullWidth
-                  sx={{ minWidth: 120 }}
+                  sx={{ minWidth: "200px" }}
                   size="small"
                   label="Supplier"
                   name="supplierId"
@@ -123,7 +123,7 @@ const CreateProjectStep3 = ({ records, setRecords }) => {
               </Grid>
 
               {/* Finish Material */}
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
                   size="small"
@@ -136,7 +136,7 @@ const CreateProjectStep3 = ({ records, setRecords }) => {
               </Grid>
 
               {/* Material Type */}
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
                   size="small"
@@ -149,7 +149,7 @@ const CreateProjectStep3 = ({ records, setRecords }) => {
               </Grid>
 
               {/* Measure */}
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
                   size="small"
@@ -162,7 +162,7 @@ const CreateProjectStep3 = ({ records, setRecords }) => {
               </Grid>
 
               {/* Material Cost */}
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
                   type="number"
@@ -177,7 +177,7 @@ const CreateProjectStep3 = ({ records, setRecords }) => {
               </Grid>
 
               {/* Edging Cost */}
-              <Grid item xs={12} md={6}>
+              <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
                   type="number"
@@ -196,7 +196,7 @@ const CreateProjectStep3 = ({ records, setRecords }) => {
       ))}
 
       {/* Add Material Button */}
-      <Box>
+      <Box textAlign="right">
         <Button
           variant="contained"
           color="primary"
