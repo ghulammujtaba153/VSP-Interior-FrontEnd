@@ -1,4 +1,4 @@
-// "use client";
+"use client";
 
 import { BASE_URL } from "@/configs/url";
 import axios from "axios";

@@ -3,7 +3,7 @@
 import { BASE_URL } from '@/configs/url'
 import axios from 'axios'
 import { useEffect, useState } from 'react'
-import Loader from '../loader/Loader'
+import Loader from '@/components/loader/Loader'
 import {
   Box,
   Button,
@@ -276,7 +276,7 @@ const ProjectSetupTable = () => {
                         color='secondary'
                         size='small'
                         onClick={() =>
-                          router.push(`/project/form?id=${project.id}&mode=edit`)
+                          router.push(`/project/variations/${project.id}`)
                         }
                       >
                         <Edit />

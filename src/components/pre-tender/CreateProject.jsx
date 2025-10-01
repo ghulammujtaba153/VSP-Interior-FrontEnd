@@ -459,7 +459,7 @@ const CreateProject = () => {
     if (pendingNavigation) {
       router.push(pendingNavigation) // Sidebar click
     } else {
-      router.push('/project') // Default back route
+      router.push('/quotes') // Default back route
     }
   }
 

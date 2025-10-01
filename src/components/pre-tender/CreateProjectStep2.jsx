@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 import {
   Box,
@@ -12,6 +14,7 @@ import {
   DialogContent,
   DialogActions,
   Button,
+  Paper,
 } from "@mui/material";
 import { useAuth } from "@/context/authContext";
 
@@ -142,12 +145,12 @@ const CreateProjectStep2 = ({ records, setRecords }) => {
   );
 
  const renderSection = (rateType) => (
-  <Card key={rateType.type} variant="outlined" sx={{ borderRadius: 2, boxShadow: 2 }}>
+  <div key={rateType.type}  >
     <CardContent>
       <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
         {rateType.label}
       </Typography>
-      <Divider sx={{ mb: 2 }} />
+      <Divider sx={{ mb: 2 }} /> 
 
       {/* Render fields in a single row */}
       <Grid container spacing={2} alignItems="center">
@@ -174,12 +177,12 @@ const CreateProjectStep2 = ({ records, setRecords }) => {
         ))}
       </Grid>
     </CardContent>
-  </Card>
+  </div>
 );
 
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3 }} component={Paper}>
       <Typography variant="h6" fontWeight="bold" gutterBottom>
         Project Rates Setup
       </Typography>

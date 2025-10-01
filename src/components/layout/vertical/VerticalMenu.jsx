@@ -124,9 +124,11 @@ const VerticalMenu = ({ scrollMenu }) => {
           </PermissionWrapper> */}
 
 
-        <MenuItem href='/project' icon={<i className='tabler-report' />}>
+        {/* <MenuItem href='/project' icon={<i className='tabler-report' />}>
           Project Setup
-        </MenuItem>
+        </MenuItem> */}
+
+        
 
         <MenuItem href='/quotes' icon={<i className='tabler-report' />}>
           Tender/ Quotes
