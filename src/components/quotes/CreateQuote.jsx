@@ -15,13 +15,13 @@ export const CreateQuote = () => {
         Create Quote
       </Button>
 
-      <Button
+      {/* <Button
         component={Link}
         href="/quotes/amend"
         variant="outlined"
       >
         Amend Existing Quote
-      </Button>
+      </Button> */}
 
       <Button
         component={Link}

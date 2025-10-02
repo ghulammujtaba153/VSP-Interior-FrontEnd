@@ -380,6 +380,7 @@ const CreateProject = () => {
   const searchParams = useSearchParams()
   const id = searchParams.get('id')
   const mode = searchParams.get('mode') // "create" | "edit"
+  const amend = searchParams.get('amend')
   const router = useRouter()
 
   const StepComponent = steps[activeStep].component
@@ -423,6 +424,7 @@ const CreateProject = () => {
       project: step1Data,
       rates: step2Data,
       materials: step3Data,
+      amend: amend ? true : false
     }
 
     toast.loading(mode === 'edit' ? 'Updating project...' : 'Saving project...')

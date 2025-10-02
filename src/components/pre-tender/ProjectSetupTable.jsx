@@ -27,7 +27,7 @@ import {
   DialogContentText,
   DialogActions
 } from '@mui/material'
-import { Edit, Delete, Add } from '@mui/icons-material'
+import { Edit, Delete, Add, Assignment } from '@mui/icons-material'
 import { toast } from 'react-toastify'
 import * as XLSX from 'xlsx'
 import Link from 'next/link'
@@ -220,6 +220,7 @@ const ProjectSetupTable = () => {
               <TableCell>Client</TableCell>
               <TableCell>Revision</TableCell>
               <TableCell>Created At</TableCell>
+              <TableCell>Amendment</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -270,6 +271,31 @@ const ProjectSetupTable = () => {
                 </TableCell>
                 <TableCell>{formatDate(project.createdAt)}</TableCell>
                 <TableCell>
+                  <Tooltip title='Create Amendment'>
+                    <IconButton
+                      color='primary'
+                      size='small'
+                      onClick={() =>
+                        router.push(`/project/form?id=${project.id}&mode=edit&amend=true`)
+                      }
+                    >
+                      <Assignment />
+                    </IconButton>
+                  </Tooltip>
+
+                  <Link href={`/project/history?id=${project.id}`}>
+                  <Button
+                    variant='contained'
+                    >
+                      View History
+                    </Button>
+                    </Link>
+
+                  
+
+
+                </TableCell>
+                <TableCell>
                   <Box display='flex' gap={0.5}>
                     <Tooltip title='Edit Project'>
                       <IconButton
@@ -297,7 +323,7 @@ const ProjectSetupTable = () => {
             ))}
             {data.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} align='center'>
+                <TableCell colSpan={10} align='center'>
                   No records found
                 </TableCell>
               </TableRow>
