@@ -213,14 +213,14 @@ const ProjectSetupTable = () => {
                   ID
                 </TableSortLabel>
               </TableCell>
-              <TableCell>Project Name</TableCell>
-              <TableCell>Site Location</TableCell>
-              <TableCell>QS Name</TableCell>
+              <TableCell sx={{minWidth: 250}}>Project Name</TableCell>
+              <TableCell sx={{minWidth: 250}}>Site Location</TableCell>
+              <TableCell sx={{minWidth: 250}}>QS Name</TableCell>
               <TableCell>QS Phone</TableCell>
               <TableCell>Client</TableCell>
               <TableCell>Revision</TableCell>
               <TableCell>Created At</TableCell>
-              <TableCell>Amendment</TableCell>
+              <TableCell sx={{minWidth: 250}}>Amendment</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
