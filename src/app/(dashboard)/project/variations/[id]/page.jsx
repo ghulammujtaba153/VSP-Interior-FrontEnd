@@ -56,9 +56,12 @@ const Page = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [deleteDialog, setDeleteDialog] = useState({ open: false, variationId: null });
 
-  const [variations, setVariations] = useState([
-    { title: "", description: "", cost: "" },
-  ]);
+  const [formData, setFormData] = useState({
+    description: "",
+    variations: [
+      { title: "", description: "", quantity: "", unit: "", rates: "", cost: "" },
+    ]
+  });
 
   const steps = ['Variation Details', 'Review & Submit'];
 
@@ -96,29 +99,50 @@ const Page = () => {
   }, [id]);
 
   const addVariationField = () => {
-    setVariations([...variations, { title: "", description: "", cost: "" }]);
+    setFormData(prev => ({
+      ...prev,
+      variations: [...prev.variations, { title: "", description: "", quantity: "", unit: "", rates: "", cost: "" }]
+    }));
   };
 
   const removeVariationField = (index) => {
-    if (variations.length > 1) {
-      const newVariations = variations.filter((_, i) => i !== index);
-      setVariations(newVariations);
+    if (formData.variations.length > 1) {
+      setFormData(prev => ({
+        ...prev,
+        variations: prev.variations.filter((_, i) => i !== index)
+      }));
     }
   };
 
-  const handleChange = (index, field, value) => {
-    const newVariations = [...variations];
-    newVariations[index][field] = value;
-    setVariations(newVariations);
+  const handleDescriptionChange = (value) => {
+    setFormData(prev => ({
+      ...prev,
+      description: value
+    }));
+  };
+
+  const handleVariationChange = (index, field, value) => {
+    setFormData(prev => {
+      const newVariations = [...prev.variations];
+      newVariations[index][field] = value;
+      
+      // Auto-calculate cost if quantity and rates are both filled
+      if ((field === "quantity" || field === "rates") && newVariations[index].quantity && newVariations[index].rates) {
+        const quantity = parseFloat(newVariations[index].quantity) || 0;
+        const rates = parseFloat(newVariations[index].rates) || 0;
+        newVariations[index].cost = (quantity * rates).toFixed(2);
+      }
+      
+      return {
+        ...prev,
+        variations: newVariations
+      };
+    });
   };
 
   const handleNext = () => {
-    // Validate all fields before proceeding to next step
-    const allFieldsFilled = variations.every(v => v.title && v.description && v.cost);
-    if (!allFieldsFilled) {
-      toast.error("Please fill all fields before proceeding");
-      return;
-    }
+    // Validate all required fields before proceeding to next step
+    
     setActiveStep((prevStep) => prevStep + 1);
   };
 
@@ -127,7 +151,10 @@ const Page = () => {
   };
 
   const resetForm = () => {
-    setVariations([{ title: "", description: "", cost: "" }]);
+    setFormData({
+      description: "",
+      variations: [{ title: "", description: "", quantity: "", unit: "", rates: "", cost: "" }]
+    });
     setActiveStep(0);
     setShowForm(false);
   };
@@ -139,9 +166,13 @@ const Page = () => {
     try {
       const payload = {
         projectId: id,
-        variations: variations.map((v) => ({
+        description: formData.description,
+        variations: formData.variations.map((v) => ({
           title: v.title,
           description: v.description,
+          quantity: Number(v.quantity),
+          unit: v.unit,
+          rates: Number(v.rates),
           cost: Number(v.cost),
         })),
       };
@@ -181,7 +212,7 @@ const Page = () => {
     });
   };
 
-  const totalNewCost = variations.reduce((sum, variation) => sum + (Number(variation.cost) || 0), 0);
+  const totalNewCost = formData.variations.reduce((sum, variation) => sum + (Number(variation.cost) || 0), 0);
   const overallTotalCost = calculateTotalCost(data);
 
   if (loading) return <Loader />;
@@ -224,9 +255,12 @@ const Page = () => {
         </Box>
       </Paper>
 
-      <Grid container spacing={3}>
+
+      <Container maxWidth={false} sx={{ py: 4 }}>
+
+      <Grid container spacing={3} sx={{ maxWidth: '100%' }}>
         {/* Existing Variations Section */}
-        <Grid item xs={12} fullWidth>
+        <Grid item xs={12}>
           <Paper elevation={2} sx={{ p: 3 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
               <Typography variant="h5" fontWeight="bold">
@@ -286,15 +320,32 @@ const Page = () => {
                             Updated: {formatDate(record.updated_at)}
                           </Typography>
                         </Box>
+
+                        {/* Record Description */}
+                        {record.description && (
+                          <Card sx={{ mb: 3, backgroundColor: 'grey.50' }}>
+                            <CardContent>
+                              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                                Description:
+                              </Typography>
+                              <Typography variant="body1">
+                                {record.description}
+                              </Typography>
+                            </CardContent>
+                          </Card>
+                        )}
                         
                         {record.variations && record.variations.length > 0 ? (
                           <TableContainer component={Paper} variant="outlined">
                             <Table>
                               <TableHead>
                                 <TableRow sx={{ backgroundColor: 'grey.50' }}>
-                                  <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>Title</TableCell>
-                                  <TableCell sx={{ fontWeight: 'bold', width: '50%' }}>Description</TableCell>
-                                  <TableCell sx={{ fontWeight: 'bold', width: '25%', textAlign: 'right' }}>Cost</TableCell>
+                                  <TableCell sx={{ fontWeight: 'bold', width: '15%' }}>Title</TableCell>
+                                  <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>Description</TableCell>
+                                  <TableCell sx={{ fontWeight: 'bold', width: '10%', textAlign: 'right' }}>Quantity</TableCell>
+                                  <TableCell sx={{ fontWeight: 'bold', width: '10%' }}>Unit</TableCell>
+                                  <TableCell sx={{ fontWeight: 'bold', width: '15%', textAlign: 'right' }}>Rates ($)</TableCell>
+                                  <TableCell sx={{ fontWeight: 'bold', width: '15%', textAlign: 'right' }}>Cost ($)</TableCell>
                                 </TableRow>
                               </TableHead>
                               <TableBody>
@@ -317,6 +368,21 @@ const Page = () => {
                                       </Typography>
                                     </TableCell>
                                     <TableCell sx={{ textAlign: 'right' }}>
+                                      <Typography variant="body2">
+                                        {variation.quantity}
+                                      </Typography>
+                                    </TableCell>
+                                    <TableCell>
+                                      <Typography variant="body2">
+                                        {variation.unit}
+                                      </Typography>
+                                    </TableCell>
+                                    <TableCell sx={{ textAlign: 'right' }}>
+                                      <Typography variant="body2">
+                                        ${Number(variation.rates).toLocaleString()}
+                                      </Typography>
+                                    </TableCell>
+                                    <TableCell sx={{ textAlign: 'right' }}>
                                       <Chip 
                                         label={`$${Number(variation.cost).toLocaleString()}`}
                                         color="success"
@@ -328,7 +394,7 @@ const Page = () => {
                                 ))}
                                 {/* Total Row */}
                                 <TableRow sx={{ backgroundColor: 'primary.light' }}>
-                                  <TableCell colSpan={2} sx={{ textAlign: 'right', border: 'none' }}>
+                                  <TableCell colSpan={5} sx={{ textAlign: 'right', border: 'none' }}>
                                     <Typography variant="subtitle1" fontWeight="bold" color="white">
                                       Record Total:
                                     </Typography>
@@ -379,21 +445,13 @@ const Page = () => {
           </Paper>
         </Grid>
 
-        Add Variations Form Section
+        {/* Add Variations Form Section */}
         {showForm && (
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={12}>
             <Paper elevation={2} sx={{ p: 3 }}>
               <Typography variant="h5" fontWeight="bold" gutterBottom>
                 Add New Variations
               </Typography>
-
-              {/* <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-                {steps.map((label) => (
-                  <Step key={label}>
-                    <StepLabel>{label}</StepLabel>
-                  </Step>
-                ))}
-              </Stepper> */}
 
               <form onSubmit={handleSubmit}>
                 {activeStep === 0 && (
@@ -401,65 +459,137 @@ const Page = () => {
                     <Typography variant="h6" gutterBottom color="primary">
                       Variation Details
                     </Typography>
-                    
-                    {variations.map((variation, index) => (
-                      <Card key={index} sx={{ mb: 2, p: 2, border: '1px solid', borderColor: 'grey.300' }}>
-                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                          <Typography variant="subtitle1" color="primary">
-                            Variation #{index + 1}
-                          </Typography>
-                          {variations.length > 1 && (
-                            <IconButton 
-                              color="error" 
-                              size="small"
-                              onClick={() => removeVariationField(index)}
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          )}
-                        </Box>
 
-                        <TextField
-                          fullWidth
-                          label="Variation Title"
-                          value={variation.title}
-                          onChange={(e) => handleChange(index, "title", e.target.value)}
-                          required
-                          margin="normal"
-                          size="small"
-                        />
-                        <TextField
-                          fullWidth
-                          label="Variation Description"
-                          value={variation.description}
-                          onChange={(e) => handleChange(index, "description", e.target.value)}
-                          required
-                          multiline
-                          rows={3}
-                          margin="normal"
-                          size="small"
-                        />
-                        <TextField
-                          fullWidth
-                          label="Cost ($)"
-                          type="number"
-                          value={variation.cost}
-                          onChange={(e) => handleChange(index, "cost", e.target.value)}
-                          required
-                          margin="normal"
-                          size="small"
-                          InputProps={{
-                            startAdornment: <MoneyIcon color="action" sx={{ mr: 1 }} />,
-                          }}
-                        />
-                      </Card>
-                    ))}
+                    {/* Top-level Description Field */}
+                    <Card sx={{ mb: 3, p: 2, border: '1px solid', borderColor: 'primary.main' }}>
+                      <Typography variant="subtitle1" fontWeight="bold" color="primary" gutterBottom>
+                        Variation Record Description
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        multiline
+                        rows={3}
+                        value={formData.description}
+                        onChange={(e) => handleDescriptionChange(e.target.value)}
+                        placeholder="Enter a description for this variation record (e.g., 'Phase 1 variations', 'Client requested changes', etc.)"
+                        
+                      />
+                    </Card>
+                    
+                    {/* Table for adding variations */}
+                    <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
+                      <Table>
+                        <TableHead>
+                          <TableRow sx={{ backgroundColor: 'grey.50' }}>
+                            <TableCell sx={{ fontWeight: 'bold', width: '15%' }}>Title</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '25%' }}>Description</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '10%', textAlign: 'right' }}>Quantity</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '10%' }}>Unit</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '15%', textAlign: 'right' }}>Rates ($)</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '15%', textAlign: 'right' }}>Cost ($)</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', width: '10%' }}>Action</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {formData.variations.map((variation, index) => (
+                            <TableRow key={index}>
+                              <TableCell>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  value={variation.title}
+                                  onChange={(e) => handleVariationChange(index, "title", e.target.value)}
+                                  placeholder="Enter title"
+                                  
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  value={variation.description}
+                                  onChange={(e) => handleVariationChange(index, "description", e.target.value)}
+                                  placeholder="Enter description"
+                                  
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  type="number"
+                                  value={variation.quantity}
+                                  onChange={(e) => handleVariationChange(index, "quantity", e.target.value)}
+                                  placeholder="Qty"
+                                  
+                                  inputProps={{ style: { textAlign: 'right' } }}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  value={variation.unit}
+                                  onChange={(e) => handleVariationChange(index, "unit", e.target.value)}
+                                  placeholder="Unit"
+                                  
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  type="number"
+                                  value={variation.rates}
+                                  onChange={(e) => handleVariationChange(index, "rates", e.target.value)}
+                                  placeholder="Rates"
+                                  
+                                  inputProps={{ style: { textAlign: 'right' } }}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  type="number"
+                                  value={variation.cost}
+                                  onChange={(e) => handleVariationChange(index, "cost", e.target.value)}
+                                  placeholder="Cost"
+                                  
+                                  inputProps={{ 
+                                    style: { textAlign: 'right' },
+                                    readOnly: true 
+                                  }}
+                                  sx={{
+                                    '& .MuiInputBase-input': {
+                                      backgroundColor: 'grey.50',
+                                      fontWeight: 'bold'
+                                    }
+                                  }}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                {formData.variations.length > 1 && (
+                                  <IconButton 
+                                    color="error" 
+                                    size="small"
+                                    onClick={() => removeVariationField(index)}
+                                  >
+                                    <DeleteIcon />
+                                  </IconButton>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
 
                     <Button
                       startIcon={<AddIcon />}
                       onClick={addVariationField}
                       variant="outlined"
-                      sx={{ mt: 1 }}
+                      sx={{ mt: 1, mb: 2 }}
                     >
                       Add Another Variation
                     </Button>
@@ -472,7 +602,7 @@ const Page = () => {
                   </Box>
                 )}
 
-                {/* {activeStep === 1 && (
+                {activeStep === 1 && (
                   <Box>
                     <Typography variant="h6" gutterBottom color="primary">
                       Review Variations
@@ -480,6 +610,18 @@ const Page = () => {
                     <Alert severity="warning" sx={{ mb: 2 }}>
                       Please review the variations before submitting
                     </Alert>
+
+                    {/* Review Description */}
+                    <Card sx={{ mb: 3, backgroundColor: 'grey.50' }}>
+                      <CardContent>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                          Record Description:
+                        </Typography>
+                        <Typography variant="body1">
+                          {formData.description}
+                        </Typography>
+                      </CardContent>
+                    </Card>
                     
                     <TableContainer component={Paper} variant="outlined">
                       <Table>
@@ -487,11 +629,14 @@ const Page = () => {
                           <TableRow sx={{ backgroundColor: 'grey.50' }}>
                             <TableCell sx={{ fontWeight: 'bold' }}>Title</TableCell>
                             <TableCell sx={{ fontWeight: 'bold' }}>Description</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold', textAlign: 'right' }}>Cost</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', textAlign: 'right' }}>Quantity</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold' }}>Unit</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', textAlign: 'right' }}>Rates ($)</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', textAlign: 'right' }}>Cost ($)</TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
-                          {variations.map((variation, index) => (
+                          {formData.variations.map((variation, index) => (
                             <TableRow key={index}>
                               <TableCell>
                                 <Typography variant="subtitle2">
@@ -504,6 +649,21 @@ const Page = () => {
                                 </Typography>
                               </TableCell>
                               <TableCell sx={{ textAlign: 'right' }}>
+                                <Typography variant="body2">
+                                  {variation.quantity}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Typography variant="body2">
+                                  {variation.unit}
+                                </Typography>
+                              </TableCell>
+                              <TableCell sx={{ textAlign: 'right' }}>
+                                <Typography variant="body2">
+                                  ${Number(variation.rates).toLocaleString()}
+                                </Typography>
+                              </TableCell>
+                              <TableCell sx={{ textAlign: 'right' }}>
                                 <Typography variant="body2" fontWeight="medium">
                                   ${Number(variation.cost).toLocaleString()}
                                 </Typography>
@@ -511,7 +671,7 @@ const Page = () => {
                             </TableRow>
                           ))}
                           <TableRow sx={{ backgroundColor: 'primary.light' }}>
-                            <TableCell colSpan={2} sx={{ textAlign: 'right', border: 'none' }}>
+                            <TableCell colSpan={5} sx={{ textAlign: 'right', border: 'none' }}>
                               <Typography variant="subtitle1" fontWeight="bold" color="white">
                                 Total:
                               </Typography>
@@ -532,7 +692,7 @@ const Page = () => {
                       New project total: ${(overallTotalCost + totalNewCost).toLocaleString()}
                     </Alert>
                   </Box>
-                )} */}
+                )}
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
                   {activeStep === 0 ? (
@@ -548,13 +708,14 @@ const Page = () => {
                   <Box>
                     
                       <Button 
+                        type="submit"
                         variant="contained" 
-                        onClick={handleNext}
-                        disabled={!variations.every(v => v.title && v.description && v.cost)}
+                        color="success"
+                        startIcon={<CheckCircleIcon />}
                       >
-                        Submit
+                        Submit Variations
                       </Button>
-
+                  
                   </Box>
                 </Box>
               </form>
@@ -562,6 +723,7 @@ const Page = () => {
           </Grid>
         )}
       </Grid>
+      </Container>
 
       {/* Floating Action Button */}
       {!showForm && (
