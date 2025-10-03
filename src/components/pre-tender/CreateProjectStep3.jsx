@@ -15,16 +15,23 @@ import {
   CardContent,
   MenuItem,
   CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
 } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Close";
+import { Add as AddIcon, Delete as DeleteIcon } from "@mui/icons-material";
 
 const emptyRecord = {
   supplierId: "",
   finishMaterial: "",
   materialType: "",
   measure: "",
-  materialCost: 0,
-  edgingCost: 0,
+  materialCost: "",
+  edgingCost: "",
 };
 
 const CreateProjectStep3 = ({ records, setRecords }) => {
@@ -45,17 +52,12 @@ const CreateProjectStep3 = ({ records, setRecords }) => {
     fetchSuppliers();
   }, []);
 
-  const handleChange = (idx, e) => {
-    const { name, value } = e.target;
+  const handleChange = (idx, field, value) => {
     const updated = records.map((rec, i) =>
       i === idx
         ? {
             ...rec,
-            [name]: name.includes("Cost")
-              ? value === ""
-                ? 0
-                : parseFloat(value)
-              : value,
+            [field]: value,
           }
         : rec
     );
@@ -67,145 +69,254 @@ const CreateProjectStep3 = ({ records, setRecords }) => {
   };
 
   const handleRemoveRecord = (idx) => {
-    setRecords(records.filter((_, i) => i !== idx));
+    if (records.length > 1) {
+      setRecords(records.filter((_, i) => i !== idx));
+    }
   };
+
+  // Initialize with one empty row if no records
+  useEffect(() => {
+    if (records.length === 0) {
+      setRecords([{ ...emptyRecord }]);
+    }
+  }, [records.length, setRecords]);
 
   return (
     <Box>
-      <Typography variant="h6" fontWeight="bold" gutterBottom>
+      <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ mb: 3 }}>
         Project Materials Setup
       </Typography>
 
-      {records.map((form, idx) => (
-        <Card
-          key={idx}
+      <Card variant="outlined" sx={{ borderRadius: 2, boxShadow: 2 }}>
+        <CardContent sx={{ p: 0 }}>
+          <TableContainer component={Paper} elevation={0}>
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ backgroundColor: "primary.light" }}>
+                  <TableCell sx={{ color: "white", fontWeight: "bold", width: "18%" }}>
+                    Supplier
+                  </TableCell>
+                  <TableCell sx={{ color: "white", fontWeight: "bold", width: "18%" }}>
+                    Finish Material
+                  </TableCell>
+                  <TableCell sx={{ color: "white", fontWeight: "bold", width: "15%" }}>
+                    Material Type
+                  </TableCell>
+                  <TableCell sx={{ color: "white", fontWeight: "bold", width: "12%" }}>
+                    Measure
+                  </TableCell>
+                  <TableCell sx={{ color: "white", fontWeight: "bold", width: "15%" }}>
+                    Material Cost ($)
+                  </TableCell>
+                  <TableCell sx={{ color: "white", fontWeight: "bold", width: "15%" }}>
+                    Edging Cost ($)
+                  </TableCell>
+                  <TableCell sx={{ color: "white", fontWeight: "bold", width: "7%" }}>
+                    Actions
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {records.map((form, idx) => (
+                  <TableRow 
+                    key={idx}
+                    sx={{ 
+                      '&:last-child td, &:last-child th': { border: 0 },
+                      '&:hover': { backgroundColor: 'action.hover' }
+                    }}
+                  >
+                    {/* Supplier */}
+                    <TableCell>
+                      <TextField
+                        select
+                        fullWidth
+                        size="small"
+                        variant="standard"
+                        value={form.supplierId}
+                        onChange={(e) => handleChange(idx, "supplierId", e.target.value)}
+                        disabled={loading}
+                        InputProps={{ disableUnderline: true }}
+                      >
+                        <MenuItem value="">Select supplier</MenuItem>
+                        {loading ? (
+                          <MenuItem disabled>
+                            <CircularProgress size={18} sx={{ mr: 1 }} /> Loading...
+                          </MenuItem>
+                        ) : (
+                          suppliers.map((s) => (
+                            <MenuItem key={s.id} value={s.id}>
+                              {s.name}
+                            </MenuItem>
+                          ))
+                        )}
+                      </TextField>
+                    </TableCell>
+
+                    {/* Finish Material */}
+                    <TableCell>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        variant="standard"
+                        value={form.finishMaterial}
+                        onChange={(e) => handleChange(idx, "finishMaterial", e.target.value)}
+                        placeholder="Enter finish material"
+                        InputProps={{ disableUnderline: true }}
+                      />
+                    </TableCell>
+
+                    {/* Material Type */}
+                    <TableCell>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        variant="standard"
+                        value={form.materialType}
+                        onChange={(e) => handleChange(idx, "materialType", e.target.value)}
+                        placeholder="Enter material type"
+                        InputProps={{ disableUnderline: true }}
+                      />
+                    </TableCell>
+
+                    {/* Measure */}
+                    <TableCell>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        variant="standard"
+                        value={form.measure}
+                        onChange={(e) => handleChange(idx, "measure", e.target.value)}
+                        placeholder="M2/LM"
+                        InputProps={{ disableUnderline: true }}
+                      />
+                    </TableCell>
+
+                    {/* Material Cost */}
+                    <TableCell>
+                      <TextField
+                        fullWidth
+                        type="number"
+                        size="small"
+                        variant="standard"
+                        value={form.materialCost}
+                        onChange={(e) => handleChange(idx, "materialCost", e.target.value)}
+                        placeholder="0.00"
+                        inputProps={{ 
+                          min: 0, 
+                          step: "0.01",
+                          style: { textAlign: 'right' }
+                        }}
+                        InputProps={{ 
+                          disableUnderline: true,
+                          startAdornment: <Typography variant="body2" sx={{ mr: 0.5 }}>$</Typography>
+                        }}
+                      />
+                    </TableCell>
+
+                    {/* Edging Cost */}
+                    <TableCell>
+                      <TextField
+                        fullWidth
+                        type="number"
+                        size="small"
+                        variant="standard"
+                        value={form.edgingCost}
+                        onChange={(e) => handleChange(idx, "edgingCost", e.target.value)}
+                        placeholder="0.00"
+                        inputProps={{ 
+                          min: 0, 
+                          step: "0.01",
+                          style: { textAlign: 'right' }
+                        }}
+                        InputProps={{ 
+                          disableUnderline: true,
+                          startAdornment: <Typography variant="body2" sx={{ mr: 0.5 }}>$</Typography>
+                        }}
+                      />
+                    </TableCell>
+
+                    {/* Actions */}
+                    <TableCell>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleRemoveRecord(idx)}
+                        disabled={records.length === 1}
+                        color="error"
+                        sx={{ 
+                          opacity: records.length === 1 ? 0.3 : 1,
+                          '&:hover': { backgroundColor: 'error.light', color: 'white' }
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </CardContent>
+      </Card>
+
+      {/* Add Row Button */}
+      <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
+        <Button
           variant="outlined"
-          sx={{ mb: 3, position: "relative", borderRadius: 2, boxShadow: 2 }}
+          color="primary"
+          startIcon={<AddIcon />}
+          onClick={handleAddRecord}
+          sx={{ fontWeight: "bold", borderRadius: 2 }}
         >
+          Add Row
+        </Button>
+      </Box>
+
+      {/* Summary */}
+      {records.length > 0 && (
+        <Card variant="outlined" sx={{ mt: 3, backgroundColor: 'grey.50' }}>
           <CardContent>
-            {/* Remove button */}
-            <IconButton
-              aria-label="remove"
-              onClick={() => handleRemoveRecord(idx)}
-              disabled={records.length === 1}
-              sx={{ position: "absolute", top: 8, right: 8 }}
-            >
-              <DeleteIcon color="error" />
-            </IconButton>
-
-            <Grid container spacing={2}>
-              {/* Supplier */}
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  select
-                  fullWidth
-                  sx={{ minWidth: "200px" }}
-                  size="small"
-                  label="Supplier"
-                  name="supplierId"
-                  value={form.supplierId}
-                  onChange={(e) => handleChange(idx, e)}
-                  disabled={loading}
-                >
-                  <MenuItem value="">Select supplier</MenuItem>
-                  {loading ? (
-                    <MenuItem disabled>
-                      <CircularProgress size={18} sx={{ mr: 1 }} /> Loading...
-                    </MenuItem>
-                  ) : (
-                    suppliers.map((s) => (
-                      <MenuItem key={s.id} value={s.id}>
-                        {s.name}
-                      </MenuItem>
-                    ))
-                  )}
-                </TextField>
+            <Typography variant="subtitle2" fontWeight="bold" color="primary">
+              Materials Summary
+            </Typography>
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid item xs={6} sm={3}>
+                <Typography variant="body2" color="text.secondary">
+                  Total Materials:
+                </Typography>
+                <Typography variant="body1" fontWeight="bold">
+                  {records.length}
+                </Typography>
               </Grid>
-
-              {/* Finish Material */}
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Finish Material"
-                  name="finishMaterial"
-                  value={form.finishMaterial}
-                  onChange={(e) => handleChange(idx, e)}
-                  placeholder="Enter finish material"
-                />
+              <Grid item xs={6} sm={3}>
+                <Typography variant="body2" color="text.secondary">
+                  Total Material Cost:
+                </Typography>
+                <Typography variant="body1" fontWeight="bold">
+                  ${records.reduce((sum, record) => sum + (parseFloat(record.materialCost) || 0), 0).toFixed(2)}
+                </Typography>
               </Grid>
-
-              {/* Material Type */}
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Material Type"
-                  name="materialType"
-                  value={form.materialType}
-                  onChange={(e) => handleChange(idx, e)}
-                  placeholder="Enter material type"
-                />
+              <Grid item xs={6} sm={3}>
+                <Typography variant="body2" color="text.secondary">
+                  Total Edging Cost:
+                </Typography>
+                <Typography variant="body1" fontWeight="bold">
+                  ${records.reduce((sum, record) => sum + (parseFloat(record.edgingCost) || 0), 0).toFixed(2)}
+                </Typography>
               </Grid>
-
-              {/* Measure */}
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Measure (M2/LM)"
-                  name="measure"
-                  value={form.measure}
-                  onChange={(e) => handleChange(idx, e)}
-                  placeholder="Enter measure (M2/LM)"
-                />
-              </Grid>
-
-              {/* Material Cost */}
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  type="number"
-                  size="small"
-                  label="Material Cost"
-                  name="materialCost"
-                  value={form.materialCost}
-                  onChange={(e) => handleChange(idx, e)}
-                  placeholder="Enter material cost"
-                  inputProps={{ min: 0, step: "0.01" }}
-                />
-              </Grid>
-
-              {/* Edging Cost */}
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  type="number"
-                  size="small"
-                  label="Edging Cost"
-                  name="edgingCost"
-                  value={form.edgingCost}
-                  onChange={(e) => handleChange(idx, e)}
-                  placeholder="Enter edging cost"
-                  inputProps={{ min: 0, step: "0.01" }}
-                />
+              <Grid item xs={6} sm={3}>
+                <Typography variant="body2" color="text.secondary">
+                  Grand Total:
+                </Typography>
+                <Typography variant="body1" fontWeight="bold" color="primary">
+                  ${records.reduce((sum, record) => 
+                    sum + (parseFloat(record.materialCost) || 0) + (parseFloat(record.edgingCost) || 0), 0
+                  ).toFixed(2)}
+                </Typography>
               </Grid>
             </Grid>
           </CardContent>
         </Card>
-      ))}
-
-      {/* Add Material Button */}
-      <Box textAlign="right">
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleAddRecord}
-          sx={{ fontWeight: "bold", borderRadius: 2 }}
-        >
-          + Add Material
-        </Button>
-      </Box>
+      )}
     </Box>
   );
 };

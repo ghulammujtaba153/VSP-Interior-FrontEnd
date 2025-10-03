@@ -50,7 +50,7 @@ const rateTypes = [
     type: "Freight",
     label: "Freight",
     fields: [
-      { name: "hourlyRate", label: "Freight Rate per M3", placeholder: "Enter freight rate per M3" },
+      { name: "markup", label: "Freight Markup %", placeholder: "Enter freight markup %" },
       { name: "cost", label: "Freight Cost", placeholder: "Enter freight cost" },
       { name: "sell", label: "Freight Sell Price", placeholder: "Enter freight sell price" },
     ],
@@ -59,7 +59,7 @@ const rateTypes = [
     type: "ShopDrawing",
     label: "Shop Drawing",
     fields: [
-      { name: "hourlyRate", label: "Shop Drawing Hourly Rate", placeholder: "Enter shop drawing hourly rate" },
+      { name: "markup", label: "Shop Drawing Markup %", placeholder: "Enter shop drawing markup %" },
       { name: "cost", label: "Shop Drawing Cost", placeholder: "Enter shop drawing cost" },
       { name: "sell", label: "Shop Drawing Sell Price", placeholder: "Enter shop drawing sell price" },
     ],
@@ -68,7 +68,7 @@ const rateTypes = [
     type: "Machining",
     label: "Machining",
     fields: [
-      { name: "hourlyRate", label: "Machining Hourly Rate", placeholder: "Enter machining hourly rate" },
+      { name: "markup", label: "Machining Markup %", placeholder: "Enter machining markup %" },
       { name: "cost", label: "Machining Cost", placeholder: "Enter machining cost" },
       { name: "sell", label: "Machining Sell Price", placeholder: "Enter machining sell price" },
     ],
@@ -77,7 +77,7 @@ const rateTypes = [
     type: "Assembly",
     label: "Assembly",
     fields: [
-      { name: "hourlyRate", label: "Assembly Hourly Rate", placeholder: "Enter assembly hourly rate" },
+      { name: "markup", label: "Assembly Markup %", placeholder: "Enter assembly markup %" },
       { name: "cost", label: "Assembly Cost", placeholder: "Enter assembly cost" },
       { name: "sell", label: "Assembly Sell Price", placeholder: "Enter assembly sell price" },
     ],
@@ -86,7 +86,7 @@ const rateTypes = [
     type: "Installation",
     label: "Installation",
     fields: [
-      { name: "hourlyRate", label: "Installation Hourly Rate", placeholder: "Enter installation hourly rate" },
+      { name: "markup", label: "Installation Markup %", placeholder: "Enter installation markup %" },
       { name: "cost", label: "Installation Cost", placeholder: "Enter installation cost" },
       { name: "sell", label: "Installation Sell Price", placeholder: "Enter installation sell price" },
     ],
@@ -97,6 +97,21 @@ const CreateProjectStep2 = ({ records, setRecords }) => {
   const { user } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  // Convert inputs to proper values
+  const normalizeValue = (val) => {
+    if (val === "" || val === null || val === undefined) return null;
+    return isNaN(val) ? val : parseFloat(val);
+  };
+
+  // Calculate sell price based on cost and markup
+  const calculateSellPrice = (cost, markup) => {
+    if (!cost && !markup) return null;
+    const costValue = parseFloat(cost) || 0;
+    const markupValue = parseFloat(markup) || 0;
+    const sellPrice = costValue * (1 + markupValue / 100);
+    return parseFloat(sellPrice.toFixed(2));
+  };
+
   const handleChange = (type, field, value) => {
     if (user.Role.name !== "Superadmin") {
       setDialogOpen(true);
@@ -106,18 +121,34 @@ const CreateProjectStep2 = ({ records, setRecords }) => {
     const updatedRecords = [...records];
     const existingIndex = updatedRecords.findIndex((record) => record.type === type);
 
+    let updatedRecord;
+
     if (existingIndex >= 0) {
-      updatedRecords[existingIndex] = {
+      updatedRecord = {
         ...updatedRecords[existingIndex],
-        [field]: value === "" ? 0 : parseFloat(value) || 0,
+        [field]: normalizeValue(value),
       };
     } else {
-      updatedRecords.push({
+      updatedRecord = {
         type,
-        [field]: value === "" ? 0 : parseFloat(value) || 0,
-        cost: 0,
-        sell: 0,
-      });
+        markup: null,
+        cost: null,
+        sell: null,
+        [field]: normalizeValue(value),
+      };
+    }
+
+    // Auto-calc sell price for ALL types when cost or markup changes
+    if (field === "cost" || field === "markup") {
+      const cost = field === "cost" ? normalizeValue(value) : updatedRecord.cost;
+      const markup = field === "markup" ? normalizeValue(value) : updatedRecord.markup;
+      updatedRecord.sell = calculateSellPrice(cost, markup);
+    }
+
+    if (existingIndex >= 0) {
+      updatedRecords[existingIndex] = updatedRecord;
+    } else {
+      updatedRecords.push(updatedRecord);
     }
 
     setRecords(updatedRecords);
@@ -125,67 +156,61 @@ const CreateProjectStep2 = ({ records, setRecords }) => {
 
   const getRecordValue = (type, field) => {
     const record = records.find((record) => record.type === type);
-    return record ? record[field] ?? 0 : 0;
+    return record && record[field] !== null ? record[field] : "";
   };
 
-  const renderField = (type, fieldConfig, fieldIndex) => (
-    <Grid item xs={12} key={`${type}-${fieldConfig.name}-${fieldIndex}`}>
-      <TextField
-        fullWidth
-        type="number"
-        label={fieldConfig.label}
-        placeholder={fieldConfig.placeholder}
-        value={getRecordValue(type, fieldConfig.name)}
-        onChange={(e) => handleChange(type, fieldConfig.name, e.target.value)}
-        inputProps={{ min: 0, step: "0.01" }}
-        size="small"
-        variant="outlined"
-      />
-    </Grid>
-  );
+  const renderSection = (rateType) => (
+    <Card key={rateType.type} sx={{ height: "100%" }}>
+      <CardContent>
+        <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+          {rateType.label}
+        </Typography>
+        <Divider sx={{ mb: 2 }} />
 
- const renderSection = (rateType) => (
-  <div key={rateType.type}  >
-    <CardContent>
-      <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-        {rateType.label}
-      </Typography>
-      <Divider sx={{ mb: 2 }} /> 
-
-      {/* Render fields in a single row */}
-      <Grid container spacing={2} alignItems="center">
-        {/* First column: the label (e.g., "Material") */}
-        <Grid item xs={12} sm={3} sx={{minWidth: "200px"}}>
-          <Typography fontWeight="medium">{rateType.label}</Typography>
-        </Grid>
-
-        {/* Other fields (markup, cost, sell, etc.) */}
-        {rateType.fields.map((field, fieldIndex) => (
-          <Grid item xs={12} sm={3} key={`${rateType.type}-${field.name}-${fieldIndex}`}>
-            <TextField
-              fullWidth
-              type="number"
-              label={field.label}
-              placeholder={field.placeholder}
-              value={getRecordValue(rateType.type, field.name)}
-              onChange={(e) => handleChange(rateType.type, field.name, e.target.value)}
-              inputProps={{ min: 0, step: "0.01" }}
-              size="small"
-              variant="outlined"
-            />
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} sm={3} sx={{ minWidth: "200px" }}>
+            <Typography fontWeight="medium">{rateType.label}</Typography>
           </Grid>
-        ))}
-      </Grid>
-    </CardContent>
-  </div>
-);
 
+          {rateType.fields.map((field, fieldIndex) => (
+            <Grid item xs={12} sm={3} key={`${rateType.type}-${field.name}-${fieldIndex}`}>
+              <TextField
+                fullWidth
+                type="number"
+                label={field.label}
+                placeholder={field.placeholder}
+                value={getRecordValue(rateType.type, field.name)}
+                onChange={(e) => handleChange(rateType.type, field.name, e.target.value)}
+                inputProps={{
+                  min: 0,
+                  step: "0.01",
+                }}
+                size="small"
+                variant="outlined"
+                disabled={field.name === "sell"}
+                sx={{
+                  "& .MuiInputBase-input:disabled": {
+                    backgroundColor: "action.hover",
+                    color: "text.primary",
+                  },
+                }}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <Box sx={{ p: 3 }} component={Paper}>
       <Typography variant="h6" fontWeight="bold" gutterBottom>
         Project Rates Setup
       </Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+        Enter cost and markup percentages. Sell prices are automatically calculated for all categories.
+      </Typography>
+
       <Grid container spacing={3}>
         {rateTypes.map((rateType) => (
           <Grid item xs={12} sm={6} md={4} lg={3} key={rateType.type}>

@@ -17,6 +17,7 @@ import {
   CardContent,
   Box,
 } from "@mui/material";
+import { MuiTelInput } from 'mui-tel-input';
 
 const CreateProjectStep1 = ({ formData, setFormData }) => {
   const [clients, setClients] = useState([]);
@@ -140,12 +141,12 @@ const CreateProjectStep1 = ({ formData, setFormData }) => {
           </Grid>
 
           <Grid item xs={12}>
-            <TextField
+            <MuiTelInput
               fullWidth
               label="QS Phone"
-              name="qsPhone"
               value={formData.qsPhone || ""}
-              onChange={handleChange}
+              onChange={(value) => setFormData({ ...formData, qsPhone: value })}
+              defaultCountry="PK" // You can set default country (PK = Pakistan, US = United States, etc.)
               placeholder="Enter QS phone"
               variant="outlined"
             />
