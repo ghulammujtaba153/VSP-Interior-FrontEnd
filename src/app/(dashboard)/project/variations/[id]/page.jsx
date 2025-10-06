@@ -50,6 +50,8 @@ import Link from "next/link";
 
 import VariationSubmittalGenerator from "@/utils/VariationPDFGenerator"; 
 
+
+
 const Page = () => {
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
