@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Container,
   Box,
@@ -18,7 +18,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Badge as MuiBadge,
 } from "@mui/material";
 import {
   Search,
@@ -28,93 +27,74 @@ import {
   CheckCircle,
   Cancel,
 } from "@mui/icons-material";
+import Loader from "../loader/Loader";
+import axios from "axios";
+import { BASE_URL } from "@/configs/url";
+import { toast } from "react-toastify";
 
 const Timesheets = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const timesheets = [
-    {
-      id: 1,
-      employee: "Sarah Johnson",
-      weekEnding: "2024-01-14",
-      totalHours: 42.5,
-      regularHours: 40,
-      overtimeHours: 2.5,
-      project: "Office Complex - Building A",
-      status: "Approved",
-      submittedDate: "2024-01-15",
-    },
-    {
-      id: 2,
-      employee: "Michael Chen",
-      weekEnding: "2024-01-14",
-      totalHours: 45,
-      regularHours: 40,
-      overtimeHours: 5,
-      project: "Residential Development",
-      status: "Pending",
-      submittedDate: "2024-01-15",
-    },
-    {
-      id: 3,
-      employee: "Emma Williams",
-      weekEnding: "2024-01-14",
-      totalHours: 38,
-      regularHours: 38,
-      overtimeHours: 0,
-      project: "Safety Inspections",
-      status: "Rejected",
-      submittedDate: "2024-01-15",
-    },
-    {
-      id: 4,
-      employee: "David Rodriguez",
-      weekEnding: "2024-01-14",
-      totalHours: 40,
-      regularHours: 40,
-      overtimeHours: 0,
-      project: "Infrastructure Project",
-      status: "Approved",
-      submittedDate: "2024-01-15",
-    },
-  ];
+  // ✅ Fetch from API
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get(
+        `${BASE_URL}/api/employee-timesheet/get?Search=${searchTerm}`
+      );
+      // your backend sends { total, page, limit, data: [...] }
+      setData(res.data.data || []);
+      console.log("Fetched Timesheets:", res.data);
+    } catch (error) {
+      toast.error("Failed to fetch employee timesheets");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const filteredTimesheets = timesheets.filter((ts) => {
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const filteredTimesheets = data.filter((ts) => {
     const matchesSearch =
-      ts.employee.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ts.project.toLowerCase().includes(searchTerm.toLowerCase());
+      ts.employee?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ts.employee?.email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus =
-      statusFilter === "all" || ts.status.toLowerCase() === statusFilter.toLowerCase();
+      statusFilter === "all" ||
+      ts.status?.toLowerCase() === statusFilter.toLowerCase();
     return matchesSearch && matchesStatus;
   });
 
   const getStatusBadge = (status) => {
-    switch (status) {
-      case "Approved":
+    switch (status?.toLowerCase()) {
+      case "approved":
         return (
           <Stack direction="row" spacing={0.5} alignItems="center">
             <CheckCircle fontSize="small" color="success" />
             <Typography variant="body2" color="success.main">
-              {status}
+              Approved
             </Typography>
           </Stack>
         );
-      case "Pending":
+      case "pending":
         return (
           <Stack direction="row" spacing={0.5} alignItems="center">
             <AccessTime fontSize="small" color="warning" />
             <Typography variant="body2" color="warning.main">
-              {status}
+              Pending
             </Typography>
           </Stack>
         );
-      case "Rejected":
+      case "rejected":
         return (
           <Stack direction="row" spacing={0.5} alignItems="center">
             <Cancel fontSize="small" color="error" />
             <Typography variant="body2" color="error.main">
-              {status}
+              Rejected
             </Typography>
           </Stack>
         );
@@ -123,9 +103,11 @@ const Timesheets = () => {
     }
   };
 
+  if (loading) return <Loader />;
+
   return (
     <Container sx={{ py: 6 }}>
-      {/* Header with Search and Buttons */}
+      {/* Header */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
         spacing={2}
@@ -135,10 +117,10 @@ const Timesheets = () => {
       >
         <Box>
           <Typography variant="h5" fontWeight="bold">
-            Timesheets
+            Employee Timesheets
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Track and approve employee hours
+            Track and approve employee working hours
           </Typography>
         </Box>
 
@@ -159,14 +141,11 @@ const Timesheets = () => {
       {/* Filters */}
       <Card sx={{ mb: 4 }}>
         <CardContent>
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={2}
-          >
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
             <TextField
               fullWidth
               size="small"
-              placeholder="Search by employee or project..."
+              placeholder="Search by employee name or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               InputProps={{
@@ -181,15 +160,15 @@ const Timesheets = () => {
               sx={{ minWidth: 180 }}
             >
               <MenuItem value="all">All Statuses</MenuItem>
-              <MenuItem value="Pending">Pending</MenuItem>
-              <MenuItem value="Approved">Approved</MenuItem>
-              <MenuItem value="Rejected">Rejected</MenuItem>
+              <MenuItem value="pending">Pending</MenuItem>
+              <MenuItem value="approved">Approved</MenuItem>
+              <MenuItem value="rejected">Rejected</MenuItem>
             </TextField>
           </Stack>
         </CardContent>
       </Card>
 
-      {/* Timesheets Table */}
+      {/* Table */}
       <Card>
         <CardHeader
           title={<Typography variant="h6">Recent Timesheets</Typography>}
@@ -200,40 +179,28 @@ const Timesheets = () => {
               <TableHead>
                 <TableRow sx={{ bgcolor: "grey.100" }}>
                   <TableCell>Employee</TableCell>
-                  <TableCell>Week Ending</TableCell>
-                  <TableCell>Total Hours</TableCell>
-                  <TableCell>Regular</TableCell>
-                  <TableCell>Overtime</TableCell>
-                  <TableCell>Project</TableCell>
+                  <TableCell>Date</TableCell>
+                  <TableCell>Start Time</TableCell>
+                  <TableCell>End Time</TableCell>
+                  <TableCell>Break</TableCell>
+                  <TableCell>Overwork</TableCell>
                   <TableCell>Status</TableCell>
-                  <TableCell>Submitted</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredTimesheets.map((ts) => (
                   <TableRow key={ts.id} hover>
-                    <TableCell sx={{ fontWeight: 500 }}>{ts.employee}</TableCell>
-                    <TableCell>{new Date(ts.weekEnding).toLocaleDateString()}</TableCell>
-                    <TableCell sx={{ fontWeight: 600 }}>{ts.totalHours}h</TableCell>
-                    <TableCell>{ts.regularHours}h</TableCell>
-                    <TableCell
-                      sx={{
-                        fontWeight: ts.overtimeHours > 0 ? 500 : "normal",
-                        color: ts.overtimeHours > 0 ? "warning.main" : "inherit",
-                      }}
-                    >
-                      {ts.overtimeHours}h
+                    <TableCell sx={{ fontWeight: 500 }}>
+                      {ts.employee?.name || "N/A"}
                     </TableCell>
-                    <TableCell
-                      sx={{ maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis" }}
-                      title={ts.project}
-                    >
-                      {ts.project}
+                    <TableCell>
+                      {new Date(ts.date).toLocaleDateString()}
                     </TableCell>
+                    <TableCell>{ts.startTime}</TableCell>
+                    <TableCell>{ts.endTime}</TableCell>
+                    <TableCell>{ts.breakTime}</TableCell>
+                    <TableCell>{ts.overWork}</TableCell>
                     <TableCell>{getStatusBadge(ts.status)}</TableCell>
-                    <TableCell color="text.secondary">
-                      {new Date(ts.submittedDate).toLocaleDateString()}
-                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Card,
@@ -29,6 +29,9 @@ import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import DescriptionIcon from "@mui/icons-material/Description";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { BASE_URL } from "@/configs/url";
+import axios from "axios";
+import Loader from "../loader/Loader";
 
 // Mock data - in real app this would come from API
 const mockQuotes = [
@@ -95,6 +98,37 @@ export const QuoteDashboard = () => {
   const avgMargin = (
     mockQuotes.reduce((sum, quote) => sum + quote.margin, 0) / totalQuotes
   ).toFixed(1);
+
+  const [data, setData] = useState();
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [limit, setLimit] = useState(10);
+  const [search, setSearch] = useState("");
+
+
+
+  const fetchProjects = async () => {
+      setLoading(true)
+      try {
+        const res = await axios.get(
+          `${BASE_URL}/api/project-setup/get?page=${page + 1}&limit=${limit}&search=${search}`
+        )
+        setData(res.data.data || [])
+        setRowCount(res.data.pagination?.totalRecords || 0)
+      } catch (error) {
+        console.error('Error fetching projects:', error)
+        toast.error('Failed to fetch projects')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+
+    useEffect(() => {
+      fetchProjects()
+    }, [page, limit, search])
+
+    if(loading) return <Loader />
 
   return (
     <Box sx={{ p: 2 }}>

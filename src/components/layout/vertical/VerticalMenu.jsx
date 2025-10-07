@@ -162,9 +162,20 @@ const VerticalMenu = ({ scrollMenu }) => {
           Reports
         </MenuItem>
 
-        <MenuItem href='/human-resource' icon={<i className='tabler-file-text' />}>
-          HR & Documentation
-        </MenuItem>
+        
+
+        <SubMenu label='HR & Documentation' icon={<i className='tabler-file-text' />}>
+          <MenuItem href='/human-resource' icon={<i className='tabler-file-text' />}>
+            HR & Documentation
+          </MenuItem>
+
+          <MenuItem href='/employee-leave' icon={<i className='tabler-file-text' />}>
+            Employee Access
+          </MenuItem>
+        
+        </SubMenu>
+
+        
 
         {/* <SubMenu label='Purchasing' icon={<i className='tabler-shopping-cart' />}></SubMenu> */}
 
