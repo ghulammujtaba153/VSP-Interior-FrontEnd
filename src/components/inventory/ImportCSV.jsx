@@ -38,10 +38,10 @@ const schemaFields = [
   "Description",
   "Category",
   "Unit",
-  "SupplierId",
+  "Supplier Name",
   "CostPrice",
   "Quantity",
-  "TotalStocks",
+ 
   "Notes",
   "Status",
 ];
@@ -53,10 +53,10 @@ const templateData = [
     Description: "Phillips head wood screws for cabinet assembly",
     Category: "Hardware",
     Unit: "Pieces",
-    SupplierId: "SUP001",
+    "Supplier Name": "ABC Wood Supplies",
     CostPrice: 0.25,
     Quantity: 500,
-    TotalStocks: 500,
+   
     Notes: "For cabinet jobs",
     Status: "active"
   },
@@ -65,10 +65,9 @@ const templateData = [
     Description: "Soft-close hinges for cabinet doors",
     Category: "Hardware",
     Unit: "Pairs",
-    SupplierId: "SUP002",
+    "Supplier Name": "Premier Hardware Co.",
     CostPrice: 12.50,
     Quantity: 75,
-    TotalStocks: 75,
     Notes: "",
     Status: "active"
   },
@@ -77,10 +76,9 @@ const templateData = [
     Description: "Premium oak board 1x6x8 feet",
     Category: "Materials",
     Unit: "Pieces",
-    SupplierId: "SUP001",
+    "Supplier Name": "ABC Wood Supplies",
     CostPrice: 45.00,
     Quantity: 25,
-    TotalStocks: 25,
     Notes: "Premium stock",
     Status: "inactive"
   }
@@ -99,7 +97,7 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
     let newErrors = {};
     data.forEach((row, idx) => {
       let rowErrors = [];
-      // Required fields (exclude Notes)
+      // Required fields (exclude Notes only)
       schemaFields.forEach((field) => {
         if (
           field !== "Notes" && // Notes is optional
@@ -109,7 +107,7 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
         }
       });
       // Numeric validation
-      ["CostPrice", "Quantity", "TotalStocks"].forEach((field) => {
+      ["CostPrice", "Quantity"].forEach((field) => {
         if (row[field] && (isNaN(row[field]) || Number(row[field]) < 0)) {
           rowErrors.push(`${field} must be a positive number`);
         }
@@ -247,13 +245,18 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
       const backendRows = validRows.map(row => {
         const mapped = {};
         schemaFields.forEach(field => {
-          const backendKey = field.charAt(0).toLowerCase() + field.slice(1);
-          mapped[backendKey] = row[field];
+          // Special handling for "Supplier Name" -> "supplierName"
+          if (field === "Supplier Name") {
+            mapped["supplierName"] = row[field];
+          } else {
+            const backendKey = field.charAt(0).toLowerCase() + field.slice(1);
+            mapped[backendKey] = row[field];
+          }
         });
         return mapped;
       });
 
-      const res=await axios.post(`${BASE_URL}/api/inventory/import`, {
+      const res = await axios.post(`${BASE_URL}/api/inventory/import`, {
         userId: user.id,
         inventory: backendRows,
       });
@@ -265,7 +268,30 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
     } catch (error) {
       console.error("Error importing inventory:", error);
       toast.dismiss();
-      toast.error("Failed to import inventory");
+      
+      // Handle supplier name validation errors specifically
+      if (error.response?.data?.invalidSuppliers) {
+        toast.error(
+          <div>
+            <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
+              {error.response.data.message}
+            </div>
+            <div style={{ fontSize: '12px', maxHeight: '200px', overflow: 'auto' }}>
+              {error.response.data.invalidSuppliers.map((item, idx) => (
+                <div key={idx} style={{ marginBottom: '4px' }}>
+                  • Item: <strong>{item.itemName}</strong> → Supplier: <strong>{item.supplierName}</strong>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: '8px', fontSize: '11px', color: '#666' }}>
+              Please ensure supplier names match exactly with existing suppliers in the database.
+            </div>
+          </div>,
+          { autoClose: 10000 }
+        );
+      } else {
+        toast.error(error.response?.data?.message || "Failed to import inventory");
+      }
     }
   };
 
@@ -410,20 +436,25 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
                       <th style={{ border: '1px solid #ddd', padding: '8px', fontWeight: 'bold', fontSize: '12px' }}>
                         #
                       </th>
-                      {schemaFields.map((field) => (
-                        <th
-                          key={field}
-                          style={{ 
-                            border: '1px solid #ddd', 
-                            padding: '8px', 
-                            fontWeight: 'bold', 
-                            fontSize: '12px', 
-                            minWidth: field === 'Description' ? '200px' : '120px' 
-                          }}
-                        >
-                          {field}
-                        </th>
-                      ))}
+                       {schemaFields.map((field) => {
+                         const isRequired = field !== "Notes";
+                         return (
+                           <th
+                             key={field}
+                             style={{ 
+                               border: '1px solid #ddd', 
+                               padding: '8px', 
+                               fontWeight: 'bold', 
+                               fontSize: '12px', 
+                               minWidth: field === 'Description' ? '200px' : '120px' 
+                             }}
+                           >
+                             {field}
+                             {isRequired && <span style={{ color: 'red', marginLeft: '2px' }}>*</span>}
+                             {!isRequired && <span style={{ color: '#4caf50', marginLeft: '4px', fontSize: '10px' }}>(Optional)</span>}
+                           </th>
+                         );
+                       })}
                       <th style={{ border: '1px solid #ddd', padding: '8px', fontWeight: 'bold', fontSize: '12px', minWidth: '180px' }}>
                         Validation Status
                       </th>
@@ -454,7 +485,7 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
                                   }
                                 }
                               }}
-                              type={['CostPrice', 'Quantity', 'TotalStocks'].includes(field) ? 'number' : 'text'}
+                              type={['CostPrice', 'Quantity'].includes(field) ? 'number' : 'text'}
                             />
                           </td>
                         ))}

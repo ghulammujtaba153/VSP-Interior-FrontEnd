@@ -508,8 +508,17 @@ const ClientsTable = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {contacts.map((contact) => (
-                <TableRow key={contact.id} hover>
+              {contacts.map((contact, index) => (
+                <TableRow 
+                  key={contact.id} 
+                  hover
+                  sx={{
+                    backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
+                    '&:hover': {
+                      backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
+                    }
+                  }}
+                >
                   <TableCell>{contact.id}</TableCell>
                   <TableCell>
                     <Typography variant="body2">
@@ -706,10 +715,18 @@ const ClientsTable = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {clients.map((client) => (
+              {clients.map((client, index) => (
                 <React.Fragment key={client.id}>
                   {/* Main client row */}
-                  <TableRow hover>
+                  <TableRow 
+                    hover
+                    sx={{
+                      backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
+                      '&:hover': {
+                        backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
+                      }
+                    }}
+                  >
                     <TableCell>
                       {/* Only show expand icon if isCompany is true */}
                       {client.isCompany ? (

@@ -30,7 +30,6 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
     supplierId: "",
     costPrice: "",
     quantity: "",
-    totalStocks: "",
     notes: "",
     status: "active",
   });
@@ -57,7 +56,7 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
         supplierId: editData.supplierId || "",
         costPrice: editData.costPrice || "",
         quantity: editData.quantity || "",
-        totalStocks: editData.totalStocks || "",
+        
         notes: editData.notes || "",
         status: editData.status || "active",
       });
@@ -70,7 +69,6 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
         supplierId: "",
         costPrice: "",
         quantity: "",
-        totalStocks: "",
         notes: "",
         status: "active",
       });
@@ -236,6 +234,7 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
             </Grid>
             <Grid item xs={12}>
               <TextField
+                sx={{minWidth: 200}}
                 select
                 fullWidth
                 label="Supplier"
@@ -265,7 +264,7 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
             <Grid item xs={6}>
               <TextField
                 fullWidth
-                label="Quantity"
+                label="Quantity in Stock"
                 name="quantity"
                 type="number"
                 value={formData.quantity}
@@ -273,17 +272,7 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
                 required
               />
             </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="Total Stocks"
-                name="totalStocks"
-                type="number"
-                value={formData.totalStocks}
-                onChange={handleChange}
-                required
-              />
-            </Grid>
+            
             <Grid item xs={6}>
               <TextField
                 select

@@ -40,7 +40,7 @@ const ContactModal = ({ open, onClose, clientId, editContact, refreshContacts })
   });
 
   const [loading, setLoading] = useState(false);
-  const {user} = useAuth()
+  const { user } = useAuth()
 
   // Confirmation dialog states
   const [confirmationOpen, setConfirmationOpen] = useState(false);
@@ -136,7 +136,7 @@ const ContactModal = ({ open, onClose, clientId, editContact, refreshContacts })
         });
         toast.success("Contact created successfully");
       }
-      
+
       refreshContacts && refreshContacts();
       onClose(); // ✅ Close the modal
     } catch (error) {
@@ -192,14 +192,14 @@ const ContactModal = ({ open, onClose, clientId, editContact, refreshContacts })
             required
           />
           <MuiTelInput
-  fullWidth
-  defaultCountry="NZ"
-  label="Phone Number"
-  value={contact.phoneNumber}
-  onChange={(value) => setContact({ ...contact, phoneNumber: value })}
-  margin="normal"
-  required
-/>
+            fullWidth
+            defaultCountry="NZ"
+            label="Phone Number"
+            value={contact.phoneNumber}
+            onChange={(value) => setContact({ ...contact, phoneNumber: value })}
+            margin="normal"
+            required
+          />
           <Box mt={2} display="flex" justifyContent="flex-end">
             <Button onClick={onClose} sx={{ mr: 2 }}>
               Cancel

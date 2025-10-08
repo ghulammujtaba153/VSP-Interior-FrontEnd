@@ -320,8 +320,13 @@ const CabinetMaterialTable = () => {
               cabinetQuotes.map((quote, index) => (
                 <TableRow 
                   key={quote.id}
-                  sx={{ '&:nth-of-type(odd)': { backgroundColor: '#fafafa' } }}
                   hover
+                  sx={{
+                    backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
+                    '&:hover': {
+                      backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
+                    }
+                  }}
                 >
                   <TableCell>{(page * limit) + index + 1}</TableCell>
                   <TableCell>

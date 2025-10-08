@@ -493,8 +493,17 @@ const SupplierTable = () => {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {contacts.map((contact) => (
-                                <TableRow key={contact.id} hover>
+                            {contacts.map((contact, index) => (
+                                <TableRow 
+                                    key={contact.id} 
+                                    hover
+                                    sx={{
+                                        backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
+                                        '&:hover': {
+                                            backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
+                                        }
+                                    }}
+                                >
                                     <TableCell>{contact.id}</TableCell>
                                     <TableCell>
                                         <Typography variant="body2">
@@ -689,10 +698,18 @@ const SupplierTable = () => {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {suppliers.map((supplier) => (
+                            {suppliers.map((supplier, index) => (
                                 <React.Fragment key={supplier.id}>
                                     {/* Main supplier row */}
-                                    <TableRow hover>
+                                    <TableRow 
+                                        hover
+                                        sx={{
+                                            backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
+                                            '&:hover': {
+                                                backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
+                                            }
+                                        }}
+                                    >
                                         <TableCell>
                                             <IconButton
                                                 size="small"

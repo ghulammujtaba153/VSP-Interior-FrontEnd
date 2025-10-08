@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react"
+import React, { useState } from "react"
 import {
   Box,
   Card,
@@ -29,6 +29,9 @@ import {
   People,
   TrackChanges,
 } from "@mui/icons-material"
+import Loader from "../loader/Loader"
+import { BASE_URL } from "@/configs/url"
+import { toast } from "react-toastify"
 
 // Mock report data
 const conversionData = [
@@ -52,6 +55,9 @@ const areaPerformance = [
 ]
 
 export const QuoteReports = () => {
+  
+  
+
   return (
     <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 3 }}>
       {/* KPIs */}

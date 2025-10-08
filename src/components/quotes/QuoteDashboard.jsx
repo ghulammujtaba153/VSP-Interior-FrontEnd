@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useEffect, useState } from "react";
 import {
@@ -22,6 +22,8 @@ import {
   Button,
   Grid,
   Paper,
+  TablePagination,
+  InputAdornment
 } from "@mui/material";
 
 import SearchIcon from "@mui/icons-material/Search";
@@ -29,6 +31,7 @@ import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import DescriptionIcon from "@mui/icons-material/Description";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import MailIcon from "@mui/icons-material/Mail";
 import { BASE_URL } from "@/configs/url";
 import axios from "axios";
 import Loader from "../loader/Loader";
@@ -88,6 +91,21 @@ const getStatusColor = (status) => {
   }
 };
 
+// New status color mapping for project data
+const getProjectStatusColor = (status) => {
+  switch (status) {
+    case "approved":
+      return "success";
+    case "rejected":
+      return "error";
+    case "pending":
+      return "warning";
+    case "draft":
+    default:
+      return "default";
+  }
+};
+
 export const QuoteDashboard = () => {
   const totalQuotes = mockQuotes.length;
   const totalValue = mockQuotes.reduce((sum, quote) => sum + quote.value, 0);
@@ -99,40 +117,78 @@ export const QuoteDashboard = () => {
     mockQuotes.reduce((sum, quote) => sum + quote.margin, 0) / totalQuotes
   ).toFixed(1);
 
-  const [data, setData] = useState();
+  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
-  const [limit, setLimit] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState("");
-
-
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const fetchProjects = async () => {
-      setLoading(true)
-      try {
-        const res = await axios.get(
-          `${BASE_URL}/api/project-setup/get?page=${page + 1}&limit=${limit}&search=${search}`
-        )
-        setData(res.data.data || [])
-        setRowCount(res.data.pagination?.totalRecords || 0)
-      } catch (error) {
-        console.error('Error fetching projects:', error)
-        toast.error('Failed to fetch projects')
-      } finally {
-        setLoading(false)
-      }
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({
+        page: (page + 1).toString(),
+        limit: rowsPerPage.toString(),
+        ...(search && { search }),
+        ...(statusFilter !== "all" && { status: statusFilter })
+      });
+
+      const res = await axios.get(
+        `${BASE_URL}/api/project-setup/get?${params}`
+      );
+      setData(res.data.data || []);
+      setTotalRecords(res.data.pagination?.totalRecords || 0);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+    } finally {
+      setLoading(false);
     }
+  };
 
+  useEffect(() => {
+    fetchProjects();
+  }, [page, rowsPerPage, search, statusFilter]);
 
-    useEffect(() => {
-      fetchProjects()
-    }, [page, limit, search])
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
 
-    if(loading) return <Loader />
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const handleSearchChange = (event) => {
+    setSearch(event.target.value);
+    setPage(0);
+  };
+
+  const handleStatusFilterChange = (event) => {
+    setStatusFilter(event.target.value);
+    setPage(0);
+  };
+
+  const handleStatusUpdate = async (id, newStatus) => {
+    try {
+      await axios.put(`${BASE_URL}/api/project-setup/update/status/${id}`, { status: newStatus });
+      fetchProjects();
+    } catch (error) {
+      console.error("Error updating project status:", error);
+    }
+  };
+
+  const calculateTotalValue = (project) => {
+    if (!project.rates || project.rates.length === 0) return 0;
+    return project.rates.reduce((total, rate) => total + (rate.sell || 0), 0);
+  };
+
+  if (loading) return <Loader />;
 
   return (
     <Box sx={{ p: 2 }}>
-      {/* Key Metrics */}
+      {/* Key Metrics - Keep original stats */}
       <Grid container spacing={2} mb={4}>
         <Grid item xs={12} sm={6} md={3}>
           <Card>
@@ -197,103 +253,152 @@ export const QuoteDashboard = () => {
         </Grid>
       </Grid>
 
-      {/* Filters */}
+      {/* Updated Quote Management with Projects Data */}
       <Card>
         <CardHeader
-          title={<Typography variant="h6">Quote Management</Typography>}
+          title={<Typography variant="h6">Project Quotes Management</Typography>}
         />
-        <CardContent>
-          <Grid container spacing={2} mb={3}>
-            <Grid item xs={12} sm={6} md={4}>
-              <TextField
-                fullWidth
-                variant="outlined"
-                placeholder="Search quotes..."
-                InputProps={{
-                  startAdornment: <SearchIcon fontSize="small" />,
-                }}
-              />
+        <CardContent sx={{ p: 0 }}>
+          {/* Filters */}
+          <Box sx={{ p: 3, pb: 2 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6} md={4}>
+                <TextField
+                  fullWidth
+                  size="small"
+                  variant="outlined"
+                  placeholder="Search projects..."
+                  value={search}
+                  onChange={handleSearchChange}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon fontSize="small" />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={4}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Status</InputLabel>
+                  <Select
+                    value={statusFilter}
+                    label="Status"
+                    onChange={handleStatusFilterChange}
+                  >
+                    <MenuItem value="all">All Status</MenuItem>
+                    <MenuItem value="draft">Draft</MenuItem>
+                    <MenuItem value="pending">Pending</MenuItem>
+                    <MenuItem value="approved">Approved</MenuItem>
+                    <MenuItem value="rejected">Rejected</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
             </Grid>
-            <Grid item xs={12} sm={3} md={4}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select defaultValue="all" label="Status">
-                  <MenuItem value="all">All Status</MenuItem>
-                  <MenuItem value="draft">Draft</MenuItem>
-                  <MenuItem value="sent">Sent</MenuItem>
-                  <MenuItem value="accepted">Accepted</MenuItem>
-                  <MenuItem value="lost">Lost</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={3} md={4}>
-              <FormControl fullWidth>
-                <InputLabel>Client</InputLabel>
-                <Select defaultValue="all" label="Client">
-                  <MenuItem value="all">All Clients</MenuItem>
-                  <MenuItem value="modern">Modern Homes Ltd</MenuItem>
-                  <MenuItem value="city">City Apartments</MenuItem>
-                  <MenuItem value="luxury">Luxury Villas</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-          </Grid>
+          </Box>
 
-          {/* Quotes Table */}
+          {/* Projects Table */}
           <TableContainer component={Paper}>
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Quote ID</TableCell>
+                  <TableCell>ID</TableCell>
                   <TableCell>Client</TableCell>
-                  <TableCell>Project</TableCell>
-                  <TableCell>Value</TableCell>
+                  <TableCell>Project Name</TableCell>
+                  <TableCell>Location</TableCell>
+                  <TableCell>Quote Value</TableCell>
+                  <TableCell>Rates Count</TableCell>
+                  <TableCell>Materials Count</TableCell>
+                  <TableCell>Revision</TableCell>
                   <TableCell>Status</TableCell>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Margin</TableCell>
+                  <TableCell>Created At</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {mockQuotes.map((quote) => (
-                  <TableRow key={quote.id} hover>
-                    <TableCell>{quote.id}</TableCell>
-                    <TableCell>{quote.client}</TableCell>
-                    <TableCell>{quote.project}</TableCell>
-                    <TableCell>
-                      ${quote.value.toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={
-                          quote.status.charAt(0).toUpperCase() +
-                          quote.status.slice(1)
-                        }
-                        color={getStatusColor(quote.status) }
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>{quote.date}</TableCell>
-                    <TableCell>{quote.margin}%</TableCell>
-                    <TableCell>
-                      <Box display="flex" gap={1}>
-                        <Button
+                {data.length > 0 ? (
+                  data.map((project) => (
+                    <TableRow key={project.id} hover>
+                      <TableCell>{project.id}</TableCell>
+                      <TableCell>{project.client?.companyName || "-"}</TableCell>
+                      <TableCell>{project.projectName}</TableCell>
+                      <TableCell>{project.siteLocation}</TableCell>
+                      <TableCell>${calculateTotalValue(project).toLocaleString()}</TableCell>
+                      <TableCell>{project.rates?.length || 0}</TableCell>
+                      <TableCell>{project.materials?.length || 0}</TableCell>
+                      <TableCell>{project.revision}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={
+                            project.status.charAt(0).toUpperCase() +
+                            project.status.slice(1)
+                          }
+                          color={getProjectStatusColor(project.status)}
                           size="small"
-                          variant="outlined"
-                          color="primary"
-                        >
-                          View
-                        </Button>
-                        <Button size="small" variant="outlined" color="secondary">
-                          Edit
-                        </Button>
-                      </Box>
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {new Date(project.createdAt).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <Box display="flex" gap={1} flexDirection="column">
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<MailIcon />}
+                            // onClick={() => handleStatusUpdate(project.id, "pending")}
+                            // disabled={project.status === "pending" || project.status === "approved"}
+                          >
+                            View
+                          </Button>
+                          {/* <Button
+                            size="small"
+                            variant="contained"
+                            color="success"
+                            onClick={() => handleStatusUpdate(project.id, "approved")}
+                            disabled={project.status === "approved"}
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="error"
+                            onClick={() => handleStatusUpdate(project.id, "rejected")}
+                            disabled={project.status === "rejected"}
+                          >
+                            Reject
+                          </Button> */}
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={11} align="center">
+                      No projects found
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
           </TableContainer>
+
+          {/* Pagination */}
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            component="div"
+            count={totalRecords}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={handleChangePage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            sx={{
+              borderTop: "1px solid",
+              borderColor: "divider",
+            }}
+          />
         </CardContent>
       </Card>
     </Box>

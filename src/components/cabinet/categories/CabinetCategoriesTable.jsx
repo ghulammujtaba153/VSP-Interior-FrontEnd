@@ -253,8 +253,17 @@ const CabinetCategoriesTable = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {data.map((category) => (
-                <TableRow key={category.id} hover>
+              {data.map((category, index) => (
+                <TableRow
+                  key={category.id}
+                  hover
+                  sx={{
+                    backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
+                    '&:hover': {
+                      backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
+                    }
+                  }}
+                >
                   <TableCell>{category.id}</TableCell>
                   <TableCell>
                     <Typography variant="body2" fontWeight="medium">

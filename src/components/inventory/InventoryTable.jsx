@@ -18,6 +18,8 @@ import {
   TableHead,
   TableRow,
   TablePagination,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import { Visibility, Edit, Delete } from "@mui/icons-material";
 import InventoryModal from "./InventoryModal";
@@ -39,6 +41,8 @@ const InventoryTable = () => {
   const [viewData, setViewData] = useState(null);
   const { user } = useAuth();
   const [importCSV, setImportCSV] = useState(false);
+  const [suppliers, setSuppliers] = useState([]);
+  const [selectedSupplier, setSelectedSupplier] = useState(null);
 
   // Pagination + search
   const [page, setPage] = useState(0);
@@ -83,7 +87,7 @@ const InventoryTable = () => {
     setLoading(true);
     try {
       const res = await axios.get(
-        `${BASE_URL}/api/inventory/get?page=${currentPage + 1}&limit=${currentLimit}&search=${searchTerm}`
+        `${BASE_URL}/api/inventory/get?page=${currentPage + 1}&limit=${currentLimit}&search=${searchTerm}&supplierId=${selectedSupplier}`
       );
       setData(res.data.inventory || []);
       setRowCount(res.data.total || 0);
@@ -94,8 +98,20 @@ const InventoryTable = () => {
     }
   };
 
+
+  const fetchSuppliers = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/api/suppliers/get`);
+      setSuppliers(res.data.data || []);
+      
+    } catch (error) {
+      console.error("Error fetching suppliers:", error);
+    }
+    
+  };
+
   useEffect(() => {
-    fetchData();
+    fetchSuppliers();
     // eslint-disable-next-line
   }, []);
 
@@ -103,7 +119,7 @@ const InventoryTable = () => {
   useEffect(() => {
     fetchData(page, limit, search);
     // eslint-disable-next-line
-  }, [page, limit]);
+  }, [page, limit, selectedSupplier, search]);
 
   const handleDelete = (inventoryRow) => {
     showConfirmation({
@@ -152,7 +168,6 @@ const InventoryTable = () => {
       Category: item.category,
       Unit: item.unit,
       Quantity: item.quantity,
-      "Total Stocks": item.totalStocks,
       Price: item.costPrice,
       Supplier: item.supplier?.companyName || "N/A",
       Status: item.status,
@@ -248,6 +263,20 @@ const InventoryTable = () => {
         </Box>
       </Box>
 
+
+      <Select
+        sx={{ minWidth: 200 }}
+        label="Supplier"
+          
+        size="small"
+        value={selectedSupplier}
+        onChange={(e) => setSelectedSupplier(e.target.value)}
+      >
+        {suppliers.map((supplier) => (
+          <MenuItem key={supplier.id} value={supplier.id}>{supplier.name}</MenuItem>
+        ))}
+      </Select>
+
       {/* Inventory Table */}
       <TableContainer component={Paper}>
         <Table>
@@ -261,7 +290,6 @@ const InventoryTable = () => {
               <TableCell sx={{ minWidth: 160, fontWeight: 'bold' }}>Supplier</TableCell>
               <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Price</TableCell>
               <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Quantity</TableCell>
-              <TableCell sx={{ minWidth: 120, fontWeight: 'bold' }}>Total Stocks</TableCell>
               <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Status</TableCell>
               <TableCell sx={{ minWidth: 180, fontWeight: 'bold' }}>Notes</TableCell>
               <TableCell sx={{ minWidth: 120, fontWeight: 'bold' }}>Date</TableCell>
@@ -269,8 +297,17 @@ const InventoryTable = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {paginatedData.map((item) => (
-              <TableRow key={item.id}>
+            {paginatedData.map((item, index) => (
+              <TableRow 
+                key={item.id}
+                hover
+                sx={{
+                  backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
+                  '&:hover': {
+                    backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
+                  }
+                }}
+              >
                 <TableCell sx={{ minWidth: 80 }}>{item.id}</TableCell>
                 <TableCell sx={{ minWidth: 160 }}>{item.name}</TableCell>
                 <TableCell sx={{ minWidth: 220 }}>{item.description}</TableCell>
@@ -279,7 +316,6 @@ const InventoryTable = () => {
                 <TableCell sx={{ minWidth: 160 }}>{item.supplier?.name || "N/A"}</TableCell>
                 <TableCell sx={{ minWidth: 100 }}>{item.costPrice}</TableCell>
                 <TableCell sx={{ minWidth: 100 }}>{item.quantity}</TableCell>
-                <TableCell sx={{ minWidth: 120 }}>{item.totalStocks}</TableCell>
                 <TableCell sx={{ minWidth: 100 }}>
                   <span style={{
                     padding: "2px 8px",

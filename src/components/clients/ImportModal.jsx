@@ -41,21 +41,46 @@ import {
 } from "@mui/icons-material";
 import CircularProgress from "@mui/material/CircularProgress";
 
-// ✅ Required fields (notes removed)
-const requiredFields = [
+// ✅ Text transformation helper - capitalize first letter, rest lowercase
+const capitalizeText = (text) => {
+  if (!text || typeof text !== 'string') return text;
+  return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+};
+
+// ✅ Transform address - capitalize first letter of each word
+const capitalizeAddress = (address) => {
+  if (!address || typeof address !== 'string') return address;
+  return address
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
+
+// ✅ Client required fields
+const clientRequiredFields = [
   "Name",
-  "isCompany",
-  "emailAddress",
-  "phoneNumber",
-  "address",
-  "postCode",
-  "status",
+  "Is Company",
+  "Email Address",
+  "Phone Number",
+  "Address",
+  "Post Code",
+  "Status",
+];
+
+// ✅ Contact fields (optional - can be empty if no contacts)
+const contactFields = [
+  "Contact First Name",
+  "Contact Last Name",
+  "Contact Role",
+  "Contact Email",
+  "Contact Phone",
 ];
 
 // ✅ All fields (for table display)
 const allFields = [
-  ...requiredFields,
-  "notes", // optional, still shown in table
+  ...clientRequiredFields,
+  "Notes", // optional
+  ...contactFields,
 ];
 
 // ✅ Optimized validation functions (moved outside component to prevent recreation)
@@ -93,61 +118,79 @@ const validateRowsBatch = (data, batchSize = 1000) => {
         const row = data[idx];
         let rowErrors = [];
 
-        // 1. Required fields
-        requiredFields.forEach((field) => {
+        // 1. Client Required fields validation
+        clientRequiredFields.forEach((field) => {
           if (!row[field] && row[field] !== 0) {
             rowErrors.push(`${field} is required`);
           }
         });
 
-        // 2. Email validation
-        if (row.emailAddress && !validateEmail(row.emailAddress)) {
-          rowErrors.push("Invalid email format");
+        // 2. Client Email validation
+        if (row["Email Address"] && !validateEmail(row["Email Address"])) {
+          rowErrors.push("Invalid client email format");
         }
 
-        // 3. Phone validation
-        if (row.phoneNumber && !validatePhone(row.phoneNumber)) {
-          rowErrors.push("Invalid phone number format");
+        // 3. Client Phone validation
+        if (row["Phone Number"] && !validatePhone(row["Phone Number"])) {
+          rowErrors.push("Invalid client phone format");
         }
 
         // 4. Status validation
-        if (row.status && !validateStatus(row.status)) {
-          rowErrors.push("status must be Active or Inactive");
+        if (row["Status"] && !validateStatus(row["Status"])) {
+          rowErrors.push("Status must be Active or Inactive");
         }
 
         // 5. Postal code validation
-        if (row.postCode && !validatePostCode(row.postCode)) {
+        if (row["Post Code"] && !validatePostCode(row["Post Code"])) {
           rowErrors.push("Invalid postal code format");
         }
 
-        // 6. Duplicate email in file
-        if (row.emailAddress) {
-          const lowerEmail = row.emailAddress.toLowerCase();
-          if (seenEmails.has(lowerEmail)) {
-            rowErrors.push("Duplicate email in file");
-          } else {
-            seenEmails.add(lowerEmail);
-          }
+        // 6. Skip duplicate email check within file - duplicates are EXPECTED for clients with multiple contacts
+        // The system will automatically group rows by email during import
+        if (row["Email Address"]) {
+          seenEmails.add(row["Email Address"].toLowerCase());
         }
 
-        // 7. Duplicate Name in file
-        if (row.Name) {
-          const lowerName = row.Name.toLowerCase();
-          if (seenNames.has(lowerName)) {
-            rowErrors.push("Duplicate Name in file");
-          } else {
-            seenNames.add(lowerName);
-          }
+        // 7. Skip duplicate name check within file - duplicates are EXPECTED for clients with multiple contacts
+        // The system will automatically group rows by email during import
+        if (row["Name"]) {
+          seenNames.add(row["Name"].toLowerCase());
         }
 
         // 8. Name length validation
-        if (row.Name && row.Name.length < 2) {
+        if (row["Name"] && row["Name"].length < 2) {
           rowErrors.push("Name must be at least 2 characters");
         }
 
         // 9. Address length validation
-        if (row.address && row.address.length < 10) {
+        if (row["Address"] && row["Address"].length < 10) {
           rowErrors.push("Address must be at least 10 characters");
+        }
+
+        // 10. Contact validation (if any contact field is filled, validate all contact required fields)
+        const hasAnyContactData = contactFields.some(field => row[field] && row[field].toString().trim());
+        
+        if (hasAnyContactData) {
+          // If there's any contact data, validate contact fields
+          if (!row["Contact First Name"] || !row["Contact First Name"].toString().trim()) {
+            rowErrors.push("Contact First Name is required when contact data is provided");
+          }
+          if (!row["Contact Last Name"] || !row["Contact Last Name"].toString().trim()) {
+            rowErrors.push("Contact Last Name is required when contact data is provided");
+          }
+          if (!row["Contact Role"] || !row["Contact Role"].toString().trim()) {
+            rowErrors.push("Contact Role is required when contact data is provided");
+          }
+          if (!row["Contact Email"] || !row["Contact Email"].toString().trim()) {
+            rowErrors.push("Contact Email is required when contact data is provided");
+          } else if (!validateEmail(row["Contact Email"])) {
+            rowErrors.push("Invalid contact email format");
+          }
+          if (!row["Contact Phone"] || !row["Contact Phone"].toString().trim()) {
+            rowErrors.push("Contact Phone is required when contact data is provided");
+          } else if (!validatePhone(row["Contact Phone"])) {
+            rowErrors.push("Invalid contact phone format");
+          }
         }
 
         if (rowErrors.length > 0) {
@@ -187,37 +230,67 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
   const validationTimeoutRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Sample template data for clients
+  // Sample template data for clients with contacts
   const templateData = [
     {
-      Name: "Modern Kitchen Designs LLC",
-      isCompany: true,
-      emailAddress: "contact@modernkitchens.com",
-      phoneNumber: "+1-555-0123",
-      address: "123 Design Avenue, Kitchen City, State 12345",
-      postCode: "12345",
-      status: "active",
-      notes: "Premium residential kitchen design services"
+      "Name": "Modern Kitchen Designs LLC",
+      "Is Company": "TRUE",
+      "Email Address": "contact@modernkitchens.com",
+      "Phone Number": "+1-555-0123",
+      "Address": "123 Design Avenue, Kitchen City, State 12345",
+      "Post Code": "12345",
+      "Status": "Active",
+      "Notes": "Premium residential kitchen design services",
+      "Contact First Name": "John",
+      "Contact Last Name": "Smith",
+      "Contact Role": "Manager",
+      "Contact Email": "john.smith@modernkitchens.com",
+      "Contact Phone": "+1-555-0124"
     },
     {
-      Name: "Home Renovation Pros",
-      isCompany: true,
-      emailAddress: "info@homerenovationpros.com", 
-      phoneNumber: "+1-555-0456",
-      address: "456 Renovation Street, Home Valley, State 67890",
-      postCode: "67890",
-      status: "active",
-      notes: "Full-service home renovation and remodeling"
+      "Name": "Modern Kitchen Designs LLC",
+      "Is Company": "TRUE",
+      "Email Address": "contact@modernkitchens.com",
+      "Phone Number": "+1-555-0123",
+      "Address": "123 Design Avenue, Kitchen City, State 12345",
+      "Post Code": "12345",
+      "Status": "Active",
+      "Notes": "Premium residential kitchen design services",
+      "Contact First Name": "Sarah",
+      "Contact Last Name": "Johnson",
+      "Contact Role": "Assistant Manager",
+      "Contact Email": "sarah.johnson@modernkitchens.com",
+      "Contact Phone": "+1-555-0125"
     },
     {
-      Name: "Luxury Cabinet Solutions",
-      isCompany: true,
-      emailAddress: "sales@luxurycabinets.net",
-      phoneNumber: "+1-555-0789",
-      address: "789 Luxury Lane, Cabinet Heights, State 54321",
-      postCode: "54321", 
-      status: "inactive",
-      notes: "High-end custom cabinet installations"
+      "Name": "Home Renovation Pros",
+      "Is Company": "TRUE",
+      "Email Address": "info@homerenovationpros.com", 
+      "Phone Number": "+1-555-0456",
+      "Address": "456 Renovation Street, Home Valley, State 67890",
+      "Post Code": "67890",
+      "Status": "Active",
+      "Notes": "Full-service home renovation and remodeling",
+      "Contact First Name": "Mike",
+      "Contact Last Name": "Davis",
+      "Contact Role": "Director",
+      "Contact Email": "mike.davis@homerenovationpros.com",
+      "Contact Phone": "+1-555-0457"
+    },
+    {
+      "Name": "Luxury Cabinet Solutions",
+      "Is Company": "TRUE",
+      "Email Address": "sales@luxurycabinets.net",
+      "Phone Number": "+1-555-0789",
+      "Address": "789 Luxury Lane, Cabinet Heights, State 54321",
+      "Post Code": "54321", 
+      "Status": "Inactive",
+      "Notes": "High-end custom cabinet installations",
+      "Contact First Name": "",
+      "Contact Last Name": "",
+      "Contact Role": "",
+      "Contact Email": "",
+      "Contact Phone": ""
     }
   ];
 
@@ -284,10 +357,29 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
   // Download template function
   const downloadTemplate = useCallback(() => {
     const ws = XLSX.utils.json_to_sheet(templateData);
+    
+    // Set column widths for better readability
+    const columnWidths = [
+      { wch: 25 }, // Name
+      { wch: 12 }, // Is Company
+      { wch: 30 }, // Email Address
+      { wch: 18 }, // Phone Number
+      { wch: 40 }, // Address
+      { wch: 12 }, // Post Code
+      { wch: 10 }, // Status
+      { wch: 35 }, // Notes
+      { wch: 18 }, // Contact First Name
+      { wch: 18 }, // Contact Last Name
+      { wch: 20 }, // Contact Role
+      { wch: 30 }, // Contact Email
+      { wch: 18 }, // Contact Phone
+    ];
+    ws['!cols'] = columnWidths;
+    
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Clients Template");
-    XLSX.writeFile(wb, "Clients VSP.xlsx");
-    toast.success("Clients template downloaded successfully!");
+    XLSX.utils.book_append_sheet(wb, ws, "Clients & Contacts");
+    XLSX.writeFile(wb, "Clients And Suppliers Contacts VSP.xlsx");
+    toast.success("Clients & Contacts template downloaded successfully!");
   }, []);
 
   // ✅ Optimized file validation
@@ -353,12 +445,21 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
         }
       }
 
-      setRows(parsed);
+      // Apply text transformations (capitalize first letter of name and address fields)
+      const transformedData = parsed.map(row => ({
+        ...row,
+        "Name": capitalizeText(row["Name"] || row["name"] || ""),
+        "Address": capitalizeAddress(row["Address"] || row["address"] || ""),
+        "Contact First Name": capitalizeText(row["Contact First Name"] || row["contact first name"] || ""),
+        "Contact Last Name": capitalizeText(row["Contact Last Name"] || row["contact last name"] || ""),
+      }));
+
+      setRows(transformedData);
       setCurrentPage(1); // Reset to first page
-      toast.success(`Successfully loaded ${parsed.length} clients`);
+      toast.success(`Successfully loaded ${transformedData.length} rows`);
       
       // Start validation
-      debouncedValidate(parsed);
+      debouncedValidate(transformedData);
 
     } catch (error) {
       toast.error("Error reading file. Please check the file format.");
@@ -430,41 +531,73 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
       return;
     }
 
-    // Map Name to companyName for backend
-    const mappedRows = validRows.map(row => ({
-      ...row,
-      companyName: row.Name,
-    }));
+    // Group rows by client (using email as unique identifier)
+    const clientsMap = new Map();
+    
+    validRows.forEach(row => {
+      const clientEmail = row["Email Address"];
+      
+      if (!clientsMap.has(clientEmail)) {
+        // Create new client entry
+        clientsMap.set(clientEmail, {
+          companyName: row["Name"],
+          isCompany: String(row["Is Company"]).toLowerCase() === 'true' || row["Is Company"] === true,
+          emailAddress: row["Email Address"],
+          phoneNumber: row["Phone Number"],
+          address: row["Address"],
+          postCode: row["Post Code"],
+          status: String(row["Status"]).toLowerCase(),
+          notes: row["Notes"] || "",
+          contacts: []
+        });
+      }
+      
+      // Add contact if contact data exists
+      const hasContactData = row["Contact First Name"] && row["Contact Last Name"];
+      if (hasContactData) {
+        clientsMap.get(clientEmail).contacts.push({
+          firstName: row["Contact First Name"],
+          lastName: row["Contact Last Name"],
+          role: row["Contact Role"],
+          emailAddress: row["Contact Email"],
+          phoneNumber: row["Contact Phone"]
+        });
+      }
+    });
 
-    const batchSize = 100; // Process in smaller batches
-    const totalBatches = Math.ceil(mappedRows.length / batchSize);
+    const clientsArray = Array.from(clientsMap.values());
+    const batchSize = 50; // Process in smaller batches
+    const totalBatches = Math.ceil(clientsArray.length / batchSize);
     let successCount = 0;
+    let totalContactsCount = 0;
 
     try {
-      toast.loading(`Importing ${mappedRows.length} clients in ${totalBatches} batches...`);
+      toast.loading(`Importing ${clientsArray.length} clients with their contacts...`);
 
       let res;
       
       for (let i = 0; i < totalBatches; i++) {
-        const batch = mappedRows.slice(i * batchSize, (i + 1) * batchSize);
-        
+        const batch = clientsArray.slice(i * batchSize, (i + 1) * batchSize);
+        const batchContactsCount = batch.reduce((sum, client) => sum + client.contacts.length, 0);
         
         try {
           res = await axios.post(`${BASE_URL}/api/client/import`, {
             userId: user.id,
             clients: batch,
           }, {
-            timeout: 30000 // 30 second timeout
+            timeout: 60000 // 60 second timeout for larger batches
           });
           
           successCount += batch.length;
+          totalContactsCount += batchContactsCount;
           
           // Update progress
           toast.loading(
-            `Imported ${successCount}/${mappedRows.length} clients (Batch ${i + 1}/${totalBatches})`
+            `Imported ${successCount}/${clientsArray.length} clients (Batch ${i + 1}/${totalBatches})`
           );
         } catch (batchError) {
           console.error(`Batch ${i + 1} failed:`, batchError);
+          toast.error(`Batch ${i + 1} failed: ${batchError.response?.data?.message || batchError.message}`);
           // Continue with next batch
         }
       }
@@ -472,10 +605,10 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
       toast.dismiss();
 
       
-      if (res.status == 201) {
-        toast.success(res.data.message || `Successfully imported all ${successCount} clients!`);
+      if (res && res.status == 201) {
+        toast.success(`Successfully imported ${successCount} clients with ${totalContactsCount} contacts!`);
       } else {
-        toast.warning(`Imported ${successCount} out of ${mappedRows.length} clients. Some batches may have failed.`);
+        toast.warning(`Imported ${successCount} out of ${clientsArray.length} clients. Some batches may have failed.`);
       }
       
       refreshClients();
@@ -484,7 +617,7 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
     } catch (error) {
       console.error("Error importing clients:", error);
       toast.dismiss();
-      toast.error("Failed to import clients");
+      toast.error("Failed to import clients: " + (error.response?.data?.message || error.message));
     }
   }, [rows, errors, user.id, refreshClients, onClose]);
 
@@ -502,6 +635,7 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
     return paginatedRows.map((row, displayIdx) => {
       const originalIdx = getOriginalIndex(displayIdx);
       
+      
       return (
         <tr key={originalIdx} style={{ backgroundColor: errors[originalIdx] ? '#ffebee' : 'white' }}>
           <td style={{ border: '1px solid #ddd', padding: '4px', textAlign: 'center', fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>
@@ -515,10 +649,10 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
                 size="small"
                 variant="outlined"
                 fullWidth
-                multiline={['address', 'notes'].includes(field)}
+                multiline={['Address', 'Notes'].includes(field)}
                 rows={
-                  field === 'address' ? 2 : 
-                  field === 'notes' ? 2 : 1
+                  field === 'Address' ? 2 : 
+                  field === 'Notes' ? 2 : 1
                 }
                 error={errors[originalIdx]?.some(err => err.includes(field))}
                 sx={{ 
@@ -529,12 +663,17 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
                     }
                   }
                 }}
-                type={field === 'emailAddress' ? 'email' : field === 'phoneNumber' ? 'tel' : 'text'}
+                type={field === 'Email Address' || field === 'Contact Email' ? 'email' : field === 'Phone Number' || field === 'Contact Phone' ? 'tel' : 'text'}
                 placeholder={
-                  field === 'emailAddress' ? 'contact@company.com' :
-                  field === 'phoneNumber' ? '+1-555-0123' :
-                  field === 'postCode' ? '12345' :
-                  field === 'companyName' ? 'Company Name LLC' : ''
+                  field === 'Email Address' ? 'contact@company.com' :
+                  field === 'Phone Number' ? '+1-555-0123' :
+                  field === 'Post Code' ? '12345' :
+                  field === 'Name' ? 'Company Name LLC' :
+                  field === 'Contact Email' ? 'john@company.com' :
+                  field === 'Contact Phone' ? '+1-555-0124' :
+                  field === 'Contact First Name' ? 'John' :
+                  field === 'Contact Last Name' ? 'Doe' :
+                  field === 'Contact Role' ? 'Manager' : ''
                 }
               />
             </td>
@@ -573,7 +712,7 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
       <DialogTitle>
         <Box display="flex" alignItems="center" gap={1}>
           <PeopleIcon />
-          Import Clients Data
+          Import Clients & Contacts Data
         </Box>
       </DialogTitle>
       <DialogContent>
@@ -594,10 +733,10 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
               <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
                 <Box>
                   <Typography variant="h6" color="secondary.main" gutterBottom>
-                    👥 Download Clients Template
+                    👥 Download Clients & Contacts Template
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Download the Excel template with sample client data and proper field format
+                    Download the Excel template with sample client and contact data. One client can have multiple contacts (repeat client info for each contact row).
                   </Typography>
                 </Box>
                 <Button
@@ -643,7 +782,7 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
                 <UploadIcon sx={{ fontSize: 48, color: dragOver ? 'secondary.main' : 'grey.400' }} />
                 <Box textAlign="center">
                   <Typography variant="h6" gutterBottom>
-                    {dragOver ? 'Drop your clients file here' : 'Drag & drop your clients file here'}
+                    {dragOver ? 'Drop your clients & contacts file here' : 'Drag & drop your clients & contacts file here'}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     or click to browse files
@@ -654,7 +793,7 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
                     <Chip label="CSV" size="small" variant="outlined" color="secondary" />
                   </Stack>
                   <Typography variant="caption" color="text.secondary" display="block" mt={1}>
-                    Maximum file size: 50MB • Supports up to 10,000+ rows
+                    Maximum file size: 50MB • Supports up to 10,000+ rows • Contact fields are optional
                   </Typography>
                 </Box>
               </Stack>
@@ -681,7 +820,7 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
                         {selectedFile.name}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {(selectedFile.size / 1024 / 1024).toFixed(1)} MB • {rows.length} clients loaded
+                        {(selectedFile.size / 1024 / 1024).toFixed(1)} MB • {rows.length} rows loaded
                       </Typography>
                     </Box>
                   </Box>
@@ -703,8 +842,8 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
                 >
                   <Typography variant="body2">
                     {errorRowsCount === 0 
-                      ? `✅ All ${rows.length} clients are valid and ready for import`
-                      : `⚠️ ${errorRowsCount} clients have errors out of ${rows.length} total clients`
+                      ? `✅ All ${rows.length} rows are valid and ready for import`
+                      : `⚠️ ${errorRowsCount} rows have errors out of ${rows.length} total rows`
                     }
                     {validating && " (Validation in progress...)"}
                   </Typography>
@@ -716,7 +855,7 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
                     <TextField
                       fullWidth
                       size="small"
-                      placeholder="Search clients..."
+                      placeholder="Search clients and contacts..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       InputProps={{
@@ -780,7 +919,7 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
               <Box>
                 <Divider sx={{ my: 2 }} />
                 <Typography variant="h6" mb={2} display="flex" alignItems="center" gap={1}>
-                  👥 Clients Data Preview & Edit 
+                  👥 Clients & Contacts Data Preview & Edit 
                   <Chip 
                     label={`Showing ${paginatedRows.length} of ${rows.length}`} 
                     size="small" 
@@ -795,27 +934,38 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
                           <th style={{ border: '1px solid #ddd', padding: '8px', fontWeight: 'bold', fontSize: '12px' }}>
                             #
                           </th>
-                          {allFields.map((field) => (
-                            <th
-                              key={field}
-                              style={{ 
-                                border: '1px solid #ddd', 
-                                padding: '8px', 
-                                fontWeight: 'bold', 
-                                fontSize: '12px', 
-                                minWidth: 
-                                  field === 'address' ? '250px' : 
-                                  field === 'notes' ? '200px' :
-                                  field === 'companyName' ? '180px' :
-                                  field === 'emailAddress' ? '180px' : '130px'
-                              }}
-                            >
-                              {field}
-                              {requiredFields.includes(field) && (
-                                <span style={{ color: 'red', marginLeft: '2px' }}>*</span>
-                              )}
-                            </th>
-                          ))}
+                          {allFields.map((field) => {
+                            const isClientRequired = clientRequiredFields.includes(field);
+                            const isContactField = contactFields.includes(field);
+                            
+                            return (
+                              <th
+                                key={field}
+                                style={{ 
+                                  border: '1px solid #ddd', 
+                                  padding: '8px', 
+                                  fontWeight: 'bold', 
+                                  fontSize: '11px', 
+                                  minWidth: 
+                                    field === 'Address' ? '250px' : 
+                                    field === 'Notes' ? '200px' :
+                                    field === 'Name' ? '200px' :
+                                    field === 'Email Address' || field === 'Contact Email' ? '180px' :
+                                    field === 'Contact First Name' || field === 'Contact Last Name' ? '140px' :
+                                    field === 'Contact Role' ? '150px' : '130px',
+                                  backgroundColor: isContactField ? '#e8f5e9' : '#f3e5f5'
+                                }}
+                              >
+                                {field}
+                                {isClientRequired && (
+                                  <span style={{ color: 'red', marginLeft: '2px' }}>*</span>
+                                )}
+                                {isContactField && (
+                                  <span style={{ color: '#4caf50', marginLeft: '4px', fontSize: '10px' }}>(Optional)</span>
+                                )}
+                              </th>
+                            );
+                          })}
                           <th style={{ border: '1px solid #ddd', padding: '8px', fontWeight: 'bold', fontSize: '12px', minWidth: '180px' }}>
                             Validation Status
                           </th>
@@ -869,7 +1019,7 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
         >
           {validating ? 'Validating...' :
            errorRowsCount > 0 ? `Fix ${errorRowsCount} Errors First` : 
-           `Import ${validRowsCount} Valid Clients`
+           `Import Clients & Contacts`
           }
         </Button>
       </DialogActions>

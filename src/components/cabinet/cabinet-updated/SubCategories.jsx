@@ -117,8 +117,17 @@ const SubCategories = ({ id }) => {
                   </TableCell>
                 </TableRow>
               ) : (
-                paginatedSubCategories.map((sub, idx) => (
-                  <TableRow key={sub.id}>
+                paginatedSubCategories.map((sub, index, idx) => (
+                  <TableRow
+                    key={sub.id}
+                    hover
+                    sx={{
+                      backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
+                      '&:hover': {
+                        backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
+                      }
+                    }}
+                  >
                     <TableCell>{page * rowsPerPage + idx + 1}</TableCell>
                     <TableCell>{sub.name}</TableCell>
                     <TableCell>
