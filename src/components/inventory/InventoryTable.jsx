@@ -87,7 +87,7 @@ const InventoryTable = () => {
     setLoading(true);
     try {
       const res = await axios.get(
-        `${BASE_URL}/api/inventory/get?page=${currentPage + 1}&limit=${currentLimit}&search=${searchTerm}&supplierId=${selectedSupplier}`
+        `${BASE_URL}/api/inventory/get?page=${currentPage + 1}&limit=${currentLimit}&search=${searchTerm}`
       );
       setData(res.data.inventory || []);
       setRowCount(res.data.total || 0);

@@ -37,7 +37,7 @@ const Navigation = () => {
   const { isBreakpointReached } = useHorizontalNav()
 
   // Vars
-  const headerContentCompact = settings.navbarContentWidth === 'compact'
+  const headerContentCompact = settings.navbarContentWidth !== 'compact'
 
   return (
     <div
@@ -53,6 +53,7 @@ const Navigation = () => {
         })}
       >
         <HorizontalMenu />
+        
       </StyledDiv>
     </div>
   )

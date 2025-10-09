@@ -22,9 +22,9 @@ const LayoutContent = ({ children }) => {
 
   return (
     <StyledMain
-      isContentCompact={contentCompact}
+      isContentCompact={contentWide}
       className={classnames(verticalLayoutClasses.content, 'flex-auto', {
-        [`${verticalLayoutClasses.contentCompact} is-full`]: contentCompact,
+        [`${verticalLayoutClasses.contentWide} is-full`]: contentWide,
         [verticalLayoutClasses.contentWide]: contentWide
       })}
     >
@@ -32,5 +32,6 @@ const LayoutContent = ({ children }) => {
     </StyledMain>
   )
 }
+
 
 export default LayoutContent
