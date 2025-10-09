@@ -8,242 +8,268 @@ import {
   Button,
   Paper,
   Grid,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   IconButton,
   Card,
   CardContent,
   CircularProgress,
   Backdrop,
+  Tabs,
+  Tab,
+  Divider,
+  Chip,
+  Stack,
 } from "@mui/material";
 import {
-  ExpandMore as ExpandMoreIcon,
   Add as AddIcon,
   Delete as DeleteIcon,
+  Category as CategoryIcon,
+  Construction as ConstructionIcon,
+  Hardware as HardwareIcon,
+  AttachMoney as MoneyIcon,
+  Info as InfoIcon,
+  LibraryBooks as LibraryIcon,
+  Build as BuildIcon,
 } from "@mui/icons-material";
 
 // Memoized TextField to prevent unnecessary re-renders
-const MemoizedTextField = memo(({ fullWidth, label, value, onChange, size }) => (
+const MemoizedTextField = memo(({ fullWidth, label, value, onChange, size, type }) => (
   <TextField
     fullWidth={fullWidth}
     label={label}
     value={value}
     onChange={onChange}
     size={size}
+    type={type}
+    variant="outlined"
   />
 ));
 
 MemoizedTextField.displayName = 'MemoizedTextField';
 
+// Custom TabPanel component
+function TabPanel(props) {
+  const { children, value, index, ...other } = props;
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`costing-tabpanel-${index}`}
+      aria-labelledby={`costing-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
+    </div>
+  );
+}
+
 const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
   const [isInitializing, setIsInitializing] = useState(false);
+  const [activeTab, setActiveTab] = useState(0);
 
   // Initialize form with default values if formData is empty
   useEffect(() => {
     if (!formData || Object.keys(formData).length === 0) {
       setIsInitializing(true);
-      // Use setTimeout to prevent blocking the UI
       setTimeout(() => {
         setFormData({
-        unitName: "",
-        drawingNo: "",
-        Revision: "",
-        Measure: "",
+    unitName: "",
+    drawingNo: "",
+    Revision: "",
+    Measure: "",
+    qunatity: "",
+    unitType: "",
+    unitLength: "",
+    wasteOverRide: "",
+    location: "",
+    cabinetLookUp: [{
+      code: "",
+      description: "",
+      measure: "",
+      qunatity: "",
+      carcaseFinish: "",
+      externalFinish: "",
+      mateialRate: "",
+      materialTotal: "",
+      grain: "",
+      notes: ""
+    }],
+    wallPanelling: [{
+      code: "",
+      description: "",
+      measure: "",
+      qunatity: "",
+      carcaseFinish: "",
+      externalFinish: "",
+      mateialRate: "",
+      materialTotal: "",
+      grain: "",
+      notes: ""
+    }],
+    hardwareLookUp: [{
+      code: "",
+      description: "",
+      measure: "",
+      qunatity: "",
+      mateialRate: "",
+      materialTotal: "",
+      grain: "",
+      notes: ""
+    }],
+    trims: [{
+      code: "",
+      description: "",
+      measure: "",
+      qunatity: "",
+      mateialRate: "",
+      materialTotal: "",
+      grain: "",
+      notes: ""
+    }],
+    splitBattens: [{
+      code: "",
+      description: "",
+      measure: "",
+      qunatity: "",
+      mateialRate: "",
+      materialTotal: "",
+      grain: "",
+      notes: ""
+    }],
+    drawers: [{
+      code: "",
+      description: "",
+      measure: "",
+      qunatity: "",
+      mateialRate: "",
+      materialTotal: "",
+      grain: "",
+      notes: ""
+    }],
+    hinges: [{
+      code: "",
+      description: "",
+      measure: "",
+      qunatity: "",
+      mateialRate: "",
+      materialTotal: "",
+      grain: "",
+      notes: ""
+    }],
+    miscItems: [{
+      description: "",
+      measure: "",
+      qunatity: "",
+      mateialRate: "",
+      materialTotal: "",
+      grain: "",
+      notes: ""
+    }],
+    buyInItems: [{
+      description: "",
+      measure: "",
+      qunatity: "",
+      mateialRate: "",
+      materialTotal: "",
+      grain: "",
+      notes: ""
+    }],
+    other: {
+      extraFreight: {
+        description: "",
+        extraQunatity: "",
+        height: "",
+        length: "",
+        depth: "",
+        measures: "",
         qunatity: "",
-        unitType: "",
-        unitLength: "",
-        wasteOverRide: "",
-        location: "",
-        cabinetLookUp: [{
-          code: "",
-          description: "",
-          measure: "",
-          qunatity: "",
-          carcaseFinish: "",
-          externalFinish: "",
-          mateialRate: "",
-          materialTotal: "",
-          grain: "",
-          notes: ""
-        }],
-        wallPanelling: [{
-          code: "",
-          description: "",
-          measure: "",
-          qunatity: "",
-          carcaseFinish: "",
-          externalFinish: "",
-          mateialRate: "",
-          materialTotal: "",
-          grain: "",
-          notes: ""
-        }],
-        hardwareLookUp: [{
-          code: "",
-          description: "",
-          measure: "",
-          qunatity: "",
-          mateialRate: "",
-          materialTotal: "",
-          grain: "",
-          notes: ""
-        }],
-        trims: [{
-          code: "",
-          description: "",
-          measure: "",
-          qunatity: "",
-          mateialRate: "",
-          materialTotal: "",
-          grain: "",
-          notes: ""
-        }],
-        splitBattens: [{
-          code: "",
-          description: "",
-          measure: "",
-          qunatity: "",
-          mateialRate: "",
-          materialTotal: "",
-          grain: "",
-          notes: ""
-        }],
-        drawers: [{
-          code: "",
-          description: "",
-          measure: "",
-          qunatity: "",
-          mateialRate: "",
-          materialTotal: "",
-          grain: "",
-          notes: ""
-        }],
-        hinges: [{
-          code: "",
-          description: "",
-          measure: "",
-          qunatity: "",
-          mateialRate: "",
-          materialTotal: "",
-          grain: "",
-          notes: ""
-        }],
-        miscItems: [{
-          description: "",
-          measure: "",
-          qunatity: "",
-          mateialRate: "",
-          materialTotal: "",
-          grain: "",
-          notes: ""
-        }],
-        buyInItems: [{
-          description: "",
-          measure: "",
-          qunatity: "",
-          mateialRate: "",
-          materialTotal: "",
-          grain: "",
-          notes: ""
-        }],
-        other: {
-          extraFreight: {
-            description: "",
-            extraQunatity: "",
-            height: "",
-            length: "",
-            depth: "",
-            measures: "",
-            qunatity: "",
-            rate: "",
-            subTotal: "",
-            notes: ""
-          }, 
-          draftingHours: {
-            measures: "",
-            qunatity: "",
-            rate: "",
-            subTotal: "",
-            notes: ""
-          },
-        },
-        extraLabourHours: {
-          extraHourMachining: {
-            measures: "",
-            qunatity: "",
-            rate: "",
-            subTotal: "",
-            notes: ""
-          },
-          extraHourAssembly: {
-            measures: "",
-            qunatity: "",
-            rate: "",
-            subTotal: "",
-            notes: ""
-          },
-          extraHourSite: {
-            measures: "",
-            qunatity: "",
-            rate: "",
-            subTotal: "",
-            notes: ""
-          },
-        },
-        totals: {
-          materials: {
-            quantity: "",
-            cost: "",
-            markup: "",
-            sell: "",
-            overRideMarkUp: "",
-          },
-          BuyInItems: {
-            quantity: "",
-            cost: "",
-            markup: "",
-            sell: "",
-            overRideMarkUp: "",
-          },
-          freight: {
-            quantity: "",
-            cost: "",
-            markup: "",
-            sell: "",
-            overRideMarkUp: "",
-          },
-          drafting: {
-            quantity: "",
-            cost: "",
-            markup: "",
-            sell: "",
-            overRideMarkUp: "",
-          },
-          machining: {
-            quantity: "",
-            cost: "",
-            markup: "",
-            sell: "",
-            overRideMarkUp: "",
-          },
-          assembly: {
-            quantity: "",
-            cost: "",
-            markup: "",
-            sell: "",
-            overRideMarkUp: "",
-          },
-          install: {
-            quantity: "",
-            cost: "",
-            markup: "",
-            sell: "",
-            overRideMarkUp: "",
-          }
-        }
-      });
-      setIsInitializing(false);
+        rate: "",
+        subTotal: "",
+        notes: ""
+      }, 
+      draftingHours: {
+        measures: "",
+        qunatity: "",
+        rate: "",
+        subTotal: "",
+        notes: ""
+      },
+    },
+    extraLabourHours: {
+      extraHourMachining: {
+        measures: "",
+        qunatity: "",
+        rate: "",
+        subTotal: "",
+        notes: ""
+      },
+      extraHourAssembly: {
+        measures: "",
+        qunatity: "",
+        rate: "",
+        subTotal: "",
+        notes: ""
+      },
+      extraHourSite: {
+        measures: "",
+        qunatity: "",
+        rate: "",
+        subTotal: "",
+        notes: ""
+      },
+    },
+    totals: {
+      materials: {
+        quantity: "",
+        cost: "",
+        markup: "",
+        sell: "",
+        overRideMarkUp: "",
+      },
+      BuyInItems: {
+        quantity: "",
+        cost: "",
+        markup: "",
+        sell: "",
+        overRideMarkUp: "",
+      },
+      freight: {
+        quantity: "",
+        cost: "",
+        markup: "",
+        sell: "",
+        overRideMarkUp: "",
+      },
+      drafting: {
+        quantity: "",
+        cost: "",
+        markup: "",
+        sell: "",
+        overRideMarkUp: "",
+      },
+      machining: {
+        quantity: "",
+        cost: "",
+        markup: "",
+        sell: "",
+        overRideMarkUp: "",
+      },
+      assembly: {
+        quantity: "",
+        cost: "",
+        markup: "",
+        sell: "",
+        overRideMarkUp: "",
+      },
+      install: {
+        quantity: "",
+        cost: "",
+        markup: "",
+        sell: "",
+        overRideMarkUp: "",
+      }
+    }
+  });
+        setIsInitializing(false);
       }, 0);
     }
   }, []);
@@ -355,30 +381,71 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
     return templates[section] || {};
   };
 
+  const handleTabChange = (event, newValue) => {
+    setActiveTab(newValue);
+  };
+
   const renderArraySection = (title, section, fields) => (
-    <Accordion>
-      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Typography variant="h6">{title}</Typography>
-      </AccordionSummary>
-      <AccordionDetails>
-        {(form[section] || []).map((item, index) => (
-          <Box key={index} sx={{ mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+    <Box sx={{ mb: 4 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
+          {title}
+        </Typography>
+        <Button
+          startIcon={<AddIcon />}
+          onClick={() => addArrayItem(section)}
+          variant="contained"
+          size="small"
+          sx={{ borderRadius: 2 }}
+        >
+          Add Item
+        </Button>
+      </Box>
+      
+      {(form[section] || []).map((item, index) => (
+        <Card 
+          key={index} 
+          sx={{ 
+            mb: 2, 
+            border: '1px solid',
+            borderColor: 'divider',
+            boxShadow: 1,
+            '&:hover': {
+              boxShadow: 3,
+              borderColor: 'primary.light'
+            },
+            transition: 'all 0.3s'
+          }}
+        >
+          <CardContent>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="subtitle1">{title} Item {index + 1}</Typography>
+              <Chip 
+                label={`Item #${index + 1}`} 
+                size="small" 
+                color="primary" 
+                variant="outlined"
+              />
               <IconButton 
                 onClick={() => removeArrayItem(section, index)}
                 color="error"
                 size="small"
+                sx={{ 
+                  '&:hover': { 
+                    backgroundColor: 'error.lighter',
+                    transform: 'scale(1.1)'
+                  },
+                  transition: 'all 0.2s'
+                }}
               >
                 <DeleteIcon />
               </IconButton>
             </Box>
             <Grid container spacing={2}>
               {fields.map(field => (
-                <Grid item xs={12} sm={6} md={4} key={field}>
-                  <TextField
+                <Grid item xs={12} sm={6} md={4} lg={3} key={field}>
+                  <MemoizedTextField
                     fullWidth
-                    label={field.charAt(0).toUpperCase() + field.slice(1)}
+                    label={field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}
                     value={item[field] || ''}
                     onChange={(e) => handleInputChange(section, field, e.target.value, index)}
                     size="small"
@@ -386,32 +453,44 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
                 </Grid>
               ))}
             </Grid>
-          </Box>
-        ))}
-        <Button
-          startIcon={<AddIcon />}
-          onClick={() => addArrayItem(section)}
-          variant="outlined"
-          sx={{ mt: 1 }}
+          </CardContent>
+        </Card>
+      ))}
+      
+      {(!form[section] || form[section].length === 0) && (
+        <Paper 
+          sx={{ 
+            p: 4, 
+            textAlign: 'center', 
+            backgroundColor: 'grey.50',
+            border: '2px dashed',
+            borderColor: 'grey.300'
+          }}
         >
-          Add {title} Item
-        </Button>
-      </AccordionDetails>
-    </Accordion>
+          <Typography color="text.secondary">
+            No items added yet. Click "Add Item" to start.
+          </Typography>
+        </Paper>
+      )}
+    </Box>
   );
 
-  const renderNestedSection = (title, section, fields) => (
-    <Accordion>
-      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Typography variant="h6">{title}</Typography>
-      </AccordionSummary>
-      <AccordionDetails>
+  const renderNestedSection = (title, section, fields, icon) => (
+    <Card sx={{ mb: 3, boxShadow: 2 }}>
+      <CardContent>
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          {icon}
+          <Typography variant="h6" sx={{ ml: 1, fontWeight: 600 }}>
+            {title}
+          </Typography>
+        </Box>
+        <Divider sx={{ mb: 2 }} />
         <Grid container spacing={2}>
           {fields.map(field => (
-            <Grid item xs={12} sm={6} key={field}>
-              <TextField
+            <Grid item xs={12} sm={6} md={4} key={field}>
+              <MemoizedTextField
                 fullWidth
-                label={field.charAt(0).toUpperCase() + field.slice(1)}
+                label={field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}
                 value={form.other?.[section]?.[field] || ''}
                 onChange={(e) => handleInputChange(`other.${section}`, field, e.target.value)}
                 size="small"
@@ -419,22 +498,22 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
             </Grid>
           ))}
         </Grid>
-      </AccordionDetails>
-    </Accordion>
+      </CardContent>
+    </Card>
   );
 
   const renderLabourSection = (title, section, fields) => (
-    <Accordion>
-      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-        <Typography variant="h6">{title}</Typography>
-      </AccordionSummary>
-      <AccordionDetails>
+    <Card sx={{ mb: 2, boxShadow: 1 }}>
+      <CardContent>
+        <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600, color: 'text.secondary' }}>
+          {title}
+        </Typography>
         <Grid container spacing={2}>
           {fields.map(field => (
-            <Grid item xs={12} sm={6} key={field}>
-              <TextField
+            <Grid item xs={12} sm={6} md={4} key={field}>
+              <MemoizedTextField
                 fullWidth
-                label={field.charAt(0).toUpperCase() + field.slice(1)}
+                label={field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}
                 value={form.extraLabourHours?.[section]?.[field] || ''}
                 onChange={(e) => handleInputChange(`extraLabourHours.${section}`, field, e.target.value)}
                 size="small"
@@ -442,27 +521,52 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
             </Grid>
           ))}
         </Grid>
-      </AccordionDetails>
-    </Accordion>
+      </CardContent>
+    </Card>
   );
 
-  const renderTotalsSection = (title, section, fields) => (
-    <Card sx={{ mb: 2 }}>
+  const renderTotalsCard = (title, section, fields) => (
+    <Card 
+      sx={{ 
+        height: '100%',
+        boxShadow: 2,
+        border: '1px solid',
+        borderColor: 'primary.light',
+        '&:hover': {
+          boxShadow: 4,
+          transform: 'translateY(-2px)'
+        },
+        transition: 'all 0.3s'
+      }}
+    >
       <CardContent>
-        <Typography variant="h6" gutterBottom>{title}</Typography>
-        <Grid container spacing={2}>
+        <Typography 
+          variant="h6" 
+          gutterBottom 
+          sx={{ 
+            fontWeight: 600, 
+            color: 'primary.main',
+            borderBottom: '2px solid',
+            borderColor: 'primary.main',
+            pb: 1,
+            mb: 2
+          }}
+        >
+          {title}
+        </Typography>
+        <Stack spacing={2}>
           {fields.map(field => (
-            <Grid item xs={12} sm={6} md={4} key={field}>
-              <TextField
+            <MemoizedTextField
+              key={field}
                 fullWidth
-                label={field.charAt(0).toUpperCase() + field.slice(1)}
-                value={form.totals?.[section]?.[field] || ''}
+              label={field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}
+              value={form.totals?.[section]?.[field] || ''}
                 onChange={(e) => handleInputChange(`totals.${section}`, field, e.target.value)}
                 size="small"
+              type={field.includes('quantity') || field.includes('cost') || field.includes('markup') || field.includes('sell') ? 'number' : 'text'}
               />
-            </Grid>
           ))}
-        </Grid>
+        </Stack>
       </CardContent>
     </Card>
   );
@@ -477,73 +581,148 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
         <CircularProgress color="inherit" />
       </Backdrop>
 
-      <Box sx={{ p: 3, maxWidth: 1200, margin: '0 auto' }}>
-        <Typography variant="h4" gutterBottom sx={{ mb: 4, fontWeight: 'bold' }}>
-          Costing Sheet
-        </Typography>
-
-        {/* Basic Information */}
-        <Paper sx={{ p: 3, mb: 3 }}>
-          <Typography variant="h5" gutterBottom>Basic Information</Typography>
-          <Grid container spacing={2}>
-            {['unitName', 'drawingNo', 'Revision', 'Measure', 'qunatity', 'unitType', 'unitLength', 'wasteOverRide', 'location'].map(field => (
-              <Grid item xs={12} sm={6} md={4} key={field}>
-                <MemoizedTextField
-                  fullWidth
-                  label={field.charAt(0).toUpperCase() + field.slice(1)}
-                  value={form[field] || ''}
-                  onChange={(e) => handleBasicFieldChange(field, e.target.value)}
-                  size="small"
-                />
-              </Grid>
-            ))}
-          </Grid>
+      <Box sx={{ width: '100%' }}>
+        {/* Header */}
+        <Paper 
+          elevation={3} 
+          sx={{ 
+            p: 3, 
+            mb: 3, 
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white'
+          }}
+        >
+          <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
+            Project Costing Sheet
+          </Typography>
+          <Typography variant="body2" sx={{ opacity: 0.9 }}>
+            Comprehensive cost breakdown and materials management
+      </Typography>
         </Paper>
 
-      {/* Array Sections */}
+        {/* Basic Information Section */}
+        <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+            <InfoIcon sx={{ mr: 1, color: 'primary.main', fontSize: 28 }} />
+            <Typography variant="h5" sx={{ fontWeight: 600 }}>
+              Basic Information
+            </Typography>
+          </Box>
+        <Grid container spacing={2}>
+          {['unitName', 'drawingNo', 'Revision', 'Measure', 'qunatity', 'unitType', 'unitLength', 'wasteOverRide', 'location'].map(field => (
+            <Grid item xs={12} sm={6} md={4} key={field}>
+                <MemoizedTextField
+                fullWidth
+                  label={field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}
+                value={form[field] || ''}
+                  onChange={(e) => handleBasicFieldChange(field, e.target.value)}
+                size="small"
+              />
+            </Grid>
+          ))}
+        </Grid>
+      </Paper>
+
+        {/* Tabs Section */}
+        <Paper elevation={2} sx={{ mb: 3 }}>
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
+            variant="scrollable"
+            scrollButtons="auto"
+            sx={{
+              borderBottom: 1,
+              borderColor: 'divider',
+              '& .MuiTab-root': {
+                minHeight: 64,
+                fontSize: '0.95rem',
+                fontWeight: 500,
+              }
+            }}
+          >
+            <Tab icon={<CategoryIcon />} iconPosition="start" label="Materials & Cabinets" />
+            <Tab icon={<HardwareIcon />} iconPosition="start" label="Hardware & Trims" />
+            <Tab icon={<BuildIcon />} iconPosition="start" label="Additional Items" />
+            <Tab icon={<ConstructionIcon />} iconPosition="start" label="Other Costs" />
+            <Tab icon={<MoneyIcon />} iconPosition="start" label="Totals & Summary" />
+          </Tabs>
+
+          {/* Tab Panel 0: Materials & Cabinets */}
+          <TabPanel value={activeTab} index={0}>
+            <Box sx={{ p: 2 }}>
       {renderArraySection('Cabinet Lookup', 'cabinetLookUp', ['code', 'description', 'measure', 'qunatity', 'carcaseFinish', 'externalFinish', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
       {renderArraySection('Wall Panelling', 'wallPanelling', ['code', 'description', 'measure', 'qunatity', 'carcaseFinish', 'externalFinish', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
+            </Box>
+          </TabPanel>
+
+          {/* Tab Panel 1: Hardware & Trims */}
+          <TabPanel value={activeTab} index={1}>
+            <Box sx={{ p: 2 }}>
       {renderArraySection('Hardware Lookup', 'hardwareLookUp', ['code', 'description', 'measure', 'qunatity', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
       {renderArraySection('Trims', 'trims', ['code', 'description', 'measure', 'qunatity', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
+              {renderArraySection('Hinges', 'hinges', ['code', 'description', 'measure', 'qunatity', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
+            </Box>
+          </TabPanel>
+
+          {/* Tab Panel 2: Additional Items */}
+          <TabPanel value={activeTab} index={2}>
+            <Box sx={{ p: 2 }}>
       {renderArraySection('Split Battens', 'splitBattens', ['code', 'description', 'measure', 'qunatity', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
       {renderArraySection('Drawers', 'drawers', ['code', 'description', 'measure', 'qunatity', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
-      {renderArraySection('Hinges', 'hinges', ['code', 'description', 'measure', 'qunatity', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
       {renderArraySection('Misc Items', 'miscItems', ['description', 'measure', 'qunatity', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
       {renderArraySection('Buy In Items', 'buyInItems', ['description', 'measure', 'qunatity', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
+            </Box>
+          </TabPanel>
 
-      {/* Other Sections */}
-      <Accordion>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6">Other Costs</Typography>
-        </AccordionSummary>
-        <AccordionDetails>
-          {renderNestedSection('Extra Freight', 'extraFreight', ['description', 'extraQunatity', 'height', 'length', 'depth', 'measures', 'qunatity', 'rate', 'subTotal', 'notes'])}
-          {renderNestedSection('Drafting Hours', 'draftingHours', ['measures', 'qunatity', 'rate', 'subTotal', 'notes'])}
-        </AccordionDetails>
-      </Accordion>
+          {/* Tab Panel 3: Other Costs */}
+          <TabPanel value={activeTab} index={3}>
+            <Box sx={{ p: 2 }}>
+              <Typography variant="h6" sx={{ mb: 3, fontWeight: 600, color: 'primary.main' }}>
+                Additional Costs
+              </Typography>
+              {renderNestedSection('Extra Freight', 'extraFreight', ['description', 'extraQunatity', 'height', 'length', 'depth', 'measures', 'qunatity', 'rate', 'subTotal', 'notes'], <LibraryIcon color="primary" />)}
+              {renderNestedSection('Drafting Hours', 'draftingHours', ['measures', 'qunatity', 'rate', 'subTotal', 'notes'], <BuildIcon color="primary" />)}
 
-      {/* Extra Labour Hours */}
-      <Accordion>
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6">Extra Labour Hours</Typography>
-        </AccordionSummary>
-        <AccordionDetails>
+              <Typography variant="h6" sx={{ mt: 4, mb: 3, fontWeight: 600, color: 'primary.main' }}>
+                Extra Labour Hours
+              </Typography>
           {renderLabourSection('Extra Hour Machining', 'extraHourMachining', ['measures', 'qunatity', 'rate', 'subTotal', 'notes'])}
           {renderLabourSection('Extra Hour Assembly', 'extraHourAssembly', ['measures', 'qunatity', 'rate', 'subTotal', 'notes'])}
           {renderLabourSection('Extra Hour Site', 'extraHourSite', ['measures', 'qunatity', 'rate', 'subTotal', 'notes'])}
-        </AccordionDetails>
-      </Accordion>
+            </Box>
+          </TabPanel>
 
-      {/* Totals Section */}
-      <Paper sx={{ p: 3, mt: 3 }}>
-        <Typography variant="h5" gutterBottom>Totals</Typography>
-        {renderTotalsSection('Materials', 'materials', ['quantity', 'cost', 'markup', 'sell', 'overRideMarkUp'])}
-        {renderTotalsSection('Buy In Items', 'BuyInItems', ['quantity', 'cost', 'markup', 'sell', 'overRideMarkUp'])}
-        {renderTotalsSection('Freight', 'freight', ['quantity', 'cost', 'markup', 'sell', 'overRideMarkUp'])}
-        {renderTotalsSection('Drafting', 'drafting', ['quantity', 'cost', 'markup', 'sell', 'overRideMarkUp'])}
-        {renderTotalsSection('Machining', 'machining', ['quantity', 'cost', 'markup', 'sell', 'overRideMarkUp'])}
-        {renderTotalsSection('Assembly', 'assembly', ['quantity', 'cost', 'markup', 'sell', 'overRideMarkUp'])}
-        {renderTotalsSection('Install', 'install', ['quantity', 'cost', 'markup', 'sell', 'overRideMarkUp'])}
+          {/* Tab Panel 4: Totals */}
+          <TabPanel value={activeTab} index={4}>
+            <Box sx={{ p: 3 }}>
+              <Typography variant="h5" gutterBottom sx={{ mb: 3, fontWeight: 700, color: 'primary.main' }}>
+                Cost Summary & Totals
+              </Typography>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6} lg={4}>
+                  {renderTotalsCard('Materials', 'materials', ['quantity', 'cost', 'markup', 'sell', 'overRideMarkUp'])}
+                </Grid>
+                <Grid item xs={12} md={6} lg={4}>
+                  {renderTotalsCard('Buy In Items', 'BuyInItems', ['quantity', 'cost', 'markup', 'sell', 'overRideMarkUp'])}
+                </Grid>
+                <Grid item xs={12} md={6} lg={4}>
+                  {renderTotalsCard('Freight', 'freight', ['quantity', 'cost', 'markup', 'sell', 'overRideMarkUp'])}
+                </Grid>
+                <Grid item xs={12} md={6} lg={4}>
+                  {renderTotalsCard('Drafting', 'drafting', ['quantity', 'cost', 'markup', 'sell', 'overRideMarkUp'])}
+                </Grid>
+                <Grid item xs={12} md={6} lg={4}>
+                  {renderTotalsCard('Machining', 'machining', ['quantity', 'cost', 'markup', 'sell', 'overRideMarkUp'])}
+                </Grid>
+                <Grid item xs={12} md={6} lg={4}>
+                  {renderTotalsCard('Assembly', 'assembly', ['quantity', 'cost', 'markup', 'sell', 'overRideMarkUp'])}
+                </Grid>
+                <Grid item xs={12} md={6} lg={4}>
+                  {renderTotalsCard('Install', 'install', ['quantity', 'cost', 'markup', 'sell', 'overRideMarkUp'])}
+                </Grid>
+              </Grid>
+            </Box>
+          </TabPanel>
       </Paper>
       </Box>
     </>
