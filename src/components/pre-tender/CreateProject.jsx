@@ -33,10 +33,10 @@ import Loader from '../loader/Loader'
 
 const steps = [
   { label: 'Project Details', component: CreateProjectStep1 },
-  { label: 'Costing Sheet', component: CreateProjectStep5 },
   { label: 'Rates Setup', component: CreateProjectStep2 },
   { label: 'Materials Setup', component: CreateProjectStep3 },
   { label: 'Project Overview', component: CreateProjectStep4 },
+  { label: 'Costing Sheet', component: CreateProjectStep5 },
 ]
 
 const CreateProject = () => {
@@ -233,15 +233,15 @@ const CreateProject = () => {
         }}
       >
         <StepComponent
-          formData={activeStep === 0 ? step1Data : activeStep === 1 ? step5Data : {}}
-          setFormData={activeStep === 0 ? setStep1Data : activeStep === 1 ? setStep5Data : () => {}}
+          formData={activeStep === 0 ? step1Data : activeStep === 4 ? step5Data : {}}
+          setFormData={activeStep === 0 ? setStep1Data : activeStep === 4 ? setStep5Data : () => {}}
           records={
-            activeStep === 2 ? step2Data : activeStep === 3 ? step3Data : []
+            activeStep === 1 ? step2Data : activeStep === 2 ? step3Data : []
           }
           setRecords={
-            activeStep === 2
+            activeStep === 1
               ? setStep2Data
-              : activeStep === 3
+              : activeStep === 2
               ? setStep3Data
               : () => {}
           }

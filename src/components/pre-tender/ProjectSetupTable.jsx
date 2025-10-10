@@ -216,7 +216,7 @@ const ProjectSetupTable = () => {
               <TableCell sx={{minWidth: 250}}>Project Name</TableCell>
               <TableCell sx={{minWidth: 250}}>Site Location</TableCell>
               <TableCell sx={{minWidth: 250}}>QS Name</TableCell>
-              <TableCell>QS Phone</TableCell>
+              <TableCell sx={{minWidth: 250}}>QS Phone</TableCell>
               <TableCell>Client</TableCell>
               <TableCell>Revision</TableCell>
               <TableCell>Created At</TableCell>
