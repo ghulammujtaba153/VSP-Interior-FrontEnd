@@ -52,6 +52,8 @@ import VariationSubmittalGenerator from "@/utils/VariationPDFGenerator";
 
 
 
+
+
 const Page = () => {
   const { id } = useParams();
   const [loading, setLoading] = useState(true);
@@ -324,10 +326,7 @@ const Page = () => {
                           </Box>
 
                           {/* PDF Generator Component */}
-                          <VariationSubmittalGenerator 
-                            variationData={record} 
-                            projectData={data[0]} 
-                          />
+                          <VariationSubmittalGenerator data={record} />
 
                           {/* Record Description */}
                           {record.description && (
