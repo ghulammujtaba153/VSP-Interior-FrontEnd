@@ -133,5 +133,9 @@ code {
 }
 
 
+.zoom-67 {
+  zoom: 0.67;
+  transform-origin: top center;
+}
 
 

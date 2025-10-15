@@ -44,7 +44,7 @@ const CabinetTable = () => {
   const { user } = useAuth()
   const [csvModalOpen, setCsvModalOpen] = useState(false)
   const [page, setPage] = useState(0)
-  const [limit, setLimit] = useState(10)
+  const [limit, setLimit] = useState(100)
   const [orderBy, setOrderBy] = useState('id')
   const [order, setOrder] = useState('asc')
 
@@ -416,7 +416,7 @@ const CabinetTable = () => {
         
         {/* Pagination */}
         <TablePagination
-          rowsPerPageOptions={[5, 10, 20, 50]}
+          rowsPerPageOptions={[25, 50, 75, 100, 150]}
           component="div"
           count={rowCount}
           rowsPerPage={limit}

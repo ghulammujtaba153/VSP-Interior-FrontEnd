@@ -69,7 +69,7 @@ const ClientsTable = () => {
 
   // Pagination states
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(100);
   const [totalCount, setTotalCount] = useState(0);
 
   // Search state
@@ -587,7 +587,7 @@ const ClientsTable = () => {
 
 
   return (
-    <Paper p={2} sx={{ padding: 2 }}>
+    <Paper p={2} sx={{ padding: 2 }} className="zoom-67">
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h5">Clients</Typography>
         <Box display="flex" gap={1}>
@@ -703,14 +703,14 @@ const ClientsTable = () => {
             <TableHead>
               <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
                 <TableCell width="50px"></TableCell>
-                <TableCell sx={{ minWidth: 100 }}><strong>Client ID</strong></TableCell>
+                <TableCell sx={{ minWidth: 90 }}><strong>Client ID</strong></TableCell>
                 <TableCell sx={{ minWidth: 260 }}><strong>Name</strong></TableCell>
                 <TableCell sx={{ minWidth: 220 }}><strong>Email</strong></TableCell>
                 <TableCell sx={{ minWidth: 160 }}><strong>Phone</strong></TableCell>
                 <TableCell sx={{ minWidth: 300 }}><strong>Address</strong></TableCell>
-                <TableCell sx={{ minWidth: 140 }}><strong>City</strong></TableCell>
-                <TableCell><strong>Contacts</strong></TableCell>
-                <TableCell><strong>Status</strong></TableCell>
+                <TableCell sx={{ minWidth: 100 }}><strong>City</strong></TableCell>
+                <TableCell sx={{ minWidth: 20 }}><strong>Contacts</strong></TableCell>
+                <TableCell sx={{ minWidth: 20 }}><strong>Status</strong></TableCell>
                 <TableCell><strong>Actions</strong></TableCell>
               </TableRow>
             </TableHead>
@@ -837,7 +837,7 @@ const ClientsTable = () => {
         </TableContainer>
 
         <TablePagination
-          rowsPerPageOptions={[5, 10, 25, 50]}
+          rowsPerPageOptions={[ 25, 50, 75, 100, 150]}
           component="div"
           count={totalCount}
           rowsPerPage={rowsPerPage}

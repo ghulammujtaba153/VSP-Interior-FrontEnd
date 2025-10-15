@@ -33,7 +33,7 @@ const CabinetMaterialTable = () => {
   const [cabinetQuotes, setCabinetQuotes] = useState([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(0)
-  const [limit, setLimit] = useState(10)
+  const [limit, setLimit] = useState(100)
   const [totalCount, setTotalCount] = useState(0)
   const [searchInput, setSearchInput] = useState('')
   const [search, setSearch] = useState('')
@@ -400,7 +400,7 @@ const CabinetMaterialTable = () => {
 
       {/* Pagination */}
       <TablePagination
-        rowsPerPageOptions={[5, 10, 20, 50]}
+        rowsPerPageOptions={[25, 50, 75, 100, 150]}
         component="div"
         count={totalCount}
         rowsPerPage={limit}

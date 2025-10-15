@@ -30,6 +30,7 @@ const Layout = async props => {
   return (
     <ProtectedRoute>
     <Providers direction={direction}>
+      
       <LayoutWrapper
         systemMode={systemMode}
         verticalLayout={
@@ -43,6 +44,7 @@ const Layout = async props => {
           </HorizontalLayout>
         }
       />
+      
       <ScrollToTop className='mui-fixed'>
         <Button variant='contained' className='is-10 bs-10 rounded-full p-0 min-is-0 flex items-center justify-center'>
           <i className='tabler-arrow-up' />

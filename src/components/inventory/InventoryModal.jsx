@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   Box,
@@ -9,32 +9,34 @@ import {
   Button,
   MenuItem,
   Grid,
+  CircularProgress,
 } from "@mui/material";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { BASE_URL } from "@/configs/url";
-import Loader from "../loader/Loader";
 import { useAuth } from "@/context/authContext";
 import ConfirmationDialog from '../ConfirmationDialog';
-
-
 
 const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
   const [isSubmit, setIsSubmit] = useState(false);
   const [suppliers, setSuppliers] = useState([]);
+  const [supplierCategories, setSupplierCategories] = useState([]);
+  const [supplierPriceBooks, setSupplierPriceBooks] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    category: "",
-    unit: "",
     supplierId: "",
+    category: "",
+    priceBookId: "",
     costPrice: "",
     quantity: "",
     notes: "",
     status: "active",
   });
-  const [loading, setLoading] = useState(true);
-  const {user} = useAuth();
+  const [loadingSuppliers, setLoadingSuppliers] = useState(false);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+  const [loadingPriceBooks, setLoadingPriceBooks] = useState(false);
+  const { user } = useAuth();
 
   // Confirmation dialog states
   const [confirmationOpen, setConfirmationOpen] = useState(false);
@@ -51,12 +53,11 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
       setFormData({
         name: editData.name || "",
         description: editData.description || "",
-        category: editData.category || "",
-        unit: editData.unit || "",
-        supplierId: editData.supplierId || "",
-        costPrice: editData.costPrice || "",
+        supplierId: editData.supplier?.id || editData.supplierId || "",
+        category: editData.categoryDetails?.id || editData.category || "",
+        priceBookId: editData.priceBooks?.id || editData.priceBookId || "",
+        costPrice: editData.costPrice || editData.priceBooks?.price || "",
         quantity: editData.quantity || "",
-        
         notes: editData.notes || "",
         status: editData.status || "active",
       });
@@ -64,9 +65,9 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
       setFormData({
         name: "",
         description: "",
-        category: "",
-        unit: "",
         supplierId: "",
+        category: "",
+        priceBookId: "",
         costPrice: "",
         quantity: "",
         notes: "",
@@ -77,21 +78,78 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
 
   // Fetch suppliers
   const fetchSuppliers = async () => {
-    setLoading(true);
+    setLoadingSuppliers(true);
     try {
-
       const res = await axios.get(`${BASE_URL}/api/suppliers/get`);
       setSuppliers(res.data.data || []);
     } catch (error) {
       console.error("Error fetching suppliers:", error);
     } finally {
-      setLoading(false);
+      setLoadingSuppliers(false);
+    }
+  };
+
+  // Fetch supplier categories when supplier changes
+  const fetchSupplierCategories = async (supplierId) => {
+    setLoadingCategories(true);
+    try {
+      const res = await axios.get(`${BASE_URL}/api/pricebook-categories/get/${supplierId}`);
+      setSupplierCategories(res.data || []);
+    } catch (error) {
+      console.error("Error fetching supplier categories:", error);
+      setSupplierCategories([]);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  // Fetch supplier pricebooks when category changes
+  const fetchSupplierPriceBooks = async (categoryId) => {
+    setLoadingPriceBooks(true);
+    try {
+      const res = await axios.get(`${BASE_URL}/api/pricebook/get/${categoryId}`);
+      setSupplierPriceBooks(res.data || []);
+    } catch (error) {
+      console.error("Error fetching supplier pricebooks:", error);
+      setSupplierPriceBooks([]);
+    } finally {
+      setLoadingPriceBooks(false);
     }
   };
 
   useEffect(() => {
     fetchSuppliers();
   }, []);
+
+  // When supplier changes, fetch categories
+  useEffect(() => {
+    if (formData.supplierId) {
+      fetchSupplierCategories(formData.supplierId);
+      setFormData({ ...formData, category: "", priceBookId: "", costPrice: "" });
+      setSupplierPriceBooks([]);
+    }
+  }, [formData.supplierId]);
+
+  // When category changes, fetch pricebooks for priceBookId dropdown
+  useEffect(() => {
+    if (formData.category) {
+      fetchSupplierPriceBooks(formData.category); // category is now id
+      setFormData({ ...formData, priceBookId: "", costPrice: "" });
+    }
+  }, [formData.category]);
+
+  // When priceBookId changes, set costPrice from selected pricebook
+  useEffect(() => {
+    if (formData.priceBookId && supplierPriceBooks.length > 0) {
+      const selectedPriceBook = supplierPriceBooks.find(pb => pb.id === Number(formData.priceBookId));
+      if (selectedPriceBook) {
+        setFormData(prev => ({
+          ...prev,
+          costPrice: selectedPriceBook.price
+        }));
+      }
+    }
+  }, [formData.priceBookId, supplierPriceBooks]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -116,7 +174,7 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
     if (isCreateMode) {
       showConfirmation({
         title: 'Create New Inventory Item',
-        message: `Are you sure you want to create a new inventory item "${formData.name}" with item code "${formData.itemCode}"?`,
+        message: `Are you sure you want to create a new inventory item "${formData.name}"?`,
         action: () => submitInventory(),
         severity: 'info'
       });
@@ -135,23 +193,15 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
     toast.loading(editData ? "Updating Inventory..." : "Creating Inventory...");
 
     try {
+      formData.costPrice = parseFloat(formData.costPrice) || 0;
+      formData.quantity = parseInt(formData.quantity) || 0;
+      formData.userId = user.id;
+
       if (editData) {
-        // Edit Mode
-        formData.minThreshold = parseInt(formData.minThreshold) || 0;
-        formData.maxThreshold = parseInt(formData.maxThreshold) || 0;
-        formData.costPrice = parseInt(formData.costPrice) || 0;
-        formData.quantity = parseInt(formData.quantity) || 0;
-        formData.userId = user.id;
         await axios.put(`${BASE_URL}/api/inventory/update/${editData.id}`, formData);
         toast.dismiss();
         toast.success("Inventory updated successfully");
       } else {
-        // Add Mode
-        formData.minThreshold = parseInt(formData.minThreshold) || 0;
-        formData.maxThreshold = parseInt(formData.maxThreshold) || 0;
-        formData.costPrice = parseInt(formData.costPrice) || 0;
-        formData.quantity = parseInt(formData.quantity) || 0;
-        formData.userId = user.id;
         await axios.post(`${BASE_URL}/api/inventory/create`, formData);
         toast.dismiss();
         toast.success("Inventory created successfully");
@@ -167,9 +217,6 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
       setIsSubmit(false);
     }
   };
-
-
-  if(loading) return <Loader/>
 
   return (
     <Modal open={open} onClose={() => setOpen(false)}>
@@ -192,7 +239,6 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
 
         <form onSubmit={handleSubmit}>
           <Grid container spacing={2}>
-            {/* Removed Item Code field */}
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -212,29 +258,9 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
                 onChange={handleChange}
               />
             </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="Category"
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                required
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                label="Unit"
-                name="unit"
-                value={formData.unit}
-                onChange={handleChange}
-                required
-              />
-            </Grid>
             <Grid item xs={12}>
               <TextField
-                sx={{minWidth: 200}}
+                sx={{ minWidth: 120 }}
                 select
                 fullWidth
                 label="Supplier"
@@ -242,10 +268,60 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
                 value={formData.supplierId}
                 onChange={handleChange}
                 required
+                SelectProps={{
+                  IconComponent: loadingSuppliers ? () => <CircularProgress size={20} /> : undefined
+                }}
               >
+                <MenuItem value="">Select supplier</MenuItem>
                 {suppliers.map((supplier) => (
                   <MenuItem key={supplier.id} value={supplier.id}>
                     {supplier.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+              sx={{ minWidth: 120 }}
+                select
+                fullWidth
+                label="Category"
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                required
+                disabled={!formData.supplierId}
+                SelectProps={{
+                  IconComponent: loadingCategories ? () => <CircularProgress size={20} /> : undefined
+                }}
+              >
+                <MenuItem value="">Select category</MenuItem>
+                {supplierCategories.map((cat) => (
+                  <MenuItem key={cat.id || cat._id} value={cat.id || cat._id}>
+                    {cat.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+              sx={{ minWidth: 120 }}
+                select
+                fullWidth
+                label="Price Book"
+                name="priceBookId"
+                value={formData.priceBookId}
+                onChange={handleChange}
+                required
+                disabled={!formData.category}
+                SelectProps={{
+                  IconComponent: loadingPriceBooks ? () => <CircularProgress size={20} /> : undefined
+                }}
+              >
+                <MenuItem value="">Select price book</MenuItem>
+                {supplierPriceBooks.map((pb) => (
+                  <MenuItem key={pb.id || pb._id} value={pb.id}>
+                    {pb.name} ({pb.unit})
                   </MenuItem>
                 ))}
               </TextField>
@@ -272,8 +348,18 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
                 required
               />
             </Grid>
-            
-            <Grid item xs={6}>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Notes"
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                multiline
+                rows={2}
+              />
+            </Grid>
+            <Grid item xs={12}>
               <TextField
                 select
                 fullWidth
@@ -286,17 +372,6 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
                 <MenuItem value="active">Active</MenuItem>
                 <MenuItem value="inactive">Inactive</MenuItem>
               </TextField>
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Notes"
-                name="notes"
-                value={formData.notes}
-                onChange={handleChange}
-                multiline
-                rows={2}
-              />
             </Grid>
           </Grid>
 

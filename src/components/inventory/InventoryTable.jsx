@@ -46,7 +46,7 @@ const InventoryTable = () => {
 
   // Pagination + search
   const [page, setPage] = useState(0);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(100);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   // Confirmation dialog states
@@ -165,13 +165,17 @@ const InventoryTable = () => {
       ID: item.id,
       Name: item.name,
       Description: item.description,
-      Category: item.category,
-      Unit: item.unit,
-      Quantity: item.quantity,
+      Category: item.categoryDetails?.name || item.category || "N/A",
+      PriceBook: item.priceBooks?.name || "N/A",
+      Unit: item.priceBooks?.unit || "N/A",
       Price: item.costPrice,
-      Supplier: item.supplier?.companyName || "N/A",
+      Quantity: item.quantity,
       Status: item.status,
       Notes: item.notes,
+      Supplier: item.supplier?.name || item.supplier?.companyName || "N/A",
+      SupplierEmail: item.supplier?.email || "N/A",
+      SupplierPhone: item.supplier?.phone || "N/A",
+      SupplierAddress: item.supplier?.address || "N/A",
       Date: item.createdAt ? formatDate(item.createdAt) : "N/A",
     }));
 
@@ -218,7 +222,7 @@ const InventoryTable = () => {
   }
 
   return (
-    <Paper p={3} sx={{ p: 4 }}>
+    <Paper p={3} sx={{ p: 4 }} className="zoom-67">
       {/* Header with Add + Export + Search */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h5" fontWeight="bold">
@@ -287,7 +291,7 @@ const InventoryTable = () => {
               <TableCell sx={{ minWidth: 220, fontWeight: 'bold' }}>Description</TableCell>
               <TableCell sx={{ minWidth: 120, fontWeight: 'bold' }}>Category</TableCell>
               <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Unit</TableCell>
-              <TableCell sx={{ minWidth: 160, fontWeight: 'bold' }}>Supplier</TableCell>
+              {/* <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Unit</TableCell> */}
               <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Price</TableCell>
               <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Quantity</TableCell>
               <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Status</TableCell>
@@ -312,8 +316,8 @@ const InventoryTable = () => {
                 <TableCell sx={{ minWidth: 160 }}>{item.name}</TableCell>
                 <TableCell sx={{ minWidth: 220 }}>{item.description}</TableCell>
                 <TableCell sx={{ minWidth: 120 }}>{item.category}</TableCell>
-                <TableCell sx={{ minWidth: 100 }}>{item.unit}</TableCell>
-                <TableCell sx={{ minWidth: 160 }}>{item.supplier?.name || "N/A"}</TableCell>
+                <TableCell sx={{ minWidth: 100 }}>{item.priceBooks?.name || "N/A"}</TableCell>
+                {/* <TableCell sx={{ minWidth: 100 }}>{item.priceBooks?.unit || "N/A"}</TableCell> */}
                 <TableCell sx={{ minWidth: 100 }}>{item.costPrice}</TableCell>
                 <TableCell sx={{ minWidth: 100 }}>{item.quantity}</TableCell>
                 <TableCell sx={{ minWidth: 100 }}>
@@ -363,7 +367,7 @@ const InventoryTable = () => {
 
       {/* Pagination Controls */}
       <TablePagination
-        rowsPerPageOptions={[5, 10, 25, 50]}
+        rowsPerPageOptions={[25, 50, 75, 100, 150]}
         component="div"
         count={rowCount}
         rowsPerPage={limit}

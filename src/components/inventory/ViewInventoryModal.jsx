@@ -42,12 +42,23 @@ const ViewInventoryModal = ({ open, setOpen, inventory }) => {
 
         <Box mb={1}>
           <Typography variant="subtitle2">Category:</Typography>
-          <Typography>{inventory.category}</Typography>
+          <Typography>
+            {inventory.categoryDetails?.name || "N/A"}
+          </Typography>
+        </Box>
+
+        <Box mb={1}>
+          <Typography variant="subtitle2">Price Book:</Typography>
+          <Typography>
+            {inventory.priceBooks?.name || "N/A"}
+          </Typography>
         </Box>
 
         <Box mb={1}>
           <Typography variant="subtitle2">Unit:</Typography>
-          <Typography>{inventory.unit}</Typography>
+          <Typography>
+            {inventory.priceBooks?.unit || "N/A"}
+          </Typography>
         </Box>
 
         <Box mb={1}>
@@ -70,7 +81,7 @@ const ViewInventoryModal = ({ open, setOpen, inventory }) => {
         <Typography variant="h6">Supplier Details</Typography>
         <Box mt={1}>
           <Typography variant="subtitle2">Name:</Typography>
-          <Typography>{inventory.supplier?.companyName || "N/A"}</Typography>
+          <Typography>{inventory.supplier?.name || "N/A"}</Typography>
         </Box>
         <Box>
           <Typography variant="subtitle2">Email:</Typography>

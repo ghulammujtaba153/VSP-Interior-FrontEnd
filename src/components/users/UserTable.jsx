@@ -32,7 +32,7 @@ const UserTable = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [users, setUsers] = useState([]);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(100);
   
   // Confirmation dialog states (only for delete)
   const [confirmationOpen, setConfirmationOpen] = useState(false);
@@ -264,7 +264,7 @@ const UserTable = () => {
         columns={columns}
         getRowId={(row) => row.id}
         pageSize={10}
-        rowsPerPageOptions={[10, 20, 50, 100]}
+        rowsPerPageOptions={[25, 50, 75, 100, 150]}
         disableRowSelectionOnClick
         loading={loading}
       />
