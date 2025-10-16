@@ -139,6 +139,7 @@ const SupplierCategoryPage = () => {
       Description: item.description,
       Unit: item.unit,
       Price: item.price,
+      Version: item.version,
       Status: item.status,
       Category: item.PriceBookCategory ? item.PriceBookCategory.name : '',
       CreatedAt: item.createdAt,
@@ -219,6 +220,9 @@ const SupplierCategoryPage = () => {
                 <b>Price</b>
               </TableCell>
               <TableCell>
+                <b>Version</b>
+              </TableCell>
+              <TableCell>
                 <b>Status</b>
               </TableCell>
               <TableCell align='center'>
@@ -235,6 +239,7 @@ const SupplierCategoryPage = () => {
                   <TableCell>{row.description}</TableCell>
                   <TableCell>{row.unit}</TableCell>
                   <TableCell>{row.price}</TableCell>
+                  <TableCell>{row.version}</TableCell>
                   <TableCell>{row.status}</TableCell>
                   <TableCell align='center'>
                     <IconButton color='primary' onClick={() => handleEdit(row)}>
@@ -248,7 +253,7 @@ const SupplierCategoryPage = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} align='center'>
+                <TableCell colSpan={8} align='center'>
                   No data found
                 </TableCell>
               </TableRow>

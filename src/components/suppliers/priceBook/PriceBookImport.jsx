@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -13,6 +13,17 @@ import {
   Tooltip,
   Alert,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  FormControl,
+  FormLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import * as XLSX from "xlsx";
 import axios from "axios";
@@ -70,6 +81,32 @@ const PriceBookImport = () => {
   const { user } = useAuth();
   const params = useParams();
   const supplierId = params?.id || params?.supplierId || null;
+  
+  // Version management states
+  const [openVersionDialog, setOpenVersionDialog] = useState(false);
+  const [versionAction, setVersionAction] = useState("new"); // "new" or "existing"
+  const [selectedVersion, setSelectedVersion] = useState("v1");
+  const [availableVersions, setAvailableVersions] = useState([]);
+
+  // Fetch available versions on mount
+  useEffect(() => {
+    if (supplierId) {
+      fetchAvailableVersions();
+    }
+  }, [supplierId]);
+
+  // Fetch available versions
+  const fetchAvailableVersions = async () => {
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/api/pricebook-categories/versions/${supplierId}`
+      );
+      setAvailableVersions(response.data.versions || []);
+    } catch (error) {
+      console.error("Failed to fetch versions", error);
+      setAvailableVersions(["v1"]); // Default fallback
+    }
+  };
 
   // ✅ Validate PriceBook rows
   const validateRows = (data) => {
@@ -191,15 +228,30 @@ const PriceBookImport = () => {
     validateRows(updated);
   };
 
-  // ✅ Confirm upload
-  const handleConfirm = async () => {
+  // ✅ Show version dialog before confirming
+  const handleConfirm = () => {
+    const validRows = rows.filter((_, idx) => !errors[idx]);
+    if (validRows.length === 0) {
+      toast.error("No valid rows to import");
+      return;
+    }
+    setOpenVersionDialog(true);
+  };
+
+  // ✅ Handle actual import after version selection
+  const handleVersionConfirm = async () => {
     toast.loading("Importing PriceBook...");
     try {
       const validRows = rows.filter((_, idx) => !errors[idx]);
-      if (validRows.length === 0) {
-        toast.dismiss();
-        toast.error("No valid rows to import");
-        return;
+      
+      // Calculate version based on selection
+      let version = selectedVersion;
+      if (versionAction === "new") {
+        // Generate next version
+        const maxVersion = availableVersions.length > 0 
+          ? Math.max(...availableVersions.map(v => parseInt(v.replace('v', '')))) 
+          : 0;
+        version = `v${maxVersion + 1}`;
       }
 
       // Normalize and build payload per schema
@@ -212,15 +264,18 @@ const PriceBookImport = () => {
         status: String(row.Status || 'Active').toLowerCase(),
       }))
 
-      const res= await axios.post(`${BASE_URL}/api/pricebook/import`, {
+      const res = await axios.post(`${BASE_URL}/api/pricebook/import`, {
         userId: user?.id,
         supplierId,
         items,
+        version, // Include version in the payload
       });
 
       toast.dismiss();
       toast.success(res.data.message);
+      setOpenVersionDialog(false);
       clearFile();
+      fetchAvailableVersions();
     } catch (err) {
       console.error(err);
       toast.dismiss();
@@ -384,6 +439,66 @@ const PriceBookImport = () => {
           </Button>
         </Stack>
       )}
+
+      {/* Version Selection Dialog */}
+      <Dialog open={openVersionDialog} onClose={() => setOpenVersionDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Select Version for Import</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            Choose whether to create a new version or update an existing one. 
+            New versions will apply only to new tenders, while existing price books remain for old quotes.
+          </Typography>
+          
+          <FormControl component="fieldset" fullWidth>
+            <FormLabel component="legend">Version Action</FormLabel>
+            <RadioGroup
+              value={versionAction}
+              onChange={(e) => setVersionAction(e.target.value)}
+            >
+              <FormControlLabel 
+                value="new" 
+                control={<Radio />} 
+                label="Create New Version (for new tenders)" 
+              />
+              <FormControlLabel 
+                value="existing" 
+                control={<Radio />} 
+                label="Update Existing Version" 
+              />
+            </RadioGroup>
+          </FormControl>
+
+          {versionAction === "existing" && (
+            <FormControl fullWidth sx={{ mt: 2 }}>
+              <FormLabel>Select Version to Update</FormLabel>
+              <Select
+                value={selectedVersion}
+                onChange={(e) => setSelectedVersion(e.target.value)}
+              >
+                {availableVersions.map((version) => (
+                  <MenuItem key={version} value={version}>
+                    {version}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+
+          {versionAction === "new" && (
+            <Typography variant="body2" color="primary" sx={{ mt: 2 }}>
+              A new version will be created automatically
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenVersionDialog(false)} color="inherit">
+            Cancel
+          </Button>
+          <Button onClick={handleVersionConfirm} color="warning" variant="contained">
+            Import PriceBook
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
