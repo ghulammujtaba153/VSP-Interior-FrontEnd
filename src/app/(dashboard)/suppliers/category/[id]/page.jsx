@@ -27,7 +27,11 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  FormControl
+  FormControl,
+  Radio,
+  RadioGroup,
+  FormControlLabel,
+  FormLabel
 } from '@mui/material'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
@@ -56,12 +60,27 @@ const SupplierCategoryPage = () => {
     status: ''
   })
 
+  // Version management states
+  const [openVersionDialog, setOpenVersionDialog] = useState(false)
+  const [versionAction, setVersionAction] = useState('new')
+  const [selectedVersion, setSelectedVersion] = useState('v1')
+  const [availableVersions, setAvailableVersions] = useState([])
+  const [categoryInfo, setCategoryInfo] = useState(null)
+
   // Fetch category
   const fetchCategory = async () => {
     setLoading(true)
     try {
       const response = await axios.get(`${BASE_URL}/api/pricebook/get/${id}`)
       setData(response.data)
+      
+      // Store category info for later use
+      if (response.data.length > 0 && response.data[0].PriceBookCategory) {
+        setCategoryInfo({
+          supplierId: response.data[0].PriceBookCategory.supplierId,
+          categoryName: response.data[0].PriceBookCategory.name
+        })
+      }
     } catch (error) {
       toast.error('Failed to fetch category')
     } finally {
@@ -69,9 +88,30 @@ const SupplierCategoryPage = () => {
     }
   }
 
+  // Fetch available versions
+  const fetchAvailableVersions = async () => {
+    if (!categoryInfo?.supplierId) return
+    
+    try {
+      const response = await axios.get(
+        `${BASE_URL}/api/pricebook-categories/versions/${categoryInfo.supplierId}`
+      )
+      setAvailableVersions(response.data.versions || ['v1'])
+    } catch (error) {
+      console.error('Failed to fetch versions', error)
+      setAvailableVersions(['v1'])
+    }
+  }
+
   useEffect(() => {
     fetchCategory()
   }, [id])
+
+  useEffect(() => {
+    if (categoryInfo) {
+      fetchAvailableVersions()
+    }
+  }, [categoryInfo])
 
   const handleDelete = async rowId => {
     toast.loading('Please wait...')
@@ -95,35 +135,101 @@ const SupplierCategoryPage = () => {
       price: row.price,
       status: row.status
     })
+    // Set current version for editing
+    setSelectedVersion(row.version || 'v1')
+    setVersionAction('existing')
     setOpen(true)
   }
 
-  const handleUpdate = async () => {
+  const handleUpdate = () => {
+    // Validate required fields
+    if (!formData.name || !formData.unit || !formData.price || !formData.status) {
+      toast.error('Please fill all required fields')
+      return
+    }
+
+    // Show version dialog before saving
+    setOpen(false)
+    setOpenVersionDialog(true)
+  }
+
+  const handleVersionConfirm = async () => {
     toast.loading('Please wait...')
     try {
+      // Calculate version based on selection
+      let version = selectedVersion
+      if (versionAction === 'new') {
+        const maxVersion = availableVersions.length > 0 
+          ? Math.max(...availableVersions.map(v => parseInt(v.replace('v', '')))) 
+          : 0
+        version = `v${maxVersion + 1}`
+      }
+
+      // Check for duplicates (same name and version in this category)
+      const duplicate = data.find(item => 
+        item.name.toLowerCase() === formData.name.toLowerCase() && 
+        item.version === version &&
+        (!selectedRow || item.id !== selectedRow.id)
+      )
+
+      if (duplicate) {
+        toast.dismiss()
+        toast.error(`Item "${formData.name}" already exists in version ${version}`)
+        return
+      }
+
       if (selectedRow) {
-        await axios.put(`${BASE_URL}/api/pricebook/update/${selectedRow.id}`, formData)
+        await axios.put(`${BASE_URL}/api/pricebook/update/${selectedRow.id}`, {
+          ...formData,
+          version: version
+        })
         toast.success('Item updated successfully')
       } else {
         await axios.post(`${BASE_URL}/api/pricebook/create`, {
           ...formData,
-          priceBookCategoryId: id
+          priceBookCategoryId: id,
+          version: version
         })
         toast.success('Item added successfully')
       }
+      
       toast.dismiss()
-      setOpen(false)
+      setOpenVersionDialog(false)
       setSelectedRow(null)
       fetchCategory()
+      fetchAvailableVersions()
+      handleClose()
     } catch (error) {
       toast.dismiss()
-      toast.error('Failed to save item')
+      const errorMessage = error.response?.data?.error || 'Failed to save item'
+      toast.error(errorMessage)
     }
   }
 
   const handleClose = () => {
     setOpen(false)
     setSelectedRow(null)
+    setFormData({
+      name: '',
+      description: '',
+      unit: '',
+      price: '',
+      status: ''
+    })
+  }
+
+  const handleAddNew = () => {
+    setSelectedRow(null)
+    setFormData({
+      name: '',
+      description: '',
+      unit: '',
+      price: '',
+      status: ''
+    })
+    setVersionAction('new')
+    setSelectedVersion('v1')
+    setOpen(true)
   }
 
   // Export XLS
@@ -178,7 +284,7 @@ const SupplierCategoryPage = () => {
           <Button variant='contained' color='success' onClick={handleExport} sx={{ mr: 2 }}>
             Export XLS
           </Button>
-          <Button variant='contained' color='secondary' onClick={() => setOpen(true)}>
+          <Button variant='contained' color='secondary' onClick={handleAddNew}>
             Add Item
           </Button>
         </Box>
@@ -328,7 +434,70 @@ const SupplierCategoryPage = () => {
             Cancel
           </Button>
           <Button onClick={handleUpdate} color='primary' variant='contained'>
-            {selectedRow ? 'Update' : 'Add'}
+            Next
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Version Selection Dialog */}
+      <Dialog open={openVersionDialog} onClose={() => setOpenVersionDialog(false)} maxWidth='sm' fullWidth>
+        <DialogTitle>Select Version</DialogTitle>
+        <DialogContent>
+          <Typography variant='body2' color='text.secondary' mb={2}>
+            Choose whether to create a new version or update an existing one. 
+            New versions will apply only to new tenders, while existing price books remain for old quotes.
+          </Typography>
+          
+          <FormControl component='fieldset' fullWidth>
+            <FormLabel component='legend'>Version Action</FormLabel>
+            <RadioGroup
+              value={versionAction}
+              onChange={(e) => setVersionAction(e.target.value)}
+            >
+              <FormControlLabel 
+                value='new' 
+                control={<Radio />} 
+                label='Create New Version (for new tenders)' 
+              />
+              <FormControlLabel 
+                value='existing' 
+                control={<Radio />} 
+                label='Update Existing Version' 
+              />
+            </RadioGroup>
+          </FormControl>
+
+          {versionAction === 'existing' && (
+            <FormControl fullWidth sx={{ mt: 2 }}>
+              <FormLabel>Select Version to Update</FormLabel>
+              <Select
+                value={selectedVersion}
+                onChange={(e) => setSelectedVersion(e.target.value)}
+              >
+                {availableVersions.map((version) => (
+                  <MenuItem key={version} value={version}>
+                    {version}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+
+          {versionAction === 'new' && (
+            <Typography variant='body2' color='primary' sx={{ mt: 2 }}>
+              A new version will be created automatically
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setOpenVersionDialog(false)
+            setOpen(true) // Go back to item form
+          }} color='inherit'>
+            Back
+          </Button>
+          <Button onClick={handleVersionConfirm} color='primary' variant='contained'>
+            {selectedRow ? 'Update' : 'Add'} Item
           </Button>
         </DialogActions>
       </Dialog>

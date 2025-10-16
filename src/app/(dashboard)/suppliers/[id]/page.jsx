@@ -50,11 +50,11 @@ const SupplierPage = () => {
             >
 
                 <Tab label="Categories" />
-                <Tab label="Import" />
+                {/* <Tab label="Import" /> */}
                 
             </Tabs>
             {tabIndex === 0 && <PriceBookCategoriesTable id={id} />}
-            {tabIndex === 1 && <PriceBookImport id={id} />}
+            {/* {tabIndex === 1 && <PriceBookImport id={id} />} */}
             
 
         </Box>
