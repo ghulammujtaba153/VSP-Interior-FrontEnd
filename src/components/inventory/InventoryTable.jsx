@@ -42,7 +42,12 @@ const InventoryTable = () => {
   const { user } = useAuth();
   const [importCSV, setImportCSV] = useState(false);
   const [suppliers, setSuppliers] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [priceBooks, setPriceBooks] = useState([]);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedPriceBook, setSelectedPriceBook] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
 
   // Pagination + search
   const [page, setPage] = useState(0);
@@ -86,9 +91,19 @@ const InventoryTable = () => {
   const fetchData = async (currentPage = page, currentLimit = limit, searchTerm = search) => {
     setLoading(true);
     try {
-      const res = await axios.get(
-        `${BASE_URL}/api/inventory/get?page=${currentPage + 1}&limit=${currentLimit}&search=${searchTerm}`
-      );
+      const params = [
+        `page=${currentPage + 1}`,
+        `limit=${currentLimit}`,
+        `search=${searchTerm}`,
+        selectedSupplier ? `supplierId=${selectedSupplier}` : "",
+        selectedCategory ? `categoryId=${selectedCategory}` : "",
+        selectedPriceBook ? `priceBookId=${selectedPriceBook}` : "",
+        selectedStatus ? `status=${selectedStatus}` : "",
+      ]
+        .filter(Boolean)
+        .join("&");
+
+      const res = await axios.get(`${BASE_URL}/api/inventory/get?${params}`);
       setData(res.data.inventory || []);
       setRowCount(res.data.total || 0);
     } catch (error) {
@@ -98,20 +113,40 @@ const InventoryTable = () => {
     }
   };
 
-
+  // Fetch suppliers
   const fetchSuppliers = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/api/suppliers/get`);
       setSuppliers(res.data.data || []);
-      
     } catch (error) {
       console.error("Error fetching suppliers:", error);
     }
-    
+  };
+
+  // Fetch categories
+  const fetchCategories = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/api/pricebook-categories/get`);
+      setCategories(res.data || []);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
+
+  // Fetch priceBooks
+  const fetchPriceBooks = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/api/pricebook/get`);
+      setPriceBooks(res.data || []);
+    } catch (error) {
+      console.error("Error fetching priceBooks:", error);
+    }
   };
 
   useEffect(() => {
     fetchSuppliers();
+    fetchCategories();
+    fetchPriceBooks();
     // eslint-disable-next-line
   }, []);
 
@@ -267,19 +302,30 @@ const InventoryTable = () => {
         </Box>
       </Box>
 
-
-      <Select
-        sx={{ minWidth: 200 }}
-        label="Supplier"
-          
-        size="small"
-        value={selectedSupplier}
-        onChange={(e) => setSelectedSupplier(e.target.value)}
-      >
-        {suppliers.map((supplier) => (
-          <MenuItem key={supplier.id} value={supplier.id}>{supplier.name}</MenuItem>
-        ))}
-      </Select>
+      {/* Filter Dropdowns */}
+      <Box display="flex" gap={2} mb={2}>
+        <Select
+          sx={{ minWidth: 180 }}
+          label="Supplier"
+          size="small"
+          value={selectedSupplier || ""}
+          onChange={(e) => {
+            setSelectedSupplier(e.target.value);
+            setPage(0);
+          }}
+          displayEmpty
+        >
+          <MenuItem value="">All Suppliers</MenuItem>
+          {suppliers.map((supplier) => (
+            <MenuItem key={supplier.id} value={supplier.id}>
+              {supplier.name}
+            </MenuItem>
+          ))}
+        </Select>
+        
+        
+        
+      </Box>
 
       {/* Inventory Table */}
       <TableContainer component={Paper}>
@@ -315,7 +361,7 @@ const InventoryTable = () => {
                 <TableCell sx={{ minWidth: 80 }}>{item.id}</TableCell>
                 <TableCell sx={{ minWidth: 160 }}>{item.name}</TableCell>
                 <TableCell sx={{ minWidth: 220 }}>{item.description}</TableCell>
-                <TableCell sx={{ minWidth: 120 }}>{item.category}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{item.categoryDetails.name}</TableCell>
                 <TableCell sx={{ minWidth: 100 }}>{item.priceBooks?.name || "N/A"}</TableCell>
                 {/* <TableCell sx={{ minWidth: 100 }}>{item.priceBooks?.unit || "N/A"}</TableCell> */}
                 <TableCell sx={{ minWidth: 100 }}>{item.costPrice}</TableCell>
