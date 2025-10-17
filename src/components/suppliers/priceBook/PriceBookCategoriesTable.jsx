@@ -28,6 +28,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { RemoveRedEye } from "@mui/icons-material";
 import Link from "next/link";
+import Loader from "@/components/loader/Loader";
 
 const PriceBookCategoriesTable = ({ id }) => {
   const [categories, setCategories] = useState([]);
@@ -182,20 +183,24 @@ const PriceBookCategoriesTable = ({ id }) => {
         >
           Search
         </Button> */}
-      </Box>
-      <Button
+
+        <Button
         variant="contained"
         color="primary"
+
         onClick={handleAdd}
-        sx={{ mb: 2 }}
+        sx={{ mb: 2, ml: "auto" }}
       >
         Add Category
       </Button>
 
+      </Box>
+      
+
       <TableContainer component={Paper}>
         {loading ? (
           <Box display="flex" justifyContent="center" p={3}>
-            <CircularProgress />
+            <Loader />
           </Box>
         ) : (
           <>

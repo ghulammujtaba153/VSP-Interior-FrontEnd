@@ -1,10 +1,11 @@
 "use client"
 
 
+import Loader from '@/components/loader/Loader';
 import PriceBookCategoriesTable from '@/components/suppliers/priceBook/PriceBookCategoriesTable';
 import PriceBookImport from '@/components/suppliers/priceBook/PriceBookImport';
 import { BASE_URL } from '@/configs/url';
-import { Box, Button, Tab, Tabs } from '@mui/material';
+import { Box, Button, Paper, Tab, Tabs } from '@mui/material';
 import axios from 'axios';
 import { useParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react'
@@ -31,11 +32,11 @@ const SupplierPage = () => {
         fetch();
     }, [id]);
 
-    if (!data) return <div>Loading...</div>;
+    if (!data) return <Loader/>;
 
 
     return (
-        <Box>
+        <Box p={4} component={Paper}>
             <Button variant="contained" color="primary" onClick={() => window.history.back('/suppliers')}>
                 Back
             </Button>

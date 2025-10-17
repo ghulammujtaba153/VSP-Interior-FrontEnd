@@ -30,6 +30,7 @@ import { useAuth } from "@/context/authContext";
 import ImportCSV from "./ImportCSV";
 import ConfirmationDialog from "../ConfirmationDialog";
 import * as XLSX from "xlsx";
+import Loader from "../loader/Loader";
 
 const InventoryTable = () => {
   const [loading, setLoading] = useState(true);
@@ -250,9 +251,7 @@ const InventoryTable = () => {
 
   if (loading && data.length === 0) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
-        <CircularProgress />
-      </Box>
+      <Loader/>
     );
   }
 

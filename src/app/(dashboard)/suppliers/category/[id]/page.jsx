@@ -35,6 +35,7 @@ import {
 } from '@mui/material'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
+import VisibilityIcon from '@mui/icons-material/Visibility'
 import * as XLSX from 'xlsx'
 
 const SupplierCategoryPage = () => {
@@ -57,7 +58,7 @@ const SupplierCategoryPage = () => {
     description: '',
     unit: '',
     price: '',
-    status: ''
+    status: 'Active' // default active, status dropdown removed
   })
 
   // Version management states
@@ -66,14 +67,24 @@ const SupplierCategoryPage = () => {
   const [selectedVersion, setSelectedVersion] = useState('v1')
   const [availableVersions, setAvailableVersions] = useState([])
   const [categoryInfo, setCategoryInfo] = useState(null)
+  const [availableLoading, setAvailableLoading] = useState(false)
 
-  // Fetch category
+  // History modal
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyData, setHistoryData] = useState([])
+
+  // New: versions list & selected version for history filter
+  const [historyVersions, setHistoryVersions] = useState([])
+  const [historyVersionSelected, setHistoryVersionSelected] = useState('All')
+
+  // Fetch category (pricebooks under category)
   const fetchCategory = async () => {
     setLoading(true)
     try {
       const response = await axios.get(`${BASE_URL}/api/pricebook/get/${id}`)
       setData(response.data)
-      
+
       // Store category info for later use
       if (response.data.length > 0 && response.data[0].PriceBookCategory) {
         setCategoryInfo({
@@ -88,18 +99,32 @@ const SupplierCategoryPage = () => {
     }
   }
 
-  // Fetch available versions
-  const fetchAvailableVersions = async () => {
-    if (!categoryInfo?.supplierId) return
-    
+  // Fetch available versions for a given item name + category
+  const fetchAvailableVersions = async itemName => {
+    setAvailableLoading(true)
+    // if no category or no name, default to v1
+    if (!categoryInfo?.supplierId || !itemName) {
+      setAvailableVersions(['v1'])
+      setAvailableLoading(false)
+      return
+    }
+
     try {
-      const response = await axios.get(
-        `${BASE_URL}/api/pricebook-categories/versions/${categoryInfo.supplierId}`
-      )
-      setAvailableVersions(response.data.versions || ['v1'])
+      const res = await axios.get(`${BASE_URL}/api/pricebook/history`, {
+        params: { name: itemName, priceBookCategoryId: id }
+      })
+
+      const items = res.data.items || res.data || []
+      const versions = Array.from(new Set(items.map(item => item.version)))
+        .filter(Boolean)
+        .sort((a, b) => parseInt(a.replace('v', '')) - parseInt(b.replace('v', '')))
+
+      setAvailableVersions(versions.length > 0 ? versions : ['v1'])
     } catch (error) {
       console.error('Failed to fetch versions', error)
       setAvailableVersions(['v1'])
+    } finally {
+      setAvailableLoading(false)
     }
   }
 
@@ -108,9 +133,8 @@ const SupplierCategoryPage = () => {
   }, [id])
 
   useEffect(() => {
-    if (categoryInfo) {
-      fetchAvailableVersions()
-    }
+    // when categoryInfo becomes available we do not auto-fetch versions globally anymore
+    // versions will be fetched per item (on add / when validating name)
   }, [categoryInfo])
 
   const handleDelete = async rowId => {
@@ -126,29 +150,55 @@ const SupplierCategoryPage = () => {
     }
   }
 
-  const handleEdit = row => {
+  const handleEdit = async row => {
     setSelectedRow(row)
     setFormData({
       name: row.name,
       description: row.description,
       unit: row.unit,
       price: row.price,
-      status: row.status
+      status: 'Active' // ensure status remains active on update
     })
-    // Set current version for editing
+    // keep version unchanged for updates
     setSelectedVersion(row.version || 'v1')
     setVersionAction('existing')
+
+    // open edit dialog directly (no second step)
     setOpen(true)
   }
 
-  const handleUpdate = () => {
+  const handleUpdate = async () => {
     // Validate required fields
-    if (!formData.name || !formData.unit || !formData.price || !formData.status) {
+    if (!formData.name || !formData.unit || !formData.price) {
       toast.error('Please fill all required fields')
       return
     }
 
-    // Show version dialog before saving
+    // If editing an existing item - update directly keeping its version
+    if (selectedRow) {
+      toast.loading('Please wait...')
+      try {
+        await axios.put(`${BASE_URL}/api/pricebook/update/${selectedRow.id}`, {
+          ...formData,
+          version: selectedRow.version, // preserve previous version
+          priceBookCategoryId: id,
+          status: 'Active' // enforce active
+        })
+        toast.dismiss()
+        toast.success('Item updated successfully')
+        setOpen(false)
+        setSelectedRow(null)
+        fetchCategory()
+      } catch (error) {
+        toast.dismiss()
+        const errorMessage = error.response?.data?.error || 'Failed to update item'
+        toast.error(errorMessage)
+      }
+      return
+    }
+
+    // If adding new item -> fetch versions for the entered name and go to version dialog
+    await fetchAvailableVersions(formData.name)
     setOpen(false)
     setOpenVersionDialog(true)
   }
@@ -156,20 +206,17 @@ const SupplierCategoryPage = () => {
   const handleVersionConfirm = async () => {
     toast.loading('Please wait...')
     try {
-      // Calculate version based on selection
+      // For creation only: calculate version based on selection
       let version = selectedVersion
       if (versionAction === 'new') {
-        const maxVersion = availableVersions.length > 0 
-          ? Math.max(...availableVersions.map(v => parseInt(v.replace('v', '')))) 
-          : 0
+        const maxVersion =
+          availableVersions.length > 0 ? Math.max(...availableVersions.map(v => parseInt(v.replace('v', '')))) : 0
         version = `v${maxVersion + 1}`
       }
 
       // Check for duplicates (same name and version in this category)
-      const duplicate = data.find(item => 
-        item.name.toLowerCase() === formData.name.toLowerCase() && 
-        item.version === version &&
-        (!selectedRow || item.id !== selectedRow.id)
+      const duplicate = data.find(
+        item => item.name.toLowerCase() === formData.name.toLowerCase() && item.version === version
       )
 
       if (duplicate) {
@@ -178,27 +225,19 @@ const SupplierCategoryPage = () => {
         return
       }
 
-      if (selectedRow) {
-        await axios.put(`${BASE_URL}/api/pricebook/update/${selectedRow.id}`, {
-          ...formData,
-          version: version
-        })
-        toast.success('Item updated successfully')
-      } else {
-        await axios.post(`${BASE_URL}/api/pricebook/create`, {
-          ...formData,
-          priceBookCategoryId: id,
-          version: version
-        })
-        toast.success('Item added successfully')
-      }
-      
+      // Create new pricebook item (status default Active)
+      await axios.post(`${BASE_URL}/api/pricebook/create`, {
+        ...formData,
+        priceBookCategoryId: id,
+        version: version,
+        status: 'Active'
+      })
+
       toast.dismiss()
+      toast.success('Item added successfully')
       setOpenVersionDialog(false)
-      setSelectedRow(null)
+      setFormData({ name: '', description: '', unit: '', price: '', status: 'Active' })
       fetchCategory()
-      fetchAvailableVersions()
-      handleClose()
     } catch (error) {
       toast.dismiss()
       const errorMessage = error.response?.data?.error || 'Failed to save item'
@@ -214,7 +253,7 @@ const SupplierCategoryPage = () => {
       description: '',
       unit: '',
       price: '',
-      status: ''
+      status: 'Active'
     })
   }
 
@@ -225,7 +264,7 @@ const SupplierCategoryPage = () => {
       description: '',
       unit: '',
       price: '',
-      status: ''
+      status: 'Active'
     })
     setVersionAction('new')
     setSelectedVersion('v1')
@@ -257,7 +296,7 @@ const SupplierCategoryPage = () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'PriceBook')
     XLSX.writeFile(
       workbook,
-      `${data[0]?.PriceBookCategory?.Supplier.name || 'Supplier'} - ${
+      `${data[0]?.PriceBookCategory?.Supplier?.name || 'Supplier'} - ${
         data[0]?.PriceBookCategory?.name || 'Category'
       } VSP.xlsx`
     )
@@ -271,10 +310,45 @@ const SupplierCategoryPage = () => {
   // Paginated rows
   const paginatedData = filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
 
+  // Fetch history (all versions) for a given pricebook name
+  const fetchHistory = async name => {
+    if (!name) return
+    setHistoryLoading(true)
+    try {
+      const res = await axios.get(`${BASE_URL}/api/pricebook/history`, {
+        params: { name: name, priceBookCategoryId: id }
+      })
+
+      const items = res.data.items || res.data || []
+      setHistoryData(items)
+
+      // compute available versions for this history and set default to 'All'
+      const versions = Array.from(new Set(items.map(item => item.version)))
+        .filter(Boolean)
+        .sort((a, b) => parseInt(a.replace('v', ''), 10) - parseInt(b.replace('v', ''), 10))
+
+      setHistoryVersions(versions)
+      setHistoryVersionSelected('All')
+    } catch (error) {
+      console.error('Failed to fetch history', error)
+      toast.error('Failed to fetch history')
+      setHistoryData([])
+      setHistoryVersions([])
+      setHistoryVersionSelected('All')
+    } finally {
+      setHistoryLoading(false)
+    }
+  }
+
+  const handleViewHistory = row => {
+    fetchHistory(row.name)
+    setHistoryOpen(true)
+  }
+
   if (loading) return <Loader />
 
   return (
-    <div className='p-4' component={Paper}>
+    <Box className='p-4' component={Paper}>
       <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
         <Button variant='contained' color='primary' onClick={() => window.history.back()}>
           Back
@@ -348,6 +422,9 @@ const SupplierCategoryPage = () => {
                   <TableCell>{row.version}</TableCell>
                   <TableCell>{row.status}</TableCell>
                   <TableCell align='center'>
+                    <IconButton color='info' onClick={() => handleViewHistory(row)} title='History'>
+                      <VisibilityIcon />
+                    </IconButton>
                     <IconButton color='primary' onClick={() => handleEdit(row)}>
                       <EditIcon />
                     </IconButton>
@@ -382,7 +459,7 @@ const SupplierCategoryPage = () => {
         />
       </TableContainer>
 
-      {/* Add/Edit Modal */}
+      {/* Add/Edit Modal (status removed from form) */}
       <Dialog open={open} onClose={handleClose}>
         <DialogTitle>{selectedRow ? 'Edit Price Book Item' : 'Add Price Book Item'}</DialogTitle>
         <DialogContent>
@@ -415,66 +492,40 @@ const SupplierCategoryPage = () => {
             value={formData.price}
             onChange={e => setFormData({ ...formData, price: e.target.value })}
           />
-          <FormControl fullWidth margin='dense'>
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={formData.status}
-              label='Status'
-              onChange={e => setFormData({ ...formData, status: e.target.value })}
-            >
-              <MenuItem value='Active'>Active</MenuItem>
-              <MenuItem value='Inactive'>Inactive</MenuItem>
-            </Select>
-          </FormControl>
+          {/* status removed; default 'Active' is used */}
         </DialogContent>
 
-        
         <DialogActions>
           <Button onClick={handleClose} color='inherit'>
             Cancel
           </Button>
           <Button onClick={handleUpdate} color='primary' variant='contained'>
-            Next
+            {availableLoading ? 'Loading' : 'Next'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Version Selection Dialog */}
+      {/* Version Selection Dialog (used only for creation) */}
       <Dialog open={openVersionDialog} onClose={() => setOpenVersionDialog(false)} maxWidth='sm' fullWidth>
         <DialogTitle>Select Version</DialogTitle>
         <DialogContent>
           <Typography variant='body2' color='text.secondary' mb={2}>
-            Choose whether to create a new version or update an existing one. 
-            New versions will apply only to new tenders, while existing price books remain for old quotes.
+            Choose whether to create a new version or update an existing one.
           </Typography>
-          
+
           <FormControl component='fieldset' fullWidth>
             <FormLabel component='legend'>Version Action</FormLabel>
-            <RadioGroup
-              value={versionAction}
-              onChange={(e) => setVersionAction(e.target.value)}
-            >
-              <FormControlLabel 
-                value='new' 
-                control={<Radio />} 
-                label='Create New Version (for new tenders)' 
-              />
-              <FormControlLabel 
-                value='existing' 
-                control={<Radio />} 
-                label='Update Existing Version' 
-              />
+            <RadioGroup value={versionAction} onChange={e => setVersionAction(e.target.value)}>
+              <FormControlLabel value='new' control={<Radio />} label='Create New Version (for new tenders)' />
+              <FormControlLabel value='existing' control={<Radio />} label='Update Existing Version' />
             </RadioGroup>
           </FormControl>
 
           {versionAction === 'existing' && (
             <FormControl fullWidth sx={{ mt: 2 }}>
               <FormLabel>Select Version to Update</FormLabel>
-              <Select
-                value={selectedVersion}
-                onChange={(e) => setSelectedVersion(e.target.value)}
-              >
-                {availableVersions.map((version) => (
+              <Select value={selectedVersion} onChange={e => setSelectedVersion(e.target.value)}>
+                {availableVersions.map(version => (
                   <MenuItem key={version} value={version}>
                     {version}
                   </MenuItem>
@@ -490,19 +541,98 @@ const SupplierCategoryPage = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => {
-            setOpenVersionDialog(false)
-            setOpen(true) // Go back to item form
-          }} color='inherit'>
+          <Button
+            onClick={() => {
+              setOpenVersionDialog(false)
+              setOpen(true) // Go back to item form
+            }}
+            color='inherit'
+          >
             Back
           </Button>
           <Button onClick={handleVersionConfirm} color='primary' variant='contained'>
-            {selectedRow ? 'Update' : 'Add'} Item
+            Add Item
           </Button>
         </DialogActions>
       </Dialog>
-    </div>
+
+      {/* History Dialog with timeline (Created At -> Version End) */}
+      <Dialog open={historyOpen} onClose={() => setHistoryOpen(false)} maxWidth='md' fullWidth>
+        <DialogTitle>Price Book History</DialogTitle>
+        <DialogContent dividers>
+          {historyLoading ? (
+            <Box display='flex' justifyContent='center' alignItems='center' p={4}>
+              <Typography>Loading...</Typography>
+            </Box>
+          ) : historyData.length === 0 ? (
+            <Typography>No history found for this item.</Typography>
+          ) : (
+            <>
+              {/* Version selector to filter history */}
+              <Box display='flex' alignItems='center' gap={2} mb={2}>
+                <Typography variant='body2'>Show:</Typography>
+                <FormControl size='small' sx={{ minWidth: 160 }}>
+                  <Select
+                    value={historyVersionSelected}
+                    onChange={(e) => setHistoryVersionSelected(e.target.value)}
+                  >
+                    <MenuItem value='All'>All Versions</MenuItem>
+                    {historyVersions.map(v => (
+                      <MenuItem key={v} value={v}>{v}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
+
+              <TableContainer>
+                <Table size='small'>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell><b>Version</b></TableCell>
+                      <TableCell><b>Name</b></TableCell>
+                      <TableCell><b>Unit</b></TableCell>
+                      <TableCell><b>Price</b></TableCell>
+                      <TableCell><b>Status</b></TableCell>
+                      <TableCell><b>Created At</b></TableCell>
+                      <TableCell><b>Version End</b></TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {(
+                      historyVersionSelected === 'All'
+                        ? historyData
+                        : historyData.filter(h => h.version === historyVersionSelected)
+                    ).map(h => (
+                      <TableRow key={h.id}>
+                        <TableCell>{h.version}</TableCell>
+                        <TableCell>{h.name}</TableCell>
+                        <TableCell>{h.unit}</TableCell>
+                        <TableCell>{h.price}</TableCell>
+                        <TableCell>{h.status}</TableCell>
+                        <TableCell>{h.createdAt ? new Date(h.createdAt).toLocaleString() : '-'}</TableCell>
+                        <TableCell>
+                          {h.versionEndDate
+                            ? new Date(h.versionEndDate).toLocaleString()
+                            : 'active'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setHistoryOpen(false)} color='inherit'>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   )
 }
 
 export default SupplierCategoryPage
+
+

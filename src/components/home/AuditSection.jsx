@@ -50,6 +50,7 @@ import {
   FilterList as FilterIcon,
   Clear as ClearIcon
 } from '@mui/icons-material'
+import Loader from '../loader/Loader'
 
 const AuditSection = () => {
   const [audits, setAudits] = useState([])
@@ -214,9 +215,7 @@ const AuditSection = () => {
 
   if (loading) {
     return (
-      <Box display='flex' justifyContent='center' alignItems='center' minHeight='400px'>
-        <CircularProgress />
-      </Box>
+      <Loader/>
     )
   }
 
