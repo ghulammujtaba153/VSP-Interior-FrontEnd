@@ -167,7 +167,7 @@ const LeaveAvailability = () => {
           </Typography>
         </Box>
         <Stack direction="row" spacing={2}>
-          <Link href="/human-resource/calendar" passHref>
+          <Link href="/human-resource/calendar">
             <Button variant="outlined" startIcon={<CalendarToday />}>
               View Calendar
             </Button>

@@ -14,17 +14,20 @@ import PeopleIcon from "@mui/icons-material/People";
 import ScheduleIcon from "@mui/icons-material/Schedule";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import SchoolIcon from "@mui/icons-material/School";
+import CampaignIcon from '@mui/icons-material/Campaign';
 
 import StaffProfiles from "@/components/human-resources/StaffProfiles";
 import Timesheets from "@/components/human-resources/Timesheets";
 import LeaveAvailability from "@/components/human-resources/LeaveAvailability";
 import Certifications from "@/components/human-resources/Certifications";
+import Notices from "@/components/human-resources/Notices";
 
 const tabComponents = {
   staffProfiles: StaffProfiles,
   timesheets: Timesheets,
   leaveAvailability: LeaveAvailability,
   certifications: Certifications,
+  notices: Notices,
 };
 
 const ReportsPage = () => {
@@ -39,6 +42,7 @@ const ReportsPage = () => {
     { id: "timesheets", label: "Timesheets", icon: <ScheduleIcon /> },
     { id: "leaveAvailability", label: "Leave & Availability", icon: <EventAvailableIcon /> },
     { id: "certifications", label: "Certifications & Licences", icon: <SchoolIcon /> },
+    { id: "notices", label: "Notices", icon: <CampaignIcon /> },
   ];
 
   const ActiveComponent = tabComponents[activeTab];

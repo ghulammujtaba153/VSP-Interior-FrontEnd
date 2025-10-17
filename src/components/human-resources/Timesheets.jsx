@@ -38,14 +38,13 @@ const Timesheets = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ✅ Fetch from API
+  // ✅ Fetch timesheets
   const fetchData = async () => {
     setLoading(true);
     try {
       const res = await axios.get(
         `${BASE_URL}/api/employee-timesheet/get?Search=${searchTerm}`
       );
-      // your backend sends { total, page, limit, data: [...] }
       setData(res.data.data || []);
       console.log("Fetched Timesheets:", res.data);
     } catch (error) {
@@ -59,6 +58,24 @@ const Timesheets = () => {
     fetchData();
   }, []);
 
+  // ✅ Update timesheet status
+  const handleStatusUpdate = async (id, newStatus) => {
+    toast.loading("loading...")
+    try {
+      await axios.put(`${BASE_URL}/api/employee-timesheet/update/${id}`, {
+        status: newStatus,
+      });
+      toast.dismiss()
+      toast.success(`Timesheet ${newStatus} successfully`);
+      fetchData(); // refresh after update
+    } catch (error) {
+      toast.dismiss()
+      console.error("Status update failed:", error);
+      toast.error("Failed to update timesheet status");
+    } 
+  };
+
+  // ✅ Filter by search + status
   const filteredTimesheets = data.filter((ts) => {
     const matchesSearch =
       ts.employee?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -69,6 +86,7 @@ const Timesheets = () => {
     return matchesSearch && matchesStatus;
   });
 
+  // ✅ Render status badge
   const getStatusBadge = (status) => {
     switch (status?.toLowerCase()) {
       case "approved":
@@ -185,8 +203,10 @@ const Timesheets = () => {
                   <TableCell>Break</TableCell>
                   <TableCell>Overwork</TableCell>
                   <TableCell>Status</TableCell>
+                  <TableCell align="center">Actions</TableCell>
                 </TableRow>
               </TableHead>
+
               <TableBody>
                 {filteredTimesheets.map((ts) => (
                   <TableRow key={ts.id} hover>
@@ -201,6 +221,30 @@ const Timesheets = () => {
                     <TableCell>{ts.breakTime}</TableCell>
                     <TableCell>{ts.overWork}</TableCell>
                     <TableCell>{getStatusBadge(ts.status)}</TableCell>
+
+                    {/* ✅ Actions */}
+                    <TableCell align="center">
+                      <Stack direction="row" spacing={1} justifyContent="center">
+                        <Button
+                          size="small"
+                          variant="contained"
+                          color="success"
+                          disabled={ts.status?.toLowerCase() === "approved"}
+                          onClick={() => handleStatusUpdate(ts.id, "approved")}
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="contained"
+                          color="error"
+                          disabled={ts.status?.toLowerCase() === "rejected"}
+                          onClick={() => handleStatusUpdate(ts.id, "rejected")}
+                        >
+                          Reject
+                        </Button>
+                      </Stack>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
