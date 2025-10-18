@@ -18,7 +18,13 @@ import {
   TableHead,
   TableRow,
   Paper,
+  IconButton,
+  Tooltip,
+  TablePagination,
+  Box,
 } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
 
 const Notices = () => {
   const [data, setData] = useState([]);
@@ -26,11 +32,18 @@ const Notices = () => {
   const [openModal, setOpenModal] = useState(false);
   const [selectedNotice, setSelectedNotice] = useState(null);
 
+  // pagination
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
   // Fetch all notices
   const fetchNotices = async () => {
+    setLoading(true);
     try {
       const res = await axios.get(`${BASE_URL}/api/notices/get`);
-      setData(res.data);
+      const notices = res.data?.data || res.data || [];
+      setData(notices);
+      setPage(0);
     } catch (error) {
       console.error(error);
       toast.error("Failed to fetch notices");
@@ -52,6 +65,36 @@ const Notices = () => {
     setSelectedNotice(null);
     setOpenModal(false);
   };
+
+  const handleDelete = async (noticeId) => {
+    if (!window.confirm("Are you sure you want to delete this notice?")) return;
+    toast.loading("Deleting notice...");
+    try {
+      await axios.delete(`${BASE_URL}/api/notices/delete/${noticeId}`);
+      toast.dismiss();
+      toast.success("Notice deleted");
+      // close modal if deleted item was open
+      if (selectedNotice?.id === noticeId) {
+        handleCloseModal();
+      }
+      fetchNotices();
+    } catch (error) {
+      toast.dismiss();
+      console.error(error);
+      toast.error("Failed to delete notice");
+    }
+  };
+
+  // pagination handlers
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const paginatedData = data.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
   if (loading) {
     return <Loader />;
@@ -87,10 +130,10 @@ const Notices = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {data?.length > 0 ? (
-                  data.map((notice, index) => (
+                {paginatedData?.length > 0 ? (
+                  paginatedData.map((notice, index) => (
                     <TableRow key={notice.id}>
-                      <TableCell>{index + 1}</TableCell>
+                      <TableCell>{page * rowsPerPage + index + 1}</TableCell>
                       <TableCell>{notice.title}</TableCell>
                       <TableCell>{notice.content}</TableCell>
                       <TableCell>
@@ -119,14 +162,26 @@ const Notices = () => {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          color="secondary"
-                          onClick={() => handleEdit(notice)}
-                        >
-                          Edit
-                        </Button>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <Tooltip title="Edit">
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={() => handleEdit(notice)}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => handleDelete(notice.id)}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
                       </TableCell>
                     </TableRow>
                   ))
@@ -140,6 +195,17 @@ const Notices = () => {
               </TableBody>
             </Table>
           </TableContainer>
+
+          <TablePagination
+            component="div"
+            count={data.length}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[5, 10, 25]}
+            sx={{ mt: 1 }}
+          />
         </CardContent>
       </Card>
 

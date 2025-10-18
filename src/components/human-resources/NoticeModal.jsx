@@ -57,6 +57,7 @@ const NoticeModal = ({ open, onClose, notice, refresh }) => {
 
   // Handle form submit
   const handleSubmit = async () => {
+    toast.loading("Saving notice...");
     const form = new FormData();
     form.append("title", formData.title);
     form.append("content", formData.content);
@@ -69,10 +70,12 @@ const NoticeModal = ({ open, onClose, notice, refresh }) => {
       if (notice) {
         // Update existing notice - do NOT set Content-Type header manually
         await axios.put(`${BASE_URL}/api/notices/update/${notice.id}`, form);
+        toast.dismiss();
         toast.success("Notice updated successfully");
       } else {
         // Create new notice - let browser/axios set multipart boundary
         await axios.post(`${BASE_URL}/api/notices/create`, form);
+        toast.dismiss();
         toast.success("Notice added successfully");
       }
       refresh();

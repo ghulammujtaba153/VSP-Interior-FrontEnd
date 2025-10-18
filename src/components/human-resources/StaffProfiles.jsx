@@ -35,6 +35,7 @@ import axios from "axios";
 import UserModal from "../users/UserModal";
 import { toast } from "react-toastify";
 import { useAuth } from '@/context/authContext';
+import Link from "next/link";
 
 const StaffProfiles = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -303,6 +304,18 @@ const StaffProfiles = () => {
                         : ""}
                     </Typography>
                   </Stack>
+
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Link href={`/human-resource/staff/${member.id}`} passHref>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        >View Profile
+                      </Button>
+                    </Link>
+                    </Stack>
+
+
                 </Stack>
               </CardContent>
             </Card>
