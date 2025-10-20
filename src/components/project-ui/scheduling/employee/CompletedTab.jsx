@@ -17,7 +17,7 @@ const mockTasks = [
     id: 1,
     projectName: "Community Center Renovation",
     phase: "Final Review",
-    location: "Rawalpindi",
+    location: "Berlin, Germany",
     dueDate: "2025-03-15",
     status: "complete",
   },
@@ -25,7 +25,7 @@ const mockTasks = [
     id: 2,
     projectName: "School Library Upgrade",
     phase: "Inspection",
-    location: "Lahore",
+    location: "Paris, France",
     dueDate: "2025-04-05",
     status: "complete",
   },
@@ -33,19 +33,21 @@ const mockTasks = [
     id: 3,
     projectName: "Hospital Equipment Installation",
     phase: "Procurement",
-    location: "Karachi",
+    location: "Rome, Italy",
     dueDate: "2025-05-10",
     status: "in-progress",
   },
   {
     id: 4,
-    projectName: "Road Safety Campaign",
+    projectName: "City Road Safety Campaign",
     phase: "Awareness Drive",
-    location: "Islamabad",
+    location: "Amsterdam, Netherlands",
     dueDate: "2025-02-20",
     status: "complete",
   },
 ];
+
+
 
 const CompletedTab = () => {
   const completedTasks = mockTasks.filter((task) => task.status === "complete");

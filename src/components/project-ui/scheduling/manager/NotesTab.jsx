@@ -29,15 +29,15 @@ const mockProjects = [
 const mockNotes = [
   {
     id: "n1",
-    author: "Ghulam Mujtaba",
-    content: "Updated homepage layout. Need feedback from @Ali.",
+    author: "Jean Dupont",
+    content: "Updated homepage layout. Need feedback from @Maria.",
     projectId: "p1",
-    mentions: ["Ali"],
+    mentions: ["Maria"],
     timestamp: "2025-10-18T10:30:00Z",
   },
   {
     id: "n2",
-    author: "Ali Raza",
+    author: "Lukas Schmidt",
     content: "App crash fixed on Android 13. Tested and verified by QA team.",
     projectId: "p2",
     mentions: [],
@@ -45,21 +45,22 @@ const mockNotes = [
   },
   {
     id: "n3",
-    author: "Fatima Khan",
+    author: "Sofia Rossi",
     content: "Scheduled campaign launch for next Monday.",
     projectId: "p3",
-    mentions: ["Hassan"],
+    mentions: ["Hugo"],
     timestamp: "2025-10-17T09:15:00Z",
   },
   {
     id: "n4",
-    author: "Hassan Ahmed",
-    content: "Added new banner design. Waiting for @Ghulam to review.",
+    author: "Hugo Müller",
+    content: "Added new banner design. Waiting for @Jean to review.",
     projectId: "p1",
-    mentions: ["Ghulam"],
+    mentions: ["Jean"],
     timestamp: "2025-10-20T08:00:00Z",
   },
 ];
+
 
 const NotesTab = () => {
   const [newNote, setNewNote] = useState("");

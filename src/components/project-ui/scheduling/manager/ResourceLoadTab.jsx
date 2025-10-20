@@ -19,8 +19,8 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 const mockProjects = [
   {
     id: "1",
-    name: "Bridge Construction",
-    assignedWorkers: ["Ali", "Hamza", "Sara"],
+    name: "Bridge Renovation",
+    assignedWorkers: ["Jean Dupont", "Lukas Schmidt", "Sofia Rossi"],
     phases: [
       { name: "Planning", estimatedHours: 40, status: "completed" },
       { name: "Construction", estimatedHours: 80, status: "in-progress" },
@@ -29,8 +29,8 @@ const mockProjects = [
   },
   {
     id: "2",
-    name: "Road Expansion Project",
-    assignedWorkers: ["Ahmed", "Bilal", "Sara"],
+    name: "Highway Expansion",
+    assignedWorkers: ["Hans Müller", "Clara Weber", "Sofia Rossi"],
     phases: [
       { name: "Survey", estimatedHours: 50, status: "completed" },
       { name: "Machinery Setup", estimatedHours: 60, status: "in-progress" },
@@ -39,8 +39,8 @@ const mockProjects = [
   },
   {
     id: "3",
-    name: "Office Complex Build",
-    assignedWorkers: ["Ali", "Zainab", "Hassan", "Ayesha"],
+    name: "Office Complex Development",
+    assignedWorkers: ["Luca Bianchi", "Emma Fischer", "Hugo Schmidt", "Isabella Moreau"],
     phases: [
       { name: "Foundation", estimatedHours: 90, status: "in-progress" },
       { name: "Interior Design", estimatedHours: 40, status: "pending" },
@@ -48,14 +48,15 @@ const mockProjects = [
   },
   {
     id: "4",
-    name: "Solar Plant Installation",
-    assignedWorkers: ["Hina", "Tariq"],
+    name: "Solar Farm Installation",
+    assignedWorkers: ["Anna Becker", "Tobias Weber"],
     phases: [
       { name: "Panel Setup", estimatedHours: 60, status: "completed" },
       { name: "Testing", estimatedHours: 40, status: "in-progress" },
     ],
   },
 ];
+
 
 const ResourceLoadTab = () => {
   // Extract unique worker names

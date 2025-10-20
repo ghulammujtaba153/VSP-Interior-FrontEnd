@@ -14,13 +14,13 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 const mockProjects = [
   {
     id: 1,
-    name: "Bridge Construction",
-    client: "NLC",
-    location: "Lahore",
+    name: "Bridge Renovation",
+    client: "EuroConstructions GmbH",
+    location: "Berlin, Germany",
     startDate: "2025-09-01",
     endDate: "2025-12-01",
     status: "on-schedule",
-    assignedWorkers: ["Ali", "Hassan"],
+    assignedWorkers: ["Jean Dupont", "Lukas Schmidt"],
     phases: [
       {
         id: 1,
@@ -50,6 +50,8 @@ const mockProjects = [
     ],
   },
 ];
+
+
 
 const GanttTab = () => {
   const getPhaseColor = (status) => {
