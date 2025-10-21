@@ -110,7 +110,7 @@ const VerticalMenu = ({ scrollMenu }) => {
           </MenuItem>
         </PermissionWrapper>
 
-        {/* <PermissionWrapper resource="cabinet">
+        <PermissionWrapper resource="cabinet">
             <MenuItem href='/cabinet'>
               Material
             </MenuItem>
@@ -121,7 +121,7 @@ const VerticalMenu = ({ scrollMenu }) => {
             <MenuItem href='/cabinet/material'>
               Cabinet
             </MenuItem>
-          </PermissionWrapper> */}
+          </PermissionWrapper> 
 
 
         {/* <MenuItem href='/project' icon={<i className='tabler-report' />}>
@@ -130,11 +130,11 @@ const VerticalMenu = ({ scrollMenu }) => {
 
         
 
-        {/* <MenuItem href='/quotes' icon={<i className='tabler-report' />}>
+        <MenuItem href='/quotes' icon={<i className='tabler-report' />}>
           Tender/ Quotes
-        </MenuItem> */}
+        </MenuItem> 
 
-        {/* <MenuItem href='/purchasing' icon={<i className='tabler-moneybag' />}>
+        <MenuItem href='/purchasing' icon={<i className='tabler-moneybag' />}>
           Purchasing
         </MenuItem>
 
@@ -146,25 +146,24 @@ const VerticalMenu = ({ scrollMenu }) => {
           <MenuItem href='/projects' icon={<i className='tabler-file-text' />}>
             Projects
           </MenuItem>
-        </SubMenu> */}
+        </SubMenu> 
 
-        {/* <MenuItem href='/tracking-board' icon={<i className='tabler-chart-bar' />}>
+        <MenuItem href='/tracking-board' icon={<i className='tabler-chart-bar' />}>
           VSP TrackBoard
-        </MenuItem> */}
+        </MenuItem>
 
         
 
-        {/* <MenuItem href='/accounts' icon={<i className='tabler-cash' />}>
+        <MenuItem href='/accounts' icon={<i className='tabler-cash' />}>
           Accounts
         </MenuItem>
 
         <MenuItem href='/reports' icon={<i className='tabler-file-text' />}>
           Reports
-        </MenuItem> */}
-
+        </MenuItem> 
         
 
-        {/* <SubMenu label='HR & Documentation' icon={<i className='tabler-file-text' />}>
+        <SubMenu label='HR & Documentation' icon={<i className='tabler-file-text' />}>
           <MenuItem href='/human-resource' icon={<i className='tabler-file-text' />}>
             HR & Documentation
           </MenuItem>
@@ -173,7 +172,7 @@ const VerticalMenu = ({ scrollMenu }) => {
             Employee Access
           </MenuItem>
         
-        </SubMenu> */}
+        </SubMenu> 
 
         
 
@@ -185,7 +184,7 @@ const VerticalMenu = ({ scrollMenu }) => {
 
         {/* <SubMenu label='HR & Documentation' icon={<i className='tabler-file-text' />}></SubMenu> */}
 
-        {/* <SubMenu label='Settings' icon={<i className='tabler-settings' />}></SubMenu> */}
+        <SubMenu label='Settings' icon={<i className='tabler-settings' />}></SubMenu> 
       
       </Menu>
     </ScrollWrapper>
