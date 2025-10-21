@@ -148,9 +148,9 @@ const VerticalMenu = ({ scrollMenu }) => {
           </MenuItem>
         </SubMenu>
 
-        <MenuItem href='/tracking-board' icon={<i className='tabler-chart-bar' />}>
+        {/* <MenuItem href='/tracking-board' icon={<i className='tabler-chart-bar' />}>
           VSP TrackBoard
-        </MenuItem>
+        </MenuItem> */}
 
         
 
