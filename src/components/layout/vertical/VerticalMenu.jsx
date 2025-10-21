@@ -130,9 +130,9 @@ const VerticalMenu = ({ scrollMenu }) => {
 
         
 
-        <MenuItem href='/quotes' icon={<i className='tabler-report' />}>
+        {/* <MenuItem href='/quotes' icon={<i className='tabler-report' />}>
           Tender/ Quotes
-        </MenuItem>
+        </MenuItem> */}
 
         {/* <MenuItem href='/purchasing' icon={<i className='tabler-moneybag' />}>
           Purchasing
