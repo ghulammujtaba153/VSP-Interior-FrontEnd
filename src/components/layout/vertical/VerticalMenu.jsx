@@ -134,7 +134,7 @@ const VerticalMenu = ({ scrollMenu }) => {
           Tender/ Quotes
         </MenuItem>
 
-        <MenuItem href='/purchasing' icon={<i className='tabler-moneybag' />}>
+        {/* <MenuItem href='/purchasing' icon={<i className='tabler-moneybag' />}>
           Purchasing
         </MenuItem>
 
@@ -146,7 +146,7 @@ const VerticalMenu = ({ scrollMenu }) => {
           <MenuItem href='/projects' icon={<i className='tabler-file-text' />}>
             Projects
           </MenuItem>
-        </SubMenu>
+        </SubMenu> */}
 
         {/* <MenuItem href='/tracking-board' icon={<i className='tabler-chart-bar' />}>
           VSP TrackBoard
