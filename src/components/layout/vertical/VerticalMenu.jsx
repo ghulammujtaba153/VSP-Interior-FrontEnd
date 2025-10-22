@@ -110,7 +110,7 @@ const VerticalMenu = ({ scrollMenu }) => {
           </MenuItem>
         </PermissionWrapper>
 
-        <PermissionWrapper resource="cabinet">
+        {/* <PermissionWrapper resource="cabinet">
             <MenuItem href='/cabinet'>
               Material
             </MenuItem>
@@ -121,7 +121,7 @@ const VerticalMenu = ({ scrollMenu }) => {
             <MenuItem href='/cabinet/material'>
               Cabinet
             </MenuItem>
-          </PermissionWrapper> 
+          </PermissionWrapper>  */}
 
 
         {/* <MenuItem href='/project' icon={<i className='tabler-report' />}>

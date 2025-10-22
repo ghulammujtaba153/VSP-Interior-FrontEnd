@@ -1,73 +1,95 @@
 "use client";
 
-import Loader from '@/components/loader/Loader'
-import GanttChart from '@/components/projects/GanttChart'
-import OverAllProject from '@/components/projects/OverAllProject'
-import { BASE_URL } from '@/configs/url'
-import axios from 'axios'
-import { useParams } from 'next/navigation'
-import React, { useEffect, useState } from 'react'
-import { toast } from 'react-toastify'
-
-import { Tabs, Tab, Box, Button } from '@mui/material'
+import Loader from '@/components/loader/Loader';
+import { BASE_URL } from '@/configs/url';
+import axios from 'axios';
+import { useParams } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
+import {
+  Box,
+  Button,
+  Tabs,
+  Tab,
+  Typography
+} from '@mui/material';
 import Link from 'next/link';
-import GanttTry from '@/components/projects/GanttTry';
+import ProjectOverview from '@/components/project-ui/scheduling/project-details/ProjectOverview';
+import Kanban from '@/components/project-ui/scheduling/project-details/Kanban';
+import GanttChart from '@/components/project-ui/scheduling/project-details/GanttChart';
+
 
 const Page = () => {
-  const { id } = useParams()
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [tabValue, setTabValue] = useState(0)
-
-  const handleChange = (event, newValue) => {
-    setTabValue(newValue)
-  }
+  const { id } = useParams();
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [tab, setTab] = useState(0);
 
   const fetchProject = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const res = await axios.get(`${BASE_URL}/api/projects/get/${id}`)
-      setData(res.data.project)
+      const res = await axios.get(`${BASE_URL}/api/job-scheduling/get/${id}`);
+      setData(res.data.job || res.data.jobs?.[0]); // support both shapes
     } catch (error) {
-      toast.error('Error fetching project data')
-      console.error(error)
+      toast.error('Error fetching project data');
+      console.error(error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    if (id) {
-      fetchProject()
-    }
-  }, [id])
+    if (id) fetchProject();
+  }, [id]);
 
-  if (loading) return <Loader />
+  if (loading) return <Loader />;
 
   return (
     <Box sx={{ width: '100%', typography: 'body1' }}>
-      <Button component={Link} href="/projects" variant="contained" sx={{ mb: 2 }}>Back</Button>
-      <Tabs
-        value={tabValue}
-        onChange={handleChange}
-        aria-label="project tabs"
-        textColor="primary"
-        indicatorColor="primary"
-        variant="fullWidth"
+      <Button
+        component={Link}
+        href="/projects"
+        variant="contained"
+        sx={{ mb: 2 }}
       >
-        <Tab label="Project Overview" />
-        <Tab label="Project Timeline" />
-        <Tab label="Tasks Management"  /> 
-      </Tabs>
+        Back
+      </Button>
 
-      <Box sx={{ mt: 3 }}>
-        {tabValue === 0 && <OverAllProject project={data} />}
-        {tabValue === 1 && <GanttChart project={data} />}
-        {tabValue === 2 && <GanttTry project={data}/>}
+      {data ? (
+        <>
+          <Tabs
+            value={tab}
+            onChange={(e, newValue) => setTab(newValue)}
+            sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}
+          >
+            <Tab label="Overview" />
+            <Tab label="Kanban" />
+            <Tab label="Gantt Chart" />
+          </Tabs>
 
-      </Box>
+          {tab === 0 && (
+            <Box sx={{ mt: 2 }}>
+              <ProjectOverview data={data} />
+            </Box>
+          )}
+
+          {tab === 1 && (
+            <Box sx={{ mt: 2 }}>
+              <Kanban projectId={id} data={data}/>
+            </Box>
+          )}
+
+          {tab === 2 && (
+            <Box sx={{ mt: 2 }}>
+              <GanttChart projectId={id} data={data}/>
+            </Box>
+          )}
+        </>
+      ) : (
+        <Typography>No project data found.</Typography>
+      )}
     </Box>
-  )
-}
+  );
+};
 
-export default Page
+export default Page;

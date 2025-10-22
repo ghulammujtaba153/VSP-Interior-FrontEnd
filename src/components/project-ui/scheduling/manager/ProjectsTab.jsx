@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -14,112 +14,128 @@ import {
   TableContainer,
   Chip,
   IconButton,
-  Menu,
-  MenuItem,
+  TablePagination,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import ConstructionIcon from "@mui/icons-material/Construction";
 import AddScheduleDialog from "./AddScheduleDialog";
-
-// 🔹 Mock project data (you can later replace with API call)
-const mockProjects = [
-  {
-    id: "1",
-    name: "Eiffel Tower Renovation",
-    client: "Paris Construction Ltd.",
-    location: "Paris, France",
-    startDate: "2025-02-01",
-    endDate: "2025-08-15",
-    status: "on-schedule",
-    assignedWorkers: ["Jean", "Marie", "Louis"],
-  },
-  {
-    id: "2",
-    name: "Berlin Metro Expansion",
-    client: "Berlin Transport Authority",
-    location: "Berlin, Germany",
-    startDate: "2025-01-10",
-    endDate: "2025-07-20",
-    status: "under-resourced",
-    assignedWorkers: ["Friedrich", "Anna"],
-  },
-  {
-    id: "3",
-    name: "London Office Complex",
-    client: "Thames Real Estate Group",
-    location: "London, UK",
-    startDate: "2025-03-05",
-    endDate: "2025-11-10",
-    status: "overdue",
-    assignedWorkers: ["Oliver", "Emma", "Liam", "Sophia"],
-  },
-  {
-    id: "4",
-    name: "Barcelona Solar Plant",
-    client: "SolarTech Europe",
-    location: "Barcelona, Spain",
-    startDate: "2025-04-15",
-    endDate: "2025-09-30",
-    status: "on-schedule",
-    assignedWorkers: ["Carlos", "Lucia"],
-  },
-];
-
+import Loader from "@/components/loader/Loader";
+import axios from "axios";
+import { BASE_URL } from "@/configs/url";
+import { toast } from "react-toastify";
+import Link from "next/link"
 
 const ProjectsTab = () => {
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [menuProject, setMenuProject] = useState(null);
+  const [showDialog, setShowDialog] = useState(false);
+  const [editingJob, setEditingJob] = useState(null);
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleMenuOpen = (event, project) => {
-    setAnchorEl(event.currentTarget);
-    setMenuProject(project);
+  // 🔹 Pagination states
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+
+  const fetchProjects = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/api/job-scheduling/get`);
+      setProjects(res.data.jobs || []);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleMenuClose = () => {
-    setAnchorEl(null);
-    setMenuProject(null);
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  // 🔹 Delete job
+  const handleDelete = async (id) => {
+    if (!confirm("Are you sure you want to delete this job schedule?")) return;
+    toast.loading("loading...")
+    try {
+      await axios.delete(`${BASE_URL}/api/job-scheduling/delete/${id}`);
+      toast.dismiss()
+      toast.success("deleted successfully")
+      await fetchProjects();
+    } catch (error) {
+      toast.dismiss()
+      toast.error("error deleting")
+      console.error("Error deleting job:", error);
+    }
   };
 
-  // 🔹 Status chip color logic
+  // 🔹 Open Add/Edit dialog
+  const handleAddNew = () => {
+    setEditingJob(null);
+    setShowDialog(true);
+  };
+
+  const handleEdit = (job) => {
+    setEditingJob(job);
+    setShowDialog(true);
+  };
+
+  // 🔹 Pagination handlers
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  if (loading) return <Loader />;
+
   const getStatusChip = (status) => {
     switch (status) {
-      case "on-schedule":
-        return <Chip label="On Schedule" color="success" size="small" />;
-      case "under-resourced":
-        return <Chip label="Under-resourced" color="warning" size="small" />;
-      case "overdue":
-        return <Chip label="Overdue" color="error" size="small" />;
+      case "scheduled":
+        return <Chip label="Scheduled" color="success" size="small" />;
+      case "in-progress":
+        return <Chip label="In Progress" color="warning" size="small" />;
+      case "completed":
+        return <Chip label="Completed" color="primary" size="small" />;
       default:
         return <Chip label={status} size="small" />;
     }
   };
 
+  // 🔹 Calculate paginated data
+  const paginatedProjects = projects.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
       {/* Header */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <Box
+        sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+      >
         <Typography variant="h6" fontWeight="bold">
-          All Projects
+          Job Scheduling
         </Typography>
         <Button
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={() => setShowAddDialog(true)}
+          onClick={handleAddNew}
           sx={{ boxShadow: 2 }}
         >
           Add New Schedule
         </Button>
       </Box>
 
-      {/* Projects Table */}
+      {/* Jobs Table */}
       <Card elevation={3}>
         <TableContainer>
           <Table>
             <TableHead>
               <TableRow sx={{ backgroundColor: "action.hover" }}>
                 <TableCell sx={{ fontWeight: 600 }}>Project Name</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>Client</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Location</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Start Date</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>End Date</TableCell>
@@ -130,64 +146,79 @@ const ProjectsTab = () => {
             </TableHead>
 
             <TableBody>
-              {mockProjects.map((project) => (
-                <TableRow
-                  key={project.id}
-                  hover
-                  sx={{
-                    "&:hover": { backgroundColor: "action.selected" },
-                    transition: "background 0.2s ease",
-                  }}
-                >
-                  <TableCell>{project.name}</TableCell>
-                  <TableCell>{project.client}</TableCell>
-                  <TableCell>{project.location}</TableCell>
-                  <TableCell>{project.startDate}</TableCell>
-                  <TableCell>{project.endDate}</TableCell>
-                  <TableCell>{getStatusChip(project.status)}</TableCell>
+              {paginatedProjects.map((job) => (
+                <TableRow key={job.id} hover>
+                  <TableCell>{job.projectSetup?.projectName || "N/A"}</TableCell>
+                  <TableCell>{job.projectSetup?.siteLocation || "N/A"}</TableCell>
+                  <TableCell>{job.startDate?.slice(0, 10)}</TableCell>
+                  <TableCell>{job.endDate?.slice(0, 10)}</TableCell>
+                  <TableCell>{getStatusChip(job.status)}</TableCell>
                   <TableCell>
                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                      {project.assignedWorkers.map((worker, idx) => (
-                        <Chip
-                          key={idx}
-                          label={worker}
-                          size="small"
-                          variant="outlined"
-                        />
-                      ))}
+                      {job.workers?.length > 0 ? (
+                        job.workers.map((w) => (
+                          <Chip
+                            key={w.id}
+                            label={`${w.name} (${w.ProjectSetupJobWorker?.hoursAssigned || 0} hrs)`}
+                            size="small"
+                          />
+                        ))
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">
+                          No workers
+                        </Typography>
+                      )}
                     </Box>
                   </TableCell>
+
                   <TableCell>
-                    <IconButton onClick={(e) => handleMenuOpen(e, project)}>
-                      <MoreVertIcon />
-                    </IconButton>
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      <Link href={`/projects/${job.id}`}>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          color="info"
+                          startIcon={<ConstructionIcon />}
+                        >
+                          Manage
+                        </Button>
+                      </Link>
+                      <IconButton color="primary" onClick={() => handleEdit(job)}>
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton color="error" onClick={() => handleDelete(job.id)}>
+                        <DeleteIcon />
+                      </IconButton>
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </TableContainer>
+
+        {/* Pagination controls */}
+        <TablePagination
+          component="div"
+          count={projects.length}
+          page={page}
+          onPageChange={handleChangePage}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          rowsPerPageOptions={[5, 10, 25]}
+          sx={{ px: 2 }}
+        />
       </Card>
 
-      {/* Actions Menu */}
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={handleMenuClose}
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "right",
-        }}
-      >
-        <MenuItem onClick={handleMenuClose}>View Details</MenuItem>
-        <MenuItem onClick={handleMenuClose}>Edit Schedule</MenuItem>
-        <MenuItem onClick={handleMenuClose} sx={{ color: "error.main" }}>
-          Delete
-        </MenuItem>
-      </Menu>
-
-      {/* Add Schedule Dialog */}
-      <AddScheduleDialog open={showAddDialog} onOpenChange={setShowAddDialog} />
+      {/* Add / Edit Dialog */}
+      {showDialog && (
+        <AddScheduleDialog
+          open={showDialog}
+          onOpenChange={setShowDialog}
+          editData={editingJob}
+          refreshList={fetchProjects}
+        />
+      )}
     </Box>
   );
 };

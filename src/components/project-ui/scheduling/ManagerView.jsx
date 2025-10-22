@@ -39,10 +39,10 @@ const ManagerView = () => {
 
   const tabData = [
     { label: "Projects", icon: <FolderIcon fontSize="small" />, component: <ProjectsTab /> },
-    { label: "Gantt View", icon: <TimelineIcon fontSize="small" />, component: <GanttTab /> },
-    { label: "Calendar", icon: <CalendarMonthIcon fontSize="small" />, component: <CalendarTab /> },
-    { label: "Resource Load", icon: <BarChartIcon fontSize="small" />, component: <ResourceLoadTab /> },
-    { label: "Notes", icon: <DescriptionIcon fontSize="small" />, component: <NotesTab /> },
+    // { label: "Gantt View", icon: <TimelineIcon fontSize="small" />, component: <GanttTab /> },
+    // { label: "Calendar", icon: <CalendarMonthIcon fontSize="small" />, component: <CalendarTab /> },
+    // { label: "Resource Load", icon: <BarChartIcon fontSize="small" />, component: <ResourceLoadTab /> },
+    // { label: "Notes", icon: <DescriptionIcon fontSize="small" />, component: <NotesTab /> },
   ];
 
   return (
