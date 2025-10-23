@@ -2,21 +2,14 @@
 
 import { useState, useEffect } from "react";
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
   Button,
   MenuItem,
   CircularProgress,
   Box,
   Typography,
-  FormControl,
-  InputLabel,
-  Select,
   Chip,
   IconButton,
+  Tooltip,
 } from "@mui/material";
 import { Add as AddIcon, Save as SaveIcon, Edit as EditIcon, Delete as DeleteIcon } from "@mui/icons-material";
 import { Gantt, ViewMode } from "gantt-task-react";
@@ -24,6 +17,174 @@ import "gantt-task-react/dist/index.css";
 import { BASE_URL } from "@/configs/url";
 import axios from "axios";
 import { toast } from "react-toastify";
+import GanttTaskModal from "./GanttTaskModal";
+
+// Custom Task List Item Component
+const CustomTaskListTableRow = ({ task, onTaskClick, onEditTask, onDeleteTask }) => {
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString('en-US', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  return (
+    <div 
+      className="flex items-center border-b hover:bg-gray-50 cursor-pointer group relative"
+      style={{ height: '44px' }}
+      onClick={() => onTaskClick(task)}
+    >
+      {/* Task Name Column */}
+      <div className="flex-1 min-w-0 px-2 py-1 border-r">
+        <div className="truncate" title={task.name}>
+          {task.name}
+        </div>
+      </div>
+      
+      {/* From Date Column */}
+      <div className="w-32 px-2 py-1 border-r">
+        <div className="text-sm text-gray-600 truncate" title={formatDate(task.start)}>
+          {formatDate(task.start)}
+        </div>
+      </div>
+      
+      {/* To Date Column */}
+      <div className="w-32 px-2 py-1 border-r">
+        <div className="text-sm text-gray-600 truncate" title={formatDate(task.end)}>
+          {formatDate(task.end)}
+        </div>
+      </div>
+
+      {/* Hover Actions */}
+      <div className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1">
+        <Tooltip title="Edit Task">
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEditTask(task);
+            }}
+            color="primary"
+            sx={{ backgroundColor: 'white', '&:hover': { backgroundColor: '#f0f0f0' } }}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Delete Task">
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDeleteTask(task.id);
+            }}
+            color="error"
+            sx={{ backgroundColor: 'white', '&:hover': { backgroundColor: '#f0f0f0' } }}
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </div>
+    </div>
+  );
+};
+
+// Custom Task List Component
+const CustomTaskListTable = ({ 
+  tasks, 
+  onTaskClick, 
+  onEditTask, 
+  onDeleteTask 
+}) => {
+  return (
+    <div className="border-r bg-white">
+      {/* Header */}
+      <div className="flex items-center border-b font-semibold bg-gray-50" style={{ height: '44px' }}>
+        <div className="flex-1 min-w-0 px-2 py-1 border-r">Name</div>
+        <div className="w-32 px-2 py-1 border-r">From</div>
+        <div className="w-32 px-2 py-1 border-r">To</div>
+      </div>
+      
+      {/* Task Rows */}
+      {tasks.map((task) => (
+        <CustomTaskListTableRow
+          key={task.id}
+          task={task}
+          onTaskClick={onTaskClick}
+          onEditTask={onEditTask}
+          onDeleteTask={onDeleteTask}
+        />
+      ))}
+    </div>
+  );
+};
+
+// Alternative approach: Use the default TaskListTable but add actions
+const TaskListWithActions = (props) => {
+  const { onTaskClick, onEditTask, onDeleteTask, ...restProps } = props;
+
+  return (
+    <table className="gantt-tasklist-table">
+      <thead>
+        <tr>
+          <th className="gantt-tasklist-name-header">Name</th>
+          <th className="gantt-tasklist-from-header">From</th>
+          <th className="gantt-tasklist-to-header">To</th>
+          <th className="gantt-tasklist-actions-header">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {restProps.tasks.map((task) => (
+          <tr 
+            key={task.id} 
+            className="gantt-tasklist-row group hover:bg-gray-50 cursor-pointer"
+            onClick={() => onTaskClick(task)}
+          >
+            <td className="gantt-tasklist-name-cell">
+              <div className="truncate" title={task.name}>
+                {task.name}
+              </div>
+            </td>
+            <td className="gantt-tasklist-from-cell">
+              {new Date(task.start).toLocaleDateString()}
+            </td>
+            <td className="gantt-tasklist-to-cell">
+              {new Date(task.end).toLocaleDateString()}
+            </td>
+            <td className="gantt-tasklist-actions-cell">
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1 justify-center">
+                <Tooltip title="Edit Task">
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEditTask(task);
+                    }}
+                    color="primary"
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Delete Task">
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteTask(task.id);
+                    }}
+                    color="error"
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+};
 
 export default function GanttChart({ projectId, data }) {
   const [viewMode, setViewMode] = useState(ViewMode.Month);
@@ -78,6 +239,8 @@ export default function GanttChart({ projectId, data }) {
         `${BASE_URL}/api/project-gantt-chart/get/${data.id}`
       );
 
+      console.log("API Response:", response.data);
+
       // Map API data to Gantt chart format
       const chartData = response.data.chart.map((item) => ({
         id: item.id.toString(),
@@ -93,6 +256,7 @@ export default function GanttChart({ projectId, data }) {
         originalData: item // Keep original data for updates
       }));
 
+      console.log("Mapped tasks:", chartData);
       setTasks(chartData);
     } catch (error) {
       console.error("Error fetching Gantt chart:", error);
@@ -233,30 +397,53 @@ export default function GanttChart({ projectId, data }) {
   const handleSaveChanges = async () => {
     try {
       setSaving(true);
-      
-      // Update all tasks that have been modified
-      const updatePromises = tasks.map(task => {
-        if (task.originalData) {
-          // Check if task has been modified
-          const hasChanged = JSON.stringify(task) !== JSON.stringify({
-            ...task,
-            originalData: task.originalData
+
+      const modifiedTasks = tasks.filter(task => {
+        const o = task.originalData || {};
+        return (
+          task.name !== o.name ||
+          new Date(task.start).toISOString() !== new Date(o.start).toISOString() ||
+          new Date(task.end).toISOString() !== new Date(o.end).toISOString() ||
+          task.progress !== o.progress ||
+          task.project !== o.project ||
+          task.description !== o.description ||
+          task.status !== o.status ||
+          JSON.stringify(task.dependencies || []) !== JSON.stringify(o.dependencies || [])
+        );
+      });
+
+      if (modifiedTasks.length === 0) {
+        toast.info("No changes to save");
+        return;
+      }
+
+      const updatePromises = modifiedTasks.map(task => {
+        const payload = {
+          name: task.name,
+          start: new Date(task.start),
+          end: new Date(task.end),
+          progress: task.progress,
+          dependencies: task.dependencies || [],
+          project: task.project || "General",
+          description: task.description || "",
+          status: task.status || "pending",
+        };
+
+        return axios
+          .put(`${BASE_URL}/api/project-gantt-chart/update/${task.id}`, payload)
+          .then(() => {
+            setTasks(prev =>
+              prev.map(t =>
+                t.id === task.id
+                  ? { ...t, originalData: { ...t.originalData, ...payload } }
+                  : t
+              )
+            );
+          })
+          .catch(err => {
+            console.error("Failed to update task:", task.name, err);
+            toast.error(`Failed to update "${task.name}"`);
           });
-          
-          if (hasChanged) {
-            return handleUpdateTask(task.id, {
-              name: task.name,
-              start: task.start,
-              end: task.end,
-              progress: task.progress,
-              dependencies: task.dependencies,
-              project: task.project,
-              description: task.description,
-              status: task.status
-            });
-          }
-        }
-        return Promise.resolve();
       });
 
       await Promise.all(updatePromises);
@@ -272,6 +459,7 @@ export default function GanttChart({ projectId, data }) {
 
   // Handle edit task
   const handleEditTask = (task) => {
+    console.log("Editing task:", task);
     setEditingTask(task);
     setNewTask({
       name: task.name,
@@ -288,6 +476,7 @@ export default function GanttChart({ projectId, data }) {
 
   // Handle task click to open edit modal
   const handleTaskClick = (task) => {
+    console.log("Task clicked:", task);
     handleEditTask(task);
   };
 
@@ -340,33 +529,98 @@ export default function GanttChart({ projectId, data }) {
     }
   };
 
-  const getBarStyle = (stage) => {
-    const baseStyle = {
-      cursor: "pointer",
-      transition: "all 0.2s ease",
-      "&:hover": {
-        opacity: 0.8,
-        transform: "scale(1.02)",
-      },
-    };
+  // Handle modal save action
+  const handleModalSave = () => {
+    if (editingTask) {
+      handleUpdateExistingTask();
+    } else {
+      handleAddTask();
+    }
+  };
 
+  // Handle modal close
+  const handleModalClose = () => {
+    setOpen(false);
+    setEditingTask(null);
+    setNewTask({
+      name: "",
+      start: "",
+      end: "",
+      progress: 0,
+      project: "Design",
+      description: "",
+      status: "pending",
+      dependencies: []
+    });
+  };
+
+  const getBarStyle = (stage) => {
     switch (stage) {
       case "Design":
-        return { ...baseStyle, backgroundColor: "#93c5fd" };
+        return "#93c5fd";
       case "Production":
-        return { ...baseStyle, backgroundColor: "#86efac" };
+        return "#86efac";
       case "Logistics":
-        return { ...baseStyle, backgroundColor: "#fde68a" };
+        return "#fde68a";
       case "Installation":
-        return { ...baseStyle, backgroundColor: "#fca5a5" };
+        return "#fca5a5";
       default:
-        return { ...baseStyle, backgroundColor: "#cbd5e1" };
+        return "#cbd5e1";
     }
+  };
+
+  // Create sample tasks if no tasks exist (for testing)
+  const createSampleTasks = () => {
+    const sampleTasks = [
+      {
+        id: "1",
+        name: "Project Planning",
+        type: "task",
+        start: new Date(2024, 0, 1),
+        end: new Date(2024, 0, 15),
+        progress: 100,
+        dependencies: [],
+        project: "Design",
+        description: "Initial project planning phase",
+        status: "completed",
+        originalData: {}
+      },
+      {
+        id: "2",
+        name: "Design Phase",
+        type: "task",
+        start: new Date(2024, 0, 16),
+        end: new Date(2024, 1, 15),
+        progress: 75,
+        dependencies: ["1"],
+        project: "Design",
+        description: "Detailed design work",
+        status: "in-progress",
+        originalData: {}
+      },
+      {
+        id: "3",
+        name: "Production",
+        type: "task",
+        start: new Date(2024, 1, 16),
+        end: new Date(2024, 2, 15),
+        progress: 0,
+        dependencies: ["2"],
+        project: "Production",
+        description: "Manufacturing phase",
+        status: "pending",
+        originalData: {}
+      }
+    ];
+    setTasks(sampleTasks);
   };
 
   useEffect(() => {
     if (data?.id) {
       getGanttChart();
+    } else {
+      setLoading(false);
+      createSampleTasks();
     }
   }, [data?.id]);
 
@@ -437,6 +691,15 @@ export default function GanttChart({ projectId, data }) {
           >
             Add Task
           </Button>
+
+          {tasks.length === 0 && (
+            <Button
+              variant="outlined"
+              onClick={createSampleTasks}
+            >
+              Load Sample Tasks
+            </Button>
+          )}
         </div>
       </div>
 
@@ -448,171 +711,83 @@ export default function GanttChart({ projectId, data }) {
               key={stage}
               label={stage}
               size="small"
-              style={{ backgroundColor: getBarStyle(stage).backgroundColor }}
+              style={{ backgroundColor: getBarStyle(stage) }}
             />
           ))}
         </div>
         <Typography variant="caption" color="textSecondary">
-          💡 Click on any task to edit it
+          💡 Click on any task to edit it, or hover in the task list for edit/delete buttons
         </Typography>
+      </div>
+
+      {/* Debug Info */}
+      <div className="mb-2 text-sm text-gray-600">
+        Tasks loaded: {tasks.length}
       </div>
 
       {/* Gantt Chart */}
       {tasks.length > 0 ? (
-        <div className="overflow-x-auto min-w-[1000px]">
+        <div className="overflow-x-auto min-w-[1000px] border rounded">
           <Gantt
-            tasks={tasks.map((t) => ({
-              ...t,
-              styles: getBarStyle(t.project),
-            }))}
+            tasks={tasks}
             viewMode={viewMode}
             onDateChange={(task, changes) => handleTaskChange(task, changes)}
             onProgressChange={(task, changes) => handleTaskChange(task, changes)}
             onDelete={(task) => handleDeleteTask(task.id)}
             onTaskClick={handleTaskClick}
-            listCellWidth="220px"
+            listCellWidth="150px"
             columnWidth={viewMode === ViewMode.Day ? 80 : 120}
             locale="en-GB"
+            barBackgroundColor={(task) => getBarStyle(task.project)}
+            barBackgroundSelectedColor={(task) => getBarStyle(task.project)}
+            barProgressColor="#374151"
+            barProgressSelectedColor="#1f2937"
+            barCornerRadius={4}
+            handleWidth={8}
+            fontFamily="inherit"
+            fontSize="12"
+            // Use the custom task list with dates
+            TaskListTable={(props) => (
+              <CustomTaskListTable
+                {...props}
+                tasks={tasks}
+                onTaskClick={handleTaskClick}
+                onEditTask={handleEditTask}
+                onDeleteTask={handleDeleteTask}
+              />
+            )}
           />
         </div>
       ) : (
-        <div className="text-center py-10">
-          <Typography variant="h6" color="textSecondary">
+        <div className="text-center py-10 border rounded">
+          <Typography variant="h6" color="textSecondary" className="mb-2">
             No tasks found
           </Typography>
-          <Typography variant="body2" color="textSecondary" className="mt-2">
-            Click "Add Task" to create your first task
+          <Typography variant="body2" color="textSecondary" className="mb-4">
+            Click "Add Task" to create your first task or "Load Sample Tasks" to see demo data
           </Typography>
+          <Button
+            variant="contained"
+            onClick={createSampleTasks}
+            startIcon={<AddIcon />}
+          >
+            Load Sample Tasks
+          </Button>
         </div>
       )}
 
-      {/* Add/Edit Task Dialog */}
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editingTask ? `Edit Task: ${editingTask.name}` : "Add New Task"}
-        </DialogTitle>
-        <DialogContent className="space-y-3 mt-2">
-          <TextField
-            label="Task Name *"
-            fullWidth
-            value={newTask.name}
-            onChange={(e) =>
-              setNewTask((p) => ({ ...p, name: e.target.value }))
-            }
-            required
-          />
-          
-          <Box display="flex" gap={2}>
-            <TextField
-              label="Start Date *"
-              type="date"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              value={newTask.start}
-              onChange={(e) =>
-                setNewTask((p) => ({ ...p, start: e.target.value }))
-              }
-              required
-            />
-            <TextField
-              label="End Date *"
-              type="date"
-              fullWidth
-              InputLabelProps={{ shrink: true }}
-              value={newTask.end}
-              onChange={(e) =>
-                setNewTask((p) => ({ ...p, end: e.target.value }))
-              }
-              required
-            />
-          </Box>
-
-          <Box display="flex" gap={2}>
-            <TextField
-              label="Progress (%)"
-              type="number"
-              fullWidth
-              inputProps={{ min: 0, max: 100 }}
-              value={newTask.progress}
-              onChange={(e) =>
-                setNewTask((p) => ({ ...p, progress: e.target.value }))
-              }
-            />
-            <FormControl fullWidth>
-              <InputLabel>Project Stage</InputLabel>
-              <Select
-                value={newTask.project}
-                label="Project Stage"
-                onChange={(e) =>
-                  setNewTask((p) => ({ ...p, project: e.target.value }))
-                }
-              >
-                {projectStages.map(stage => (
-                  <MenuItem key={stage} value={stage}>
-                    {stage}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-
-          <FormControl fullWidth>
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={newTask.status}
-              label="Status"
-              onChange={(e) =>
-                setNewTask((p) => ({ ...p, status: e.target.value }))
-              }
-            >
-              <MenuItem value="pending">Pending</MenuItem>
-              <MenuItem value="in-progress">In Progress</MenuItem>
-              <MenuItem value="completed">Completed</MenuItem>
-            </Select>
-          </FormControl>
-
-          <TextField
-            label="Dependencies (optional)"
-            select
-            fullWidth
-            value={newTask.dependencies[0] || ""}
-            onChange={(e) =>
-              setNewTask((p) => ({ 
-                ...p, 
-                dependencies: e.target.value ? [e.target.value] : [] 
-              }))
-            }
-          >
-            <MenuItem value="">None</MenuItem>
-            {tasks.filter(t => t.id !== editingTask?.id).map((t) => (
-              <MenuItem key={t.id} value={t.id}>
-                {t.name}
-              </MenuItem>
-            ))}
-          </TextField>
-
-          <TextField
-            label="Description"
-            fullWidth
-            multiline
-            rows={3}
-            value={newTask.description}
-            onChange={(e) =>
-              setNewTask((p) => ({ ...p, description: e.target.value }))
-            }
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
-          <Button 
-            onClick={editingTask ? handleUpdateExistingTask : handleAddTask} 
-            variant="contained"
-            disabled={saving}
-          >
-            {saving ? "Saving..." : editingTask ? "Update Task" : "Add Task"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Gantt Task Modal */}
+      <GanttTaskModal
+        open={open}
+        onClose={handleModalClose}
+        editingTask={editingTask}
+        newTask={newTask}
+        setNewTask={setNewTask}
+        onSave={handleModalSave}
+        saving={saving}
+        projectStages={projectStages}
+        tasks={tasks}
+      />
     </div>
   );
 }

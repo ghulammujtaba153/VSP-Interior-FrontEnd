@@ -1,6 +1,7 @@
 
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript'
 
+
 // Third-party Imports
 import 'react-perfect-scrollbar/dist/css/styles.css'
 import 'react-toastify/dist/ReactToastify.css'

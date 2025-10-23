@@ -17,7 +17,9 @@ import Link from 'next/link';
 import ProjectOverview from '@/components/project-ui/scheduling/project-details/ProjectOverview';
 import Kanban from '@/components/project-ui/scheduling/project-details/Kanban';
 import GanttChart from '@/components/project-ui/scheduling/project-details/GanttChart';
-
+import CalenderView from '@/components/project-ui/scheduling/project-details/CalenderView';
+import Notes from  "@/components/project-ui/scheduling/project-details/Notes"
+import InventoryView from '@/components/project-ui/scheduling/project-details/InventoryView';
 
 const Page = () => {
   const { id } = useParams();
@@ -65,6 +67,9 @@ const Page = () => {
             <Tab label="Overview" />
             <Tab label="Kanban" />
             <Tab label="Gantt Chart" />
+            <Tab label="Calender View" />
+            <Tab label="Inventory View" />
+            <Tab label= "Notes"/>
           </Tabs>
 
           {tab === 0 && (
@@ -84,6 +89,28 @@ const Page = () => {
               <GanttChart projectId={id} data={data}/>
             </Box>
           )}
+
+          {tab === 3 && (
+            <Box sx={{ mt: 2 }}>
+              <CalenderView projectId={id} data={data}/>
+            </Box>
+          )}
+
+          {
+            tab === 4 && (
+              <Box sx={{mt:2}}>
+                <InventoryView projectId={id} data={data} />
+              </Box>
+            )
+          }
+
+          {
+            tab === 5 && (
+              <Box sx={{mt:2}}>
+                <Notes projectId={id} data={data} />
+                </Box>
+            )
+          }
         </>
       ) : (
         <Typography>No project data found.</Typography>

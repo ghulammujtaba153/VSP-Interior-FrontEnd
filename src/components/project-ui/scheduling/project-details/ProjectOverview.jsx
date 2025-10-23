@@ -64,7 +64,7 @@ const ProjectOverview = ({ data }) => {
         </Grid>
 
         {/* Rates Table */}
-        {rates.length > 0 && (
+        {/* {rates.length > 0 && (
           <>
             <Divider sx={{ my: 3 }} />
             <Typography variant="h6" gutterBottom>Rates</Typography>
@@ -91,10 +91,10 @@ const ProjectOverview = ({ data }) => {
               </Table>
             </TableContainer>
           </>
-        )}
+        )} */}
 
         {/* Materials Table */}
-        {materials.length > 0 && (
+        {/* {materials.length > 0 && (
           <>
             <Divider sx={{ my: 3 }} />
             <Typography variant="h6" gutterBottom>Materials</Typography>
@@ -123,7 +123,7 @@ const ProjectOverview = ({ data }) => {
               </Table>
             </TableContainer>
           </>
-        )}
+        )} */}
 
         {/* Variations */}
         {/* {variations.length > 0 && (

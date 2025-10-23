@@ -38,9 +38,15 @@ importers:
       '@fullcalendar/interaction':
         specifier: ^6.1.19
         version: 6.1.19(@fullcalendar/core@6.1.19)
+      '@fullcalendar/list':
+        specifier: ^6.1.19
+        version: 6.1.19(@fullcalendar/core@6.1.19)
       '@fullcalendar/react':
         specifier: ^6.1.19
         version: 6.1.19(@fullcalendar/core@6.1.19)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@fullcalendar/timegrid':
+        specifier: ^6.1.19
+        version: 6.1.19(@fullcalendar/core@6.1.19)
       '@mui/icons-material':
         specifier: ^7.3.2
         version: 7.3.4(@mui/material@7.3.4(@emotion/react@11.14.0(@types/react@19.2.2)(react@18.3.1))(@emotion/styled@11.14.0(@emotion/react@11.14.0(@types/react@19.2.2)(react@18.3.1))(@types/react@19.2.2)(react@18.3.1))(@types/react@19.2.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(@types/react@19.2.2)(react@18.3.1)
@@ -533,12 +539,22 @@ packages:
     peerDependencies:
       '@fullcalendar/core': ~6.1.19
 
+  '@fullcalendar/list@6.1.19':
+    resolution: {integrity: sha512-knZHpAVF0LbzZpSJSUmLUUzF0XlU/MRGK+Py2s0/mP93bCtno1k2L3XPs/kzh528hSjehwLm89RgKTSfW1P6cA==}
+    peerDependencies:
+      '@fullcalendar/core': ~6.1.19
+
   '@fullcalendar/react@6.1.19':
     resolution: {integrity: sha512-FP78vnyylaL/btZeHig8LQgfHgfwxLaIG6sKbNkzkPkKEACv11UyyBoTSkaavPsHtXvAkcTED1l7TOunAyPEnA==}
     peerDependencies:
       '@fullcalendar/core': ~6.1.19
       react: ^16.7.0 || ^17 || ^18 || ^19
       react-dom: ^16.7.0 || ^17 || ^18 || ^19
+
+  '@fullcalendar/timegrid@6.1.19':
+    resolution: {integrity: sha512-OuzpUueyO9wB5OZ8rs7TWIoqvu4v3yEqdDxZ2VcsMldCpYJRiOe7yHWKr4ap5Tb0fs7Rjbserc/b6Nt7ol6BRg==}
+    peerDependencies:
+      '@fullcalendar/core': ~6.1.19
 
   '@humanwhocodes/config-array@0.13.0':
     resolution: {integrity: sha512-DZLEEqFWQFiyK6h5YIeynKx7JlvCYWL0cImfSRXZ9l4Sg2efkFGTuFf6vzXjK1cq6IYkU+Eg/JizXw+TD2vRNw==}
@@ -3711,11 +3727,20 @@ snapshots:
     dependencies:
       '@fullcalendar/core': 6.1.19
 
+  '@fullcalendar/list@6.1.19(@fullcalendar/core@6.1.19)':
+    dependencies:
+      '@fullcalendar/core': 6.1.19
+
   '@fullcalendar/react@6.1.19(@fullcalendar/core@6.1.19)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
       '@fullcalendar/core': 6.1.19
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
+
+  '@fullcalendar/timegrid@6.1.19(@fullcalendar/core@6.1.19)':
+    dependencies:
+      '@fullcalendar/core': 6.1.19
+      '@fullcalendar/daygrid': 6.1.19(@fullcalendar/core@6.1.19)
 
   '@humanwhocodes/config-array@0.13.0':
     dependencies:
