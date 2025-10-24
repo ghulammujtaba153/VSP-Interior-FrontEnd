@@ -41,6 +41,13 @@ import {
   OutlinedInput,
   Grid,
   CircularProgress,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemAvatar,
+  Stack,
+  Tooltip,
+  LinearProgress,
 } from '@mui/material'
 import {
   Add as AddIcon,
@@ -53,6 +60,11 @@ import {
   CheckCircle as CompletedIcon,
   CalendarToday as CalendarIcon,
   Person as PersonIcon,
+  ChatBubbleOutline as ChatIcon,
+  AttachFile as AttachFileIcon,
+  Download as DownloadIcon,
+  Send as SendIcon,
+  Close as CloseIcon,
 } from '@mui/icons-material'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -117,7 +129,7 @@ const formatDateRange = (startDate, endDate) => {
 }
 
 // Sortable Task Component
-const SortableTask = ({ task, onEdit, onDelete, workers }) => {
+const SortableTask = ({ task, onEdit, onDelete, workers, onViewComments }) => {
   const {
     attributes,
     listeners,
@@ -263,6 +275,21 @@ const SortableTask = ({ task, onEdit, onDelete, workers }) => {
                 sx={{ mt: 0.5 }}
               />
             )}
+
+            {/* Comments Button - only show if comments exist */}
+            {task.comments && task.comments.length > 0 && (
+              <Box sx={{ mt: 1 }}>
+                <Chip
+                  icon={<ChatIcon />}
+                  label={`${task.comments.length} comment${task.comments.length === 1 ? '' : 's'}`}
+                  size="small"
+                  variant="outlined"
+                  color="secondary"
+                  onClick={() => onViewComments(task)}
+                  sx={{ cursor: "pointer", '&:hover': { backgroundColor: 'action.hover' } }}
+                />
+              </Box>
+            )}
           </Box>
           
           <IconButton
@@ -295,7 +322,7 @@ const SortableTask = ({ task, onEdit, onDelete, workers }) => {
 }
 
 // Column Component
-const Column = ({ column, tasks, onAddTask, onEditTask, onDeleteTask, workers, isOver, loading }) => {
+const Column = ({ column, tasks, onAddTask, onEditTask, onDeleteTask, workers, isOver, loading, onViewComments }) => {
   const { setNodeRef } = useDroppable({
     id: column.id,
   })
@@ -505,6 +532,7 @@ const Column = ({ column, tasks, onAddTask, onEditTask, onDeleteTask, workers, i
                   onEdit={onEditTask}
                   onDelete={onDeleteTask}
                   workers={workers}
+                  onViewComments={onViewComments}
                 />
               ))}
             </SortableContext>
@@ -558,6 +586,14 @@ const Kanban = ({ projectId, data }) => {
     stage: 'todo', // Default to first stage
   })
   const [activeColumn, setActiveColumn] = useState(null)
+  
+  // Comment dialog state
+  const [commentDialogOpen, setCommentDialogOpen] = useState(false)
+  const [selectedTask, setSelectedTask] = useState(null)
+  const [newComment, setNewComment] = useState("")
+  const [commentFile, setCommentFile] = useState(null)
+  const [uploadingFile, setUploadingFile] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
 
   console.log("data from parent", data)
 
@@ -862,6 +898,100 @@ const Kanban = ({ projectId, data }) => {
     setActiveColumn(null)
   }
 
+  // Comment handling functions
+  const handleViewComments = (task) => {
+    setSelectedTask(task)
+    setNewComment("")
+    setCommentFile(null)
+    setCommentDialogOpen(true)
+  }
+
+  const handleCommentFileSelect = (event) => {
+    const file = event.target.files[0]
+    setCommentFile(file)
+  }
+
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !selectedTask) return
+
+    setUploadingFile(true)
+    setUploadProgress(0)
+
+    try {
+      let fileData = null
+      
+      // Upload file if attached
+      if (commentFile) {
+        const formData = new FormData()
+        formData.append("file", commentFile)
+        formData.append("taskId", selectedTask.id)
+
+        const response = await axios.post(`${BASE_URL}/api/project-kanban/upload`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          onUploadProgress: (progressEvent) => {
+            const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+            setUploadProgress(progress)
+          },
+        })
+
+        fileData = {
+          name: commentFile.name,
+          size: commentFile.size,
+          type: commentFile.type,
+          url: response.data.fileUrl,
+        }
+      }
+
+      const commentData = {
+        content: newComment.trim(),
+        file: fileData,
+        timestamp: new Date().toISOString(),
+        author: "Current User", // You can get this from auth context
+      }
+
+      // Get existing comments or initialize empty array
+      const existingComments = selectedTask.comments || []
+      const updatedComments = [...existingComments, commentData]
+
+      await axios.put(`${BASE_URL}/api/project-kanban/update/${selectedTask.id}`, {
+        comments: updatedComments,
+      })
+
+      // Update local state
+      setColumns((prevColumns) => {
+        const updatedColumns = { ...prevColumns }
+        Object.keys(updatedColumns).forEach(columnId => {
+          const column = updatedColumns[columnId]
+          const taskIndex = column.tasks.findIndex(task => task.id === selectedTask.id)
+          if (taskIndex !== -1) {
+            updatedColumns[columnId] = {
+              ...column,
+              tasks: column.tasks.map((task, index) => 
+                index === taskIndex 
+                  ? { ...task, comments: updatedComments }
+                  : task
+              )
+            }
+          }
+        })
+        return updatedColumns
+      })
+
+      setNewComment("")
+      setCommentFile(null)
+      setCommentDialogOpen(false)
+      toast.success("Comment added successfully")
+    } catch (error) {
+      console.error("Failed to add comment", error)
+      toast.error("Failed to add comment")
+    } finally {
+      setUploadingFile(false)
+      setUploadProgress(0)
+    }
+  }
+
   const handleAddTask = async (columnId, taskData) => {
     try {
       await createTask({
@@ -974,6 +1104,7 @@ const Kanban = ({ projectId, data }) => {
                 workers={workers}
                 isOver={activeColumn?.id === column.id}
                 loading={loading}
+                onViewComments={handleViewComments}
               />
             </Box>
           ))}
@@ -1142,6 +1273,134 @@ const Kanban = ({ projectId, data }) => {
           <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
           <Button onClick={handleUpdateTask} variant="contained">
             Update Task
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Comment Dialog */}
+      <Dialog
+        open={commentDialogOpen}
+        onClose={() => setCommentDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          View Comments
+          <IconButton
+            onClick={() => setCommentDialogOpen(false)}
+            sx={{ position: "absolute", right: 8, top: 8 }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          {selectedTask && (
+            <Box>
+              <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                {selectedTask.title}
+              </Typography>
+              
+              {/* Existing Comments */}
+              {selectedTask.comments && selectedTask.comments.length > 0 && (
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+                    Comments ({selectedTask.comments.length})
+                  </Typography>
+                  <Paper sx={{ p: 2, maxHeight: 300, overflow: "auto" }}>
+                    {selectedTask.comments.map((comment, index) => (
+                      <Box key={index} sx={{ mb: 2, pb: 2, borderBottom: index < selectedTask.comments.length - 1 ? 1 : 0, borderColor: "divider" }}>
+                        <Box display="flex" alignItems="center" gap={1} sx={{ mb: 1 }}>
+                          <Avatar sx={{ width: 24, height: 24, fontSize: 12 }}>
+                            {comment.author?.charAt(0) || "U"}
+                          </Avatar>
+                          <Typography variant="caption" color="text.secondary">
+                            {comment.author} • {new Date(comment.timestamp).toLocaleString()}
+                          </Typography>
+                        </Box>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          {comment.content || comment.text}
+                        </Typography>
+                        {comment.file && (
+                          <Chip
+                            icon={<DownloadIcon />}
+                            label={comment.file.name}
+                            size="small"
+                            variant="outlined"
+                            onClick={() => window.open(`${BASE_URL}${comment.file.url}`, "_blank")}
+                            sx={{ cursor: "pointer", fontSize: "0.75rem" }}
+                          />
+                        )}
+                      </Box>
+                    ))}
+                  </Paper>
+                </Box>
+              )}
+
+              {/* New Comment Input */}
+              <Box sx={{ mb: 2 }}>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={4}
+                  placeholder="Add your comment..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  variant="outlined"
+                />
+              </Box>
+
+              {/* File Upload for Comment */}
+              <Box sx={{ mb: 2 }}>
+                <input
+                  id="comment-file-upload"
+                  type="file"
+                  style={{ display: "none" }}
+                  onChange={handleCommentFileSelect}
+                  accept="*/*"
+                />
+                <label htmlFor="comment-file-upload">
+                  <Button
+                    component="span"
+                    variant="outlined"
+                    startIcon={<AttachFileIcon />}
+                    size="small"
+                    sx={{ mr: 1 }}
+                  >
+                    Attach File
+                  </Button>
+                </label>
+                {commentFile && (
+                  <Chip
+                    label={commentFile.name}
+                    onDelete={() => setCommentFile(null)}
+                    size="small"
+                    color="primary"
+                    sx={{ ml: 1 }}
+                  />
+                )}
+              </Box>
+
+              {/* Upload Progress */}
+              {uploadingFile && (
+                <Box sx={{ mb: 2 }}>
+                  <LinearProgress variant="determinate" value={uploadProgress} />
+                  <Typography variant="caption" color="text.secondary">
+                    Uploading file... {uploadProgress}%
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCommentDialogOpen(false)}>Close</Button>
+          <Button
+            onClick={handleAddComment}
+            variant="contained"
+            startIcon={<SendIcon />}
+            disabled={!newComment.trim() || uploadingFile}
+          >
+            {uploadingFile ? "Uploading..." : "Add Comment"}
           </Button>
         </DialogActions>
       </Dialog>

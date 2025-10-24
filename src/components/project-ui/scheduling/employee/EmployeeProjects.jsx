@@ -20,18 +20,18 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ConstructionIcon from "@mui/icons-material/Construction";
-import AddScheduleDialog from "./AddScheduleDialog";
 import Loader from "@/components/loader/Loader";
 import axios from "axios";
 import { BASE_URL } from "@/configs/url";
 import { toast } from "react-toastify";
 import Link from "next/link"
+import { useAuth } from "@/context/authContext";
 
-const ProjectsTab = () => {
-  const [showDialog, setShowDialog] = useState(false);
-  const [editingJob, setEditingJob] = useState(null);
+const EmployeeProjects = () => {
+
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const {user} = useAuth()
 
   // 🔹 Pagination states
   const [page, setPage] = useState(0);
@@ -39,7 +39,7 @@ const ProjectsTab = () => {
 
   const fetchProjects = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/api/job-scheduling/get`);
+      const res = await axios.post(`${BASE_URL}/api/job-scheduling/worker`, {email: user.email});
       setProjects(res.data.jobs || []);
     } catch (error) {
       console.error("Error fetching projects:", error);
@@ -52,21 +52,7 @@ const ProjectsTab = () => {
     fetchProjects();
   }, []);
 
-  // 🔹 Delete job
-  const handleDelete = async (id) => {
-    if (!confirm("Are you sure you want to delete this job schedule?")) return;
-    toast.loading("loading...")
-    try {
-      await axios.delete(`${BASE_URL}/api/job-scheduling/delete/${id}`);
-      toast.dismiss()
-      toast.success("deleted successfully")
-      await fetchProjects();
-    } catch (error) {
-      toast.dismiss()
-      toast.error("error deleting")
-      console.error("Error deleting job:", error);
-    }
-  };
+  
 
   // 🔹 Open Add/Edit dialog
   const handleAddNew = () => {
@@ -117,16 +103,9 @@ const ProjectsTab = () => {
         sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
       >
         <Typography variant="h6" fontWeight="bold">
-          Job Scheduling
+            Assigned Projects
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAddNew}
-          sx={{ boxShadow: 2 }}
-        >
-          Add New Project
-        </Button>
+        
       </Box>
 
       {/* Jobs Table */}
@@ -173,7 +152,7 @@ const ProjectsTab = () => {
 
                   <TableCell>
                     <Box sx={{ display: "flex", gap: 1 }}>
-                      <Link href={`/projects/${job.id}`}>
+                      <Link href={`/projects/worker/${job.id}`}>
                         <Button
                           size="small"
                           variant="outlined"
@@ -183,12 +162,7 @@ const ProjectsTab = () => {
                           Manage
                         </Button>
                       </Link>
-                      <IconButton color="primary" onClick={() => handleEdit(job)}>
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton color="error" onClick={() => handleDelete(job.id)}>
-                        <DeleteIcon />
-                      </IconButton>
+                      
                     </Box>
                   </TableCell>
                 </TableRow>
@@ -210,17 +184,9 @@ const ProjectsTab = () => {
         />
       </Card>
 
-      {/* Add / Edit Dialog */}
-      {showDialog && (
-        <AddScheduleDialog
-          open={showDialog}
-          onOpenChange={setShowDialog}
-          editData={editingJob}
-          refreshList={fetchProjects}
-        />
-      )}
+      
     </Box>
   );
 };
 
-export default ProjectsTab;
+export default EmployeeProjects;

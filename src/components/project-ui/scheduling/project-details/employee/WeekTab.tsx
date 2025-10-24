@@ -11,62 +11,37 @@ import {
 } from "@mui/material";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 
-// ✅ Mock data (can be moved to a separate file later)
-const mockTasks = [
-  {
-    id: "1",
-    projectName: "Community Center Renovation",
-    phase: "Painting",
-    location: "Main Street, Downtown",
-    dueDate: "2025-10-20",
-    status: "in-progress",
-  },
-  {
-    id: "2",
-    projectName: "School Expansion Project",
-    phase: "Foundation",
-    location: "Elm Avenue, East Side",
-    dueDate: "2025-10-22",
-    status: "to-start",
-  },
-  {
-    id: "3",
-    projectName: "Park Lighting Setup",
-    phase: "Inspection",
-    location: "Riverside Park",
-    dueDate: "2025-10-24",
-    status: "complete",
-  },
-];
-
-const WeekTab = () => {
+const WeekTab = ({ tasks = [] }) => {
+  // ✅ Generate next 7 days (starting today)
   const getWeekDates = () => {
     const today = new Date();
-    const week = [];
-    for (let i = 0; i < 7; i++) {
+    return Array.from({ length: 7 }, (_, i) => {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
-      week.push(date);
-    }
-    return week;
+      return date;
+    });
   };
 
   const weekDates = getWeekDates();
 
+  // ✅ Filter tasks based on matching date overlap
   const getTasksForDate = (date) => {
     const dateStr = date.toISOString().split("T")[0];
-    return mockTasks.filter((task) => task.dueDate === dateStr);
+    return tasks.filter((task) => {
+      const s = new Date(task.startDate);
+      const e = new Date(task.endDate);
+      const target = new Date(dateStr);
+      target.setHours(12, 0, 0, 0);
+      return s <= target && e >= target;
+    });
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
-      case "complete":
-        return "success";
-      case "in-progress":
-        return "primary";
-      default:
-        return "default";
-    }
+    const s = (status || "").toString().toLowerCase();
+    if (s.includes("complete")) return "success";
+    if (s.includes("progress")) return "primary";
+    if (s.includes("start")) return "warning";
+    return "default";
   };
 
   return (
@@ -82,7 +57,7 @@ const WeekTab = () => {
       {/* Week Grid */}
       <Grid container spacing={2}>
         {weekDates.map((date) => {
-          const tasks = getTasksForDate(date);
+          const tasksForDay = getTasksForDate(date);
           const isToday = date.toDateString() === new Date().toDateString();
 
           return (
@@ -128,8 +103,8 @@ const WeekTab = () => {
                     </Box>
                     <Chip
                       variant="outlined"
-                      label={`${tasks.length} ${
-                        tasks.length === 1 ? "task" : "tasks"
+                      label={`${tasksForDay.length} ${
+                        tasksForDay.length === 1 ? "task" : "tasks"
                       }`}
                     />
                   </Box>
@@ -137,7 +112,7 @@ const WeekTab = () => {
                   <Divider sx={{ mb: 2 }} />
 
                   {/* Task List */}
-                  {tasks.length > 0 ? (
+                  {tasksForDay.length > 0 ? (
                     <Box
                       sx={{
                         display: "flex",
@@ -145,7 +120,7 @@ const WeekTab = () => {
                         gap: 1.5,
                       }}
                     >
-                      {tasks.map((task) => (
+                      {tasksForDay.map((task) => (
                         <Box
                           key={task.id}
                           sx={{
@@ -159,18 +134,18 @@ const WeekTab = () => {
                         >
                           <Box>
                             <Typography variant="subtitle2" fontWeight={500}>
-                              {task.projectName}
+                              {task.title}
                             </Typography>
                             <Typography
                               variant="body2"
                               color="text.secondary"
                               sx={{ display: "flex", gap: 1 }}
                             >
-                              <span>{task.phase}</span>•<span>{task.location}</span>
+                              <span>{task.stage}</span>•<span>{task.assignedWorker?.name || "Unassigned"}</span>
                             </Typography>
                           </Box>
                           <Chip
-                            label={task.status.replace("-", " ")}
+                            label={task.status?.replace(/([a-z])([A-Z])/g, "$1 $2")}
                             color={getStatusColor(task.status)}
                             sx={{ textTransform: "capitalize" }}
                           />

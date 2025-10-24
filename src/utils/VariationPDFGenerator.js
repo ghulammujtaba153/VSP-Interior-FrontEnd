@@ -93,7 +93,7 @@ const VariationSubmittalGenerator = ({ data }) => {
       doc.text('VARIATION SUBMITTAL', 105, 8, { align: 'center' });
 
       let currentY = 20;
-
+      
       // PAYER Section (Left side) - No header, just the table
       // Company/Name Row
       doc.setDrawColor(0, 0, 0);
@@ -103,12 +103,12 @@ const VariationSubmittalGenerator = ({ data }) => {
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
       doc.text('P', 20, currentY + 4, { align: 'center' });
-
+      
       doc.setFillColor(...lightGrayColor);
       doc.rect(30, currentY, 40, 6, 'F');
       doc.setTextColor(...blackColor);
       doc.text('Company', 50, currentY + 4, { align: 'center' });
-
+      
       doc.setFillColor(...whiteColor);
       doc.rect(70, currentY, 35, 6, 'F');
       doc.setFont('helvetica', 'normal');
@@ -122,12 +122,12 @@ const VariationSubmittalGenerator = ({ data }) => {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
       doc.text('P', 115, currentY + 4, { align: 'center' });
-
+      
       doc.setFillColor(...lightGrayColor);
       doc.rect(125, currentY, 40, 6, 'F');
       doc.setTextColor(...blackColor);
       doc.text('Company', 145, currentY + 4, { align: 'center' });
-
+      
       doc.setFillColor(...whiteColor);
       doc.rect(165, currentY, 35, 6, 'F');
       doc.setFont('helvetica', 'normal');
@@ -138,16 +138,16 @@ const VariationSubmittalGenerator = ({ data }) => {
 
       // PAYER Address Rows
       doc.setFillColor(...blackColor);
-      doc.rect(10, currentY, 20, 6, 'F');
-      doc.setTextColor(...whiteColor);
+          doc.rect(10, currentY, 20, 6, 'F');
+          doc.setTextColor(...whiteColor);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
-      doc.text('A', 20, currentY + 4, { align: 'center' });
-
+          doc.text('A', 20, currentY + 4, { align: 'center' });
+          
       doc.setFillColor(...lightGrayColor);
-      doc.rect(30, currentY, 40, 6, 'F');
+          doc.rect(30, currentY, 40, 6, 'F');
       doc.setTextColor(...blackColor);
-      doc.text('Address', 50, currentY + 4, { align: 'center' });
+          doc.text('Address', 50, currentY + 4, { align: 'center' });
 
       doc.setFillColor(...whiteColor);
       doc.rect(70, currentY, 35, 6, 'F');
@@ -178,35 +178,35 @@ const VariationSubmittalGenerator = ({ data }) => {
 
       // PAYER Address Row 2
       doc.setFillColor(...blackColor);
-      doc.rect(10, currentY, 20, 6, 'F');
-      doc.setTextColor(...whiteColor);
+          doc.rect(10, currentY, 20, 6, 'F');
+          doc.setTextColor(...whiteColor);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
       doc.text('Y', 20, currentY + 4, { align: 'center' });
-
+          
       doc.setFillColor(...lightGrayColor);
-      doc.rect(30, currentY, 40, 6, 'F');
+          doc.rect(30, currentY, 40, 6, 'F');
       doc.setTextColor(...blackColor);
-      doc.text('Address', 50, currentY + 4, { align: 'center' });
-
+          doc.text('Address', 50, currentY + 4, { align: 'center' });
+        
       doc.setFillColor(...whiteColor);
-      doc.rect(70, currentY, 35, 6, 'F');
+        doc.rect(70, currentY, 35, 6, 'F');
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
       doc.text(templateData.payer.address2, 87.5, currentY + 4, { align: 'center' });
 
       // PAYEE Address Row 2
       doc.setFillColor(...blackColor);
-      doc.rect(105, currentY, 20, 6, 'F');
-      doc.setTextColor(...whiteColor);
+          doc.rect(105, currentY, 20, 6, 'F');
+          doc.setTextColor(...whiteColor);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
       doc.text('Y', 115, currentY + 4, { align: 'center' });
-
+          
       doc.setFillColor(...lightGrayColor);
-      doc.rect(125, currentY, 40, 6, 'F');
+          doc.rect(125, currentY, 40, 6, 'F');
       doc.setTextColor(...blackColor);
-      doc.text('Address', 145, currentY + 4, { align: 'center' });
+          doc.text('Address', 145, currentY + 4, { align: 'center' });
 
       doc.setFillColor(...whiteColor);
       doc.rect(165, currentY, 35, 6, 'F');
@@ -231,24 +231,24 @@ const VariationSubmittalGenerator = ({ data }) => {
 
 
       doc.setFillColor(...blackColor);
-      doc.rect(105, currentY, 20, 6, 'F');
-      doc.setTextColor(...whiteColor);
+          doc.rect(105, currentY, 20, 6, 'F');
+          doc.setTextColor(...whiteColor);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
       doc.text('E', 115, currentY + 4, { align: 'center' });
-
+          
       doc.setFillColor(...lightGrayColor);
-      doc.rect(125, currentY, 40, 6, 'F');
+          doc.rect(125, currentY, 40, 6, 'F');
       doc.setTextColor(...blackColor);
-      doc.text('Address', 145, currentY + 4, { align: 'center' });
-
+          doc.text('Address', 145, currentY + 4, { align: 'center' });
+        
       doc.setFillColor(...whiteColor);
-      doc.rect(165, currentY, 35, 6, 'F');
+        doc.rect(165, currentY, 35, 6, 'F');
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
       doc.text(templateData.payee.address2, 182.5, currentY + 4, { align: 'center' });
 
-      currentY += 6;
+        currentY += 6;
 
       // PAYER Attention Row
       doc.setFillColor(...blackColor);
@@ -257,12 +257,12 @@ const VariationSubmittalGenerator = ({ data }) => {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
       doc.text('R', 20, currentY + 4, { align: 'center' });
-
+      
       doc.setFillColor(...lightGrayColor);
       doc.rect(30, currentY, 40, 6, 'F');
       doc.setTextColor(...blackColor);
       doc.text('Attention', 50, currentY + 4, { align: 'center' });
-
+      
       doc.setFillColor(...whiteColor);
       doc.rect(70, currentY, 35, 6, 'F');
       doc.setFont('helvetica', 'normal');
@@ -278,12 +278,12 @@ const VariationSubmittalGenerator = ({ data }) => {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
       doc.text('R', 115, currentY + 4, { align: 'center' });
-
+      
       doc.setFillColor(...lightGrayColor);
       doc.rect(125, currentY, 40, 6, 'F');
       doc.setTextColor(...blackColor);
       doc.text('Contact', 145, currentY + 4, { align: 'center' });
-
+      
       doc.setFillColor(...whiteColor);
       doc.rect(165, currentY, 35, 6, 'F');
       doc.setFont('helvetica', 'normal');
@@ -325,7 +325,7 @@ const VariationSubmittalGenerator = ({ data }) => {
       doc.rect(80, currentY, 20, 6, 'F');
       doc.setFont('helvetica', 'normal');
       doc.text(templateData.project.trade, 90, currentY + 4, { align: 'center' });
-
+      
       doc.setFillColor(...lightGrayColor);
       doc.rect(100, currentY, 20, 6, 'F');
       doc.setFont('helvetica', 'bold');
@@ -337,7 +337,7 @@ const VariationSubmittalGenerator = ({ data }) => {
       doc.text(templateData.project.ourRef, 130, currentY + 4, { align: 'center' });
 
       currentY += 6;
-
+      
       // Bottom row - Site Address, Variation/Reference, Date/Received
       doc.setFillColor(...lightGrayColor);
       doc.rect(10, currentY, 20, 6, 'F');
@@ -350,7 +350,7 @@ const VariationSubmittalGenerator = ({ data }) => {
       doc.rect(30, currentY, 50, 6, 'F');
       doc.setFont('helvetica', 'normal');
       doc.text(templateData.project.siteAddress, 55, currentY + 4, { align: 'center' });
-
+      
       // Variation/Reference column
       doc.setFillColor(...lightGrayColor);
       doc.rect(80, currentY, 20, 3, 'F');
@@ -360,7 +360,7 @@ const VariationSubmittalGenerator = ({ data }) => {
       doc.setFillColor(...lightGrayColor);
       doc.rect(80, currentY + 3, 20, 3, 'F');
       doc.text('Reference', 90, currentY + 5, { align: 'center' });
-
+      
       doc.setFillColor(...whiteColor);
       doc.rect(100, currentY, 20, 3, 'F');
       doc.setFont('helvetica', 'normal');
@@ -399,7 +399,7 @@ const VariationSubmittalGenerator = ({ data }) => {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
       doc.text('Variation Description', 15, currentY + 4);
-
+      
       // Doc Ref
       doc.setFillColor(...lightGrayColor);
       doc.rect(130, currentY, 70, 6, 'F');
@@ -413,7 +413,7 @@ const VariationSubmittalGenerator = ({ data }) => {
       // Main Content Area
       doc.setDrawColor(0, 0, 0);
       doc.rect(10, currentY, 130, 45, 'S');
-
+      
       doc.setTextColor(...blackColor);
       doc.setFontSize(7);
       doc.setFont('helvetica', 'bold');
@@ -430,13 +430,13 @@ const VariationSubmittalGenerator = ({ data }) => {
 
       // Right section - Price
       doc.rect(140, currentY, 60, 45, 'S');
-
+      
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
       const priceText = 'Submitted price as detailed below';
       const priceLines = doc.splitTextToSize(priceText, 50);
       doc.text(priceLines, 145, currentY + 10);
-
+      
       doc.setFontSize(10);
       doc.text('ADD', 160, currentY + 25);
       doc.setFontSize(12);
@@ -444,7 +444,7 @@ const VariationSubmittalGenerator = ({ data }) => {
 
       // Price Breakdown section
       currentY += 52;
-
+      
       // Header
       doc.setFillColor(...blackColor);
       doc.rect(10, currentY, 190, 8, 'F');
@@ -458,7 +458,7 @@ const VariationSubmittalGenerator = ({ data }) => {
       doc.rect(10, currentY + 8, 190, 6, 'F');
       doc.setTextColor(...whiteColor);
       doc.setFontSize(7);
-
+      
       const colPositions = [15, 50, 125, 140, 160, 195];
       doc.text('ITEM', colPositions[0], currentY + 12);
       doc.text('DESCRIPTION', colPositions[1], currentY + 12);
@@ -468,7 +468,7 @@ const VariationSubmittalGenerator = ({ data }) => {
       doc.text('AMOUNT', colPositions[5], currentY + 12, { align: 'right' });
 
       currentY += 15;
-
+      
       // ADDITION VARIATION header
       doc.setFillColor(...whiteColor);
       doc.rect(10, currentY, 190, 6, 'F');
@@ -521,12 +521,12 @@ const VariationSubmittalGenerator = ({ data }) => {
       currentY += 6;
       doc.setDrawColor(0, 0, 0);
       doc.rect(10, currentY, 190, 15, 'S');
-
+      
       // Signature section
       currentY += 20;
       doc.setDrawColor(0, 0, 0);
       doc.rect(10, currentY, 190, 25, 'S');
-
+      
       // Signature Section with 3 rows and multiple columns
       doc.setFontSize(7);
       doc.setFont('helvetica', 'bold');
@@ -655,18 +655,18 @@ const VariationSubmittalGenerator = ({ data }) => {
       alert('Error generating PDF. Please check the console for details.');
     }
   };
-
-  return (
-    <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+    
+    return (
+        <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
       {/* <Button variant="outlined" startIcon={<PdfIcon />} onClick={() => setPreviewOpen(true)} size="small">
-        Preview
+          Preview
       </Button> */}
-      <Button variant="contained" startIcon={<DownloadIcon />} onClick={generatePDF} size="small" color="primary">
-        Download PDF
-      </Button>
+        <Button variant="contained" startIcon={<DownloadIcon />} onClick={generatePDF} size="small" color="primary">
+          Download PDF
+        </Button>
 
 
-    </Box>
+      </Box>
   );
 };
 

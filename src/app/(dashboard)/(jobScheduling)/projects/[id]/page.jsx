@@ -20,6 +20,7 @@ import GanttChart from '@/components/project-ui/scheduling/project-details/Gantt
 import CalenderView from '@/components/project-ui/scheduling/project-details/CalenderView';
 import Notes from  "@/components/project-ui/scheduling/project-details/Notes"
 import InventoryView from '@/components/project-ui/scheduling/project-details/InventoryView';
+import Calender from '@/components/project-ui/scheduling/project-details/Calender';
 
 const Page = () => {
   const { id } = useParams();
@@ -70,6 +71,7 @@ const Page = () => {
             <Tab label="Calender View" />
             <Tab label="Inventory View" />
             <Tab label= "Notes"/>
+            <Tab label="Resource View" />
           </Tabs>
 
           {tab === 0 && (
@@ -111,6 +113,12 @@ const Page = () => {
                 </Box>
             )
           }
+
+          {tab === 6 && (
+            <Box sx={{ mt: 2 }}>
+              <Calender projectId={id} data={data}/>
+            </Box>
+          )}
         </>
       ) : (
         <Typography>No project data found.</Typography>
