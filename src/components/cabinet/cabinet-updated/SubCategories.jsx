@@ -103,7 +103,7 @@ const SubCategories = ({ id }) => {
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>#</TableCell>
+                {/* <TableCell>#</TableCell> */}
                 <TableCell>Name</TableCell>
                 <TableCell>Created At</TableCell>
                 <TableCell align="right">Actions</TableCell>
@@ -128,7 +128,7 @@ const SubCategories = ({ id }) => {
                       }
                     }}
                   >
-                    <TableCell>{page * rowsPerPage + idx + 1}</TableCell>
+                    {/* <TableCell>{page * rowsPerPage + idx + 1}</TableCell> */}
                     <TableCell>{sub.name}</TableCell>
                     <TableCell>
                       {sub.createdAt ? new Date(sub.createdAt).toLocaleString() : "-"}

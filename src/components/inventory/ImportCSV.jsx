@@ -37,26 +37,26 @@ const schemaFields = [
   "Name",
   "Description",
   "Category",
+  "PriceBook",
   "Unit",
   "Supplier Name",
   "CostPrice",
   "Quantity",
- 
   "Notes",
   "Status",
 ];
 
-// Sample template data for inventory (first letter capitalized)
+// Sample template data for inventory (first letter capitalized) - aligned with inventory schema
 const templateData = [
   {
     Name: "Wood Screws 2 inch",
     Description: "Phillips head wood screws for cabinet assembly",
     Category: "Hardware",
-    Unit: "Pieces",
+    PriceBook: "Wood Screws",
+    Unit: "pieces",
     "Supplier Name": "Abc wood supplies",
     CostPrice: 0.25,
     Quantity: 500,
-   
     Notes: "For cabinet jobs",
     Status: "active"
   },
@@ -64,23 +64,25 @@ const templateData = [
     Name: "Cabinet Hinges",
     Description: "Soft-close hinges for cabinet doors",
     Category: "Hardware",
-    Unit: "Pairs",
+    PriceBook: "Cabinet Hinges",
+    Unit: "pairs",
     "Supplier Name": "Premier hardware co.",
     CostPrice: 12.50,
     Quantity: 75,
-    Notes: "",
+    Notes: "Quality hinges",
     Status: "active"
   },
   {
     Name: "Oak Wood Board",
     Description: "Premium oak board 1x6x8 feet",
     Category: "Materials",
-    Unit: "Pieces",
+    PriceBook: "Oak Boards",
+    Unit: "pieces",
     "Supplier Name": "Abc wood supplies",
     CostPrice: 45.00,
     Quantity: 25,
     Notes: "Premium stock",
-    Status: "inactive"
+    Status: "active"
   }
 ];
 
@@ -97,10 +99,11 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
     let newErrors = {};
     data.forEach((row, idx) => {
       let rowErrors = [];
-      // Required fields (exclude Notes only)
+      // Required fields (exclude Notes and Description)
+      const optionalFields = ["Notes", "Description"];
       schemaFields.forEach((field) => {
         if (
-          field !== "Notes" && // Notes is optional
+          !optionalFields.includes(field) && // Notes and Description are optional
           (!row[field] && row[field] !== 0)
         ) {
           rowErrors.push(`${field} is required`);
@@ -245,9 +248,17 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
       const backendRows = validRows.map(row => {
         const mapped = {};
         schemaFields.forEach(field => {
-          // Special handling for "Supplier Name" -> "supplierName"
+          // Special handling for specific fields
           if (field === "Supplier Name") {
             mapped["supplierName"] = row[field];
+          } else if (field === "PriceBook") {
+            mapped["priceBook"] = row[field]; // Send to backend for lookup
+            mapped["unit"] = row["Unit"]; // Include unit for pricebook
+          } else if (field === "Category") {
+            mapped["category"] = row[field]; // Send to backend for lookup
+          } else if (field === "Unit") {
+            // Unit is already handled in PriceBook mapping, skip adding it again
+            return;
           } else {
             const backendKey = field.charAt(0).toLowerCase() + field.slice(1);
             mapped[backendKey] = row[field];
@@ -269,25 +280,31 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
       console.error("Error importing inventory:", error);
       toast.dismiss();
       
-      // Handle supplier name validation errors specifically
-      if (error.response?.data?.invalidSuppliers) {
+      // Handle validation errors with detailed information
+      if (error.response?.data?.skippedSuppliers) {
         toast.error(
           <div>
             <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>
               {error.response.data.message}
             </div>
-            <div style={{ fontSize: '12px', maxHeight: '200px', overflow: 'auto' }}>
-              {error.response.data.invalidSuppliers.map((item, idx) => (
-                <div key={idx} style={{ marginBottom: '4px' }}>
-                  • Item: <strong>{item.itemName}</strong> → Supplier: <strong>{item.supplierName}</strong>
+            <div style={{ fontSize: '11px', maxHeight: '200px', overflow: 'auto' }}>
+              {error.response.data.skippedSuppliers.map((item, idx) => (
+                <div key={idx} style={{ marginBottom: '8px', paddingBottom: '8px', borderBottom: idx < error.response.data.skippedSuppliers.length - 1 ? '1px solid #ddd' : 'none' }}>
+                  <div style={{ fontWeight: 'bold', color: '#d32f2f' }}>Item: {item.itemName}</div>
+                  <div style={{ marginLeft: '10px', fontSize: '10px' }}>
+                    <div>• Supplier: <strong>{item.supplierName}</strong></div>
+                    <div>• Category: <strong>{item.category}</strong></div>
+                    <div>• Price Book: <strong>{item.priceBook}</strong></div>
+                    <div style={{ color: '#d32f2f', marginTop: '4px' }}>❌ {item.reason}</div>
+                  </div>
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: '8px', fontSize: '11px', color: '#666' }}>
-              Please ensure supplier names match exactly with existing suppliers in the database.
+            <div style={{ marginTop: '8px', fontSize: '11px', color: '#666', fontStyle: 'italic' }}>
+              Please add the missing suppliers, categories, or pricebooks in the database first.
             </div>
           </div>,
-          { autoClose: 10000 }
+          { autoClose: 15000 }
         );
       } else {
         toast.error(error.response?.data?.message || "Failed to import inventory");
