@@ -135,9 +135,21 @@ code {
 }
 
 
+/* .zoom-67 {
+  zoom: 0.67;
+  transform-origin: top center;
+} */
+
+
 .zoom-67 {
   zoom: 0.67;
   transform-origin: top center;
+}
+
+@media (min-width: 1920px) {
+  .zoom-67 {
+    zoom: 1.75;
+  }
 }
 
 

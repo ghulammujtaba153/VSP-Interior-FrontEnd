@@ -585,6 +585,7 @@ const ClientsTable = () => {
   if (loading) return <Loader />;
 
 
+  
 
   return (
     <Paper p={2} sx={{ padding: 2 }} className="zoom-67">

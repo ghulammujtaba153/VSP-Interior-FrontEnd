@@ -378,7 +378,7 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
     
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Clients & Contacts");
-    XLSX.writeFile(wb, "Clients And Suppliers Contacts VSP.xlsx");
+    XLSX.writeFile(wb, "Clients And Client Contacts VSP.xlsx");
     toast.success("Clients & Contacts template downloaded successfully!");
   }, []);
 

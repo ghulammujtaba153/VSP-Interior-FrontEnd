@@ -21,6 +21,7 @@ import CalenderView from '@/components/project-ui/scheduling/project-details/Cal
 import Notes from  "@/components/project-ui/scheduling/project-details/Notes"
 import InventoryView from '@/components/project-ui/scheduling/project-details/InventoryView';
 import Calender from '@/components/project-ui/scheduling/project-details/Calender';
+import WorkerView from '@/components/project-ui/scheduling/project-details/WorkerView';
 
 const Page = () => {
   const { id } = useParams();
@@ -72,7 +73,9 @@ const Page = () => {
             {/*<Tab label="Inventory View" />*/}
 
             <Tab label= "Notes"/>
-            <Tab label="Resource View" />
+            <Tab label= "Tasks View" />
+            <Tab label= "Workers" />
+            
           </Tabs>
 
           {tab === 0 && (
@@ -120,6 +123,14 @@ const Page = () => {
               <Calender projectId={id} data={data}/>
             </Box>
           )}
+
+          {
+            tab === 6 && (
+              <Box sx={{ mt: 2 }}>
+              <WorkerView projectId={id} data={data}/>
+            </Box>
+            )
+          }
         </>
       ) : (
         <Typography>No project data found.</Typography>
