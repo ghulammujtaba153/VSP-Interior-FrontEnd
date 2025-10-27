@@ -40,11 +40,11 @@ const GanttTaskModal = ({
       </DialogTitle>
       <DialogContent className="space-y-3 mt-2">
         <TextField
-          label="Task Name *"
+          label="Task Title *"
           fullWidth
-          value={newTask.name}
+          value={newTask.title}
           onChange={(e) =>
-            setNewTask((p) => ({ ...p, name: e.target.value }))
+            setNewTask((p) => ({ ...p, title: e.target.value }))
           }
           required
         />
@@ -55,9 +55,9 @@ const GanttTaskModal = ({
             type="date"
             fullWidth
             InputLabelProps={{ shrink: true }}
-            value={newTask.start}
+            value={newTask.startDate}
             onChange={(e) =>
-              setNewTask((p) => ({ ...p, start: e.target.value }))
+              setNewTask((p) => ({ ...p, startDate: e.target.value }))
             }
             required
           />
@@ -66,77 +66,80 @@ const GanttTaskModal = ({
             type="date"
             fullWidth
             InputLabelProps={{ shrink: true }}
-            value={newTask.end}
+            value={newTask.endDate}
             onChange={(e) =>
-              setNewTask((p) => ({ ...p, end: e.target.value }))
+              setNewTask((p) => ({ ...p, endDate: e.target.value }))
             }
             required
           />
         </Box>
 
         <Box display="flex" gap={2}>
-          <TextField
-            label="Progress (%)"
-            type="number"
-            fullWidth
-            inputProps={{ min: 0, max: 100 }}
-            value={newTask.progress}
-            onChange={(e) =>
-              setNewTask((p) => ({ ...p, progress: e.target.value }))
-            }
-          />
           <FormControl fullWidth>
-            <InputLabel>Project Stage</InputLabel>
+            <InputLabel>Status</InputLabel>
             <Select
-              value={newTask.project}
-              label="Project Stage"
+              value={newTask.status}
+              label="Status"
               onChange={(e) =>
-                setNewTask((p) => ({ ...p, project: e.target.value }))
+                setNewTask((p) => ({ ...p, status: e.target.value }))
               }
             >
-              {projectStages.map(stage => (
-                <MenuItem key={stage} value={stage}>
-                  {stage}
-                </MenuItem>
-              ))}
+              <MenuItem value="upcoming">Upcoming</MenuItem>
+              <MenuItem value="inProgress">In Progress</MenuItem>
+              <MenuItem value="completed">Completed</MenuItem>
+            </Select>
+          </FormControl>
+          
+          <FormControl fullWidth>
+            <InputLabel>Priority</InputLabel>
+            <Select
+              value={newTask.priority}
+              label="Priority"
+              onChange={(e) =>
+                setNewTask((p) => ({ ...p, priority: e.target.value }))
+              }
+            >
+              <MenuItem value="low">Low</MenuItem>
+              <MenuItem value="medium">Medium</MenuItem>
+              <MenuItem value="high">High</MenuItem>
             </Select>
           </FormControl>
         </Box>
 
         <FormControl fullWidth>
-          <InputLabel>Status</InputLabel>
+          <InputLabel>Project Stage *</InputLabel>
           <Select
-            value={newTask.status}
-            label="Status"
+            value={newTask.stage}
+            label="Project Stage *"
             onChange={(e) =>
-              setNewTask((p) => ({ ...p, status: e.target.value }))
+              setNewTask((p) => ({ ...p, stage: e.target.value }))
             }
+            required
           >
-            <MenuItem value="pending">Pending</MenuItem>
-            <MenuItem value="in-progress">In Progress</MenuItem>
-            <MenuItem value="completed">Completed</MenuItem>
+            {projectStages.map(stage => (
+              <MenuItem key={stage} value={stage}>
+                {stage}
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
 
-        <TextField
-          label="Dependencies (optional)"
-          select
-          fullWidth
-          value={newTask.dependencies[0] || ""}
-          onChange={(e) =>
-            setNewTask((p) => ({ 
-              ...p, 
-              dependencies: e.target.value ? [e.target.value] : [] 
-            }))
-          }
-        >
-          <MenuItem value="">None</MenuItem>
-          {tasks.filter(t => t.id !== editingTask?.id).map((t) => (
-            <MenuItem key={t.id} value={t.id}>
-              {t.name}
-            </MenuItem>
-          ))}
-        </TextField>
+        {/* Worker Assignment - You can expand this with actual worker data from your API */}
+        <FormControl fullWidth>
+          <InputLabel>Assigned Worker</InputLabel>
+          <Select
+            value={newTask.workerId || ""}
+            label="Assigned Worker"
+            onChange={(e) =>
+              setNewTask((p) => ({ ...p, workerId: e.target.value || null }))
+            }
+          >
+            <MenuItem value="">Unassigned</MenuItem>
+            {/* You can populate this with actual workers from your API */}
+            <MenuItem value={4}>Jane Smith (Electrician)</MenuItem>
+            <MenuItem value={7}>Worker1 (Worker)</MenuItem>
+          </Select>
+        </FormControl>
 
         <TextField
           label="Description"
@@ -147,6 +150,7 @@ const GanttTaskModal = ({
           onChange={(e) =>
             setNewTask((p) => ({ ...p, description: e.target.value }))
           }
+          placeholder="Enter task description..."
         />
       </DialogContent>
       <DialogActions>
@@ -154,7 +158,7 @@ const GanttTaskModal = ({
         <Button 
           onClick={handleSubmit}
           variant="contained"
-          disabled={saving}
+          disabled={saving || !newTask.title || !newTask.startDate || !newTask.endDate || !newTask.stage}
         >
           {saving ? "Saving..." : editingTask ? "Update Task" : "Add Task"}
         </Button>

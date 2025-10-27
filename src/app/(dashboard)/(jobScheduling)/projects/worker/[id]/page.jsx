@@ -13,6 +13,7 @@ import WeekTab from "@/components/project-ui/scheduling/project-details/employee
 import Loader from "@/components/loader/Loader";
 import { BASE_URL } from "@/configs/url";
 import { useAuth } from '@/context/authContext';
+import Kanban from "@/components/project-ui/scheduling/project-details/Kanban";
 
 const Page = () => {
   const { id } = useParams();
@@ -21,6 +22,7 @@ const Page = () => {
   const [loading, setLoading] = useState(false);
   const [tab, setTab] = useState(0);
   const {user } = useAuth();
+  const [totalTasks, setTotalTasks] = useState()
 
   
 
@@ -32,6 +34,7 @@ const Page = () => {
     setLoading(true);
     try {
       const res = await axios.get(`${BASE_URL}/api/job-scheduling/get/${id}`);
+      setTotalTasks(res.data.job || res.data.jobs?.[0] || null)
       setData(res.data.job || res.data.jobs?.[0] || null);
     } catch (error) {
       toast.error("Error fetching project data");
@@ -45,7 +48,7 @@ const Page = () => {
   const fetchTasks = async () => {
   try {
     const res = await axios.get(`${BASE_URL}/api/project-kanban/job/${id}`);
-
+    setTotalTasks(res.data)
     // Filter tasks where the logged-in user's email matches assignedWorker.email
     const data = res.data.filter(
       (task) => task.assignedWorker?.email === user?.email
@@ -136,6 +139,7 @@ const Page = () => {
         sx={{ borderBottom: 1, borderColor: "divider", mb: 2 }}
       >
         <Tab label="Overview" />
+        <Tab label="Kanban" />
         <Tab label="Today" />
         <Tab label="This Week" />
         <Tab label="Completed" />
@@ -144,9 +148,10 @@ const Page = () => {
       {/* Tab Panels */}
       <Box sx={{ mt: 2 }}>
         {tab === 0 && <ProjectOverview data={data} />}
-        {tab === 1 && <TodayTab tasks={todayTasks} onStatusChange={fetchTasks} />}
-        {tab === 2 && <WeekTab tasks={weekTasks} />}
-        {tab === 3 && <CompletedTab tasks={completedTasks} />}
+        {tab === 1 && <Kanban projectId={id} data={totalTasks} />}
+        {tab === 2 && <TodayTab tasks={todayTasks} onStatusChange={fetchTasks} />}
+        {tab === 3 && <WeekTab tasks={weekTasks} />}
+        {tab === 4 && <CompletedTab tasks={completedTasks} />}
       </Box>
     </Box>
   );

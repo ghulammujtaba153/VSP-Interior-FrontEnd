@@ -69,7 +69,8 @@ const Page = () => {
             <Tab label="Kanban" />
             <Tab label="Gantt Chart" />
             <Tab label="Calender View" />
-            <Tab label="Inventory View" />
+            {/*<Tab label="Inventory View" />*/}
+
             <Tab label= "Notes"/>
             <Tab label="Resource View" />
           </Tabs>
@@ -98,23 +99,23 @@ const Page = () => {
             </Box>
           )}
 
-          {
+          {/* {
             tab === 4 && (
               <Box sx={{mt:2}}>
                 <InventoryView projectId={id} data={data} />
               </Box>
             )
-          }
+          } */}
 
           {
-            tab === 5 && (
+            tab === 4 && (
               <Box sx={{mt:2}}>
                 <Notes projectId={id} data={data} />
                 </Box>
             )
           }
 
-          {tab === 6 && (
+          {tab === 5 && (
             <Box sx={{ mt: 2 }}>
               <Calender projectId={id} data={data}/>
             </Box>

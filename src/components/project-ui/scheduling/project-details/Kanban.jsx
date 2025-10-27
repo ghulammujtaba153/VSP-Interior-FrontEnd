@@ -595,36 +595,9 @@ const Kanban = ({ projectId, data }) => {
   const [uploadingFile, setUploadingFile] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
 
-  console.log("data from parent", data)
+  console.log("data from parent ", data)
 
-  // Test function to debug with sample data
-  const testWithSampleData = () => {
-    const sampleTasks = [
-      {"id":1,"projectSetupJobId":6,"title":"task1-machine","description":"description","startDate":"2025-10-23T00:00:00.000Z","endDate":"2025-10-31T00:00:00.000Z","workerId":4,"status":"upcoming","priority":"medium","stage":"To Do","createdAt":"2025-10-22T09:22:20.390Z","updatedAt":"2025-10-22T09:22:20.390Z"},
-      {"id":2,"projectSetupJobId":6,"title":"mnn","description":"mnmnmn","startDate":"2025-10-23T00:00:00.000Z","endDate":"2025-11-07T00:00:00.000Z","workerId":4,"status":"upcoming","priority":"medium","stage":"Machining","createdAt":"2025-10-22T09:30:22.835Z","updatedAt":"2025-10-22T09:30:22.835Z"},
-      {"id":3,"projectSetupJobId":6,"title":"mnn","description":"mnmnm","startDate":"2025-10-23T00:00:00.000Z","endDate":"2025-10-31T00:00:00.000Z","workerId":4,"status":"upcoming","priority":"medium","stage":"Installation","createdAt":"2025-10-22T09:31:05.384Z","updatedAt":"2025-10-22T09:31:05.384Z"},
-      {"id":4,"projectSetupJobId":6,"title":"nmnm","description":"mnmnm","startDate":"2025-10-23T00:00:00.000Z","endDate":"2025-10-23T00:00:00.000Z","workerId":4,"status":"upcoming","priority":"medium","stage":"Assembly","createdAt":"2025-10-22T09:31:35.742Z","updatedAt":"2025-10-22T09:31:35.742Z"}
-    ]
-    
-    console.log("Testing with sample data:", sampleTasks)
-    console.log("Available stages in sample tasks:", [...new Set(sampleTasks.map(t => t.stage))])
-    
-    // Organize tasks by stage
-    const organizedColumns = {}
-    Object.keys(processColumns).forEach(processId => {
-      const columnConfig = processColumns[processId]
-      const columnTasks = sampleTasks.filter(task => task.stage === columnConfig.stage)
-      console.log(`Column ${processId} (${columnConfig.stage}):`, columnTasks.length, "tasks")
-      
-      organizedColumns[processId] = {
-        ...columnConfig,
-        tasks: columnTasks
-      }
-    })
-    
-    setColumns(organizedColumns)
-    console.log("Organized columns with sample data:", organizedColumns)
-  }
+  
 
   // API functions
   const getTasks = async () => {

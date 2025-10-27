@@ -29,6 +29,24 @@ const CustomTaskListTableRow = ({ task, onTaskClick, onEditTask, onDeleteTask })
     });
   };
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'completed': return '#10b981';
+      case 'inProgress': return '#3b82f6';
+      case 'upcoming': return '#f59e0b';
+      default: return '#6b7280';
+    }
+  };
+
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case 'high': return '#ef4444';
+      case 'medium': return '#f59e0b';
+      case 'low': return '#10b981';
+      default: return '#6b7280';
+    }
+  };
+
   return (
     <div 
       className="flex items-center border-b hover:bg-gray-50 cursor-pointer group relative"
@@ -37,8 +55,40 @@ const CustomTaskListTableRow = ({ task, onTaskClick, onEditTask, onDeleteTask })
     >
       {/* Task Name Column */}
       <div className="flex-1 min-w-0 px-2 py-1 border-r">
-        <div className="truncate" title={task.name}>
+        <div className="truncate font-medium" title={task.name}>
           {task.name}
+        </div>
+        <div className="flex gap-1 mt-1">
+          <Chip 
+            label={task.status} 
+            size="small" 
+            style={{ 
+              backgroundColor: getStatusColor(task.status),
+              color: 'white',
+              fontSize: '10px',
+              height: '18px'
+            }} 
+          />
+          <Chip 
+            label={task.priority} 
+            size="small" 
+            style={{ 
+              backgroundColor: getPriorityColor(task.priority),
+              color: 'white',
+              fontSize: '10px',
+              height: '18px'
+            }} 
+          />
+        </div>
+      </div>
+      
+      {/* Worker Column */}
+      <div className="w-40 px-2 py-1 border-r">
+        <div className="text-sm text-gray-600 truncate" title={task.assignedWorker?.name || 'Unassigned'}>
+          {task.assignedWorker?.name || 'Unassigned'}
+        </div>
+        <div className="text-xs text-gray-400 truncate">
+          {task.assignedWorker?.jobTitle || ''}
         </div>
       </div>
       
@@ -100,9 +150,10 @@ const CustomTaskListTable = ({
     <div className="border-r bg-white">
       {/* Header */}
       <div className="flex items-center border-b font-semibold bg-gray-50" style={{ height: '44px' }}>
-        <div className="flex-1 min-w-0 px-2 py-1 border-r">Name</div>
-        <div className="w-32 px-2 py-1 border-r">From</div>
-        <div className="w-32 px-2 py-1 border-r">To</div>
+        <div className="flex-1 min-w-0 px-2 py-1 border-r">Task Name</div>
+        <div className="w-40 px-2 py-1 border-r">Assigned To</div>
+        <div className="w-32 px-2 py-1 border-r">Start Date</div>
+        <div className="w-32 px-2 py-1 border-r">End Date</div>
       </div>
       
       {/* Task Rows */}
@@ -119,73 +170,6 @@ const CustomTaskListTable = ({
   );
 };
 
-// Alternative approach: Use the default TaskListTable but add actions
-const TaskListWithActions = (props) => {
-  const { onTaskClick, onEditTask, onDeleteTask, ...restProps } = props;
-
-  return (
-    <table className="gantt-tasklist-table">
-      <thead>
-        <tr>
-          <th className="gantt-tasklist-name-header">Name</th>
-          <th className="gantt-tasklist-from-header">From</th>
-          <th className="gantt-tasklist-to-header">To</th>
-          <th className="gantt-tasklist-actions-header">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {restProps.tasks.map((task) => (
-          <tr 
-            key={task.id} 
-            className="gantt-tasklist-row group hover:bg-gray-50 cursor-pointer"
-            onClick={() => onTaskClick(task)}
-          >
-            <td className="gantt-tasklist-name-cell">
-              <div className="truncate" title={task.name}>
-                {task.name}
-              </div>
-            </td>
-            <td className="gantt-tasklist-from-cell">
-              {new Date(task.start).toLocaleDateString()}
-            </td>
-            <td className="gantt-tasklist-to-cell">
-              {new Date(task.end).toLocaleDateString()}
-            </td>
-            <td className="gantt-tasklist-actions-cell">
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1 justify-center">
-                <Tooltip title="Edit Task">
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEditTask(task);
-                    }}
-                    color="primary"
-                  >
-                    <EditIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Delete Task">
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteTask(task.id);
-                    }}
-                    color="error"
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </div>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-};
-
 export default function GanttChart({ projectId, data }) {
   const [viewMode, setViewMode] = useState(ViewMode.Month);
   const [open, setOpen] = useState(false);
@@ -196,262 +180,208 @@ export default function GanttChart({ projectId, data }) {
   const [editingTask, setEditingTask] = useState(null);
 
   const [newTask, setNewTask] = useState({
-    name: "",
-    start: "",
-    end: "",
-    progress: 0,
-    project: "Design",
+    title: "",
     description: "",
-    status: "pending",
-    dependencies: []
+    startDate: "",
+    endDate: "",
+    workerId: null,
+    status: "upcoming",
+    priority: "medium",
+    stage: "Design"
   });
 
-  // Project stages for categorization
-  const projectStages = [
-    "Design",
-    "Production", 
-    "Logistics",
-    "Installation",
-    "General"
-  ];
-
-  // Helper function to safely convert date strings to Date objects
-  const convertToDate = (dateString) => {
-    if (!dateString) return new Date();
-    if (dateString instanceof Date) return dateString;
-    return new Date(dateString);
-  };
-
-  // Helper function to format date for input fields
-  const formatDateForInput = (date) => {
-    if (!date) return "";
-    if (date instanceof Date) return date.toISOString().split('T')[0];
-    return new Date(date).toISOString().split('T')[0];
-  };
-
-  // Fetch existing Gantt chart tasks
-  const getGanttChart = async () => {
-    if (!data?.id) return;
+  // Helper function to convert API task to Gantt task format
+  const convertApiTaskToGanttTask = (apiTask) => {
+    const progress = apiTask.status === 'completed' ? 100 : 
+                    apiTask.status === 'inProgress' ? 50 : 0;
     
+    return {
+      id: apiTask.id.toString(),
+      name: apiTask.title,
+      type: "task",
+      start: new Date(apiTask.startDate),
+      end: new Date(apiTask.endDate),
+      progress: progress,
+      dependencies: [], // Always initialize as empty array since we don't have dependencies
+      project: apiTask.stage,
+      description: apiTask.description,
+      status: apiTask.status,
+      priority: apiTask.priority,
+      assignedWorker: apiTask.assignedWorker,
+      // Store original API data for reference
+      originalData: apiTask
+    };
+  };
+
+  // Helper function to convert Gantt task back to API format
+  const convertGanttTaskToApiTask = (ganttTask) => {
+    return {
+      title: ganttTask.name,
+      description: ganttTask.description,
+      startDate: ganttTask.start,
+      endDate: ganttTask.end,
+      status: ganttTask.status,
+      priority: ganttTask.priority,
+      stage: ganttTask.project
+    };
+  };
+
+  // API functions
+  const getTasks = async () => {
+    if (!data?.id) {
+      setLoading(false);
+      return;
+    }
+    
+    setLoading(true);
     try {
-      setLoading(true);
-      const response = await axios.get(
-        `${BASE_URL}/api/project-gantt-chart/get/${data.id}`
-      );
-
-      console.log("API Response:", response.data);
-
-      // Map API data to Gantt chart format
-      const chartData = response.data.chart.map((item) => ({
-        id: item.id.toString(),
-        name: item.name,
-        type: "task",
-        start: convertToDate(item.start),
-        end: convertToDate(item.end),
-        progress: item.progress || 0,
-        dependencies: item.dependencies || [],
-        project: item.project || "General",
-        description: item.description || "",
-        status: item.status || "pending",
-        originalData: item // Keep original data for updates
-      }));
-
-      console.log("Mapped tasks:", chartData);
-      setTasks(chartData);
+      const res = await axios.get(`${BASE_URL}/api/project-kanban/job/${data.id}`);
+      const apiTasks = res.data || [];
+      console.log("Fetched tasks from API:", apiTasks);
+      
+      // Convert API tasks to Gantt format
+      const ganttTasks = apiTasks.map(convertApiTaskToGanttTask);
+      console.log("Converted Gantt tasks:", ganttTasks);
+      
+      setTasks(ganttTasks);
     } catch (error) {
-      console.error("Error fetching Gantt chart:", error);
-      toast.error("Failed to fetch project tasks");
-      setTasks([]);
+      console.error('Error fetching tasks:', error);
+      toast.error('Failed to load tasks');
     } finally {
       setLoading(false);
     }
   };
 
-  // Add new task via API
-  const handleAddTask = async () => {
-    const { name, start, end, progress, project, description, status, dependencies } = newTask;
-    
-    if (!name || !start || !end) {
-      return toast.error("Please fill all required fields");
-    }
-
-    if (new Date(end) < new Date(start)) {
-      return toast.error("End date cannot be before start date");
-    }
-
+  const createTask = async (taskData) => {
     try {
-      setSaving(true);
       const payload = {
         projectSetupJobId: data.id,
-        name,
-        start: new Date(start),
-        end: new Date(end),
-        progress: parseFloat(progress) || 0,
-        dependencies: dependencies || [],
-        project: project || "General",
-        description: description || "",
-        status: status || "pending"
+        title: taskData.title,
+        description: taskData.description,
+        startDate: taskData.startDate || null,
+        endDate: taskData.endDate || null,
+        workerId: taskData.workerId || null,
+        status: taskData.status,
+        priority: taskData.priority,
+        stage: taskData.stage
       };
 
-      const response = await axios.post(`${BASE_URL}/api/project-gantt-chart/create`, payload);
-      
-      // Add the new task to the local state
-      const newTaskData = {
-        id: response.data.chart.id.toString(),
-        name,
-        type: "task",
-        start: convertToDate(start),
-        end: convertToDate(end),
-        progress: parseFloat(progress) || 0,
-        dependencies: dependencies || [],
-        project: project || "General",
-        description: description || "",
-        status: status || "pending",
-        originalData: response.data.chart
-      };
-
-      setTasks(prev => [...prev, newTaskData]);
-      setNewTask({
-        name: "",
-        start: "",
-        end: "",
-        progress: 0,
-        project: "Design",
-        description: "",
-        status: "pending",
-        dependencies: []
-      });
-      setOpen(false);
-      toast.success("Task created successfully");
+      console.log("Creating task with payload:", payload);
+      const res = await axios.post(`${BASE_URL}/api/project-kanban/create`, payload);
+      toast.success('Task created successfully');
+      await getTasks(); // Refresh the task list
+      return res.data;
     } catch (error) {
-      console.error("Error creating task:", error);
-      toast.error("Failed to create task");
-    } finally {
-      setSaving(false);
+      console.error('Error creating task:', error);
+      toast.error('Failed to create task');
+      throw error;
     }
   };
 
-  // Update task via API
-  const handleUpdateTask = async (taskId, updatedData) => {
+  const updateTask = async (taskId, taskData) => {
     try {
-      setSaving(true);
       const payload = {
-        name: updatedData.name,
-        start: updatedData.start,
-        end: updatedData.end,
-        progress: updatedData.progress,
-        dependencies: updatedData.dependencies || [],
-        project: updatedData.project || "General",
-        description: updatedData.description || "",
-        status: updatedData.status || "pending"
+        title: taskData.name,
+        description: taskData.description,
+        startDate: taskData.start,
+        endDate: taskData.end,
+        workerId: taskData.assignedWorker?.id || null,
+        status: taskData.status,
+        priority: taskData.priority,
+        stage: taskData.project
       };
 
-      await axios.put(`${BASE_URL}/api/project-gantt-chart/update/${taskId}`, payload);
-      
-      // Update local state
-      setTasks(prev => prev.map(task => 
-        task.id === taskId 
-          ? { ...task, ...updatedData, originalData: { ...task.originalData, ...updatedData } }
-          : task
-      ));
-      
-      setHasChanges(false);
-      toast.success("Task updated successfully");
+      console.log("Updating task with payload:", payload);
+      const res = await axios.put(`${BASE_URL}/api/project-kanban/update/${taskId}`, payload);
+      toast.success('Task updated successfully');
+      await getTasks(); // Refresh the task list
+      return res.data;
     } catch (error) {
-      console.error("Error updating task:", error);
-      toast.error("Failed to update task");
-    } finally {
-      setSaving(false);
+      console.error('Error updating task:', error);
+      toast.error('Failed to update task');
+      throw error;
     }
   };
 
-  // Delete task via API
-  const handleDeleteTask = async (taskId) => {
-    if (!window.confirm("Are you sure you want to delete this task?")) return;
-
+  const deleteTask = async (taskId) => {
     try {
-      setSaving(true);
-      await axios.delete(`${BASE_URL}/api/project-gantt-chart/delete/${taskId}`);
-      
-      // Remove from local state
-      setTasks(prev => prev.filter(task => task.id !== taskId));
-      toast.success("Task deleted successfully");
+      await axios.delete(`${BASE_URL}/api/project-kanban/${taskId}`);
+      toast.success('Task deleted successfully');
+      await getTasks(); // Refresh the task list
+      return true;
     } catch (error) {
-      console.error("Error deleting task:", error);
-      toast.error("Failed to delete task");
-    } finally {
-      setSaving(false);
+      console.error('Error deleting task:', error);
+      toast.error('Failed to delete task');
+      throw error;
     }
   };
 
   // Handle task changes (drag and drop, progress changes)
-  const handleTaskChange = (task, changes) => {
-    const updatedTask = { ...task, ...changes };
-    
-    // Update local state immediately for UI responsiveness
-    setTasks(prev => prev.map(t => t.id === task.id ? updatedTask : t));
-    setHasChanges(true);
+  const handleTaskChange = async (task, changes) => {
+    try {
+      // Ensure dependencies is always an array
+      const updatedTask = { 
+        ...task, 
+        ...changes,
+        dependencies: task.dependencies || [] // Ensure dependencies exists
+      };
+      
+      // Update local state immediately for UI responsiveness
+      setTasks(prev => prev.map(t => t.id === task.id ? updatedTask : t));
+      setHasChanges(true);
+
+      // Auto-save changes
+      await updateTask(task.id, updatedTask);
+      setHasChanges(false);
+    } catch (error) {
+      // Revert on error
+      await getTasks();
+    }
   };
 
-  // Save all changes
-  const handleSaveChanges = async () => {
+  // Handle delete task
+  const handleDeleteTask = async (taskId) => {
+    if (!window.confirm('Are you sure you want to delete this task?')) {
+      return;
+    }
+
+    try {
+      await deleteTask(taskId);
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    }
+  };
+
+  // Handle add new task
+  const handleAddTask = async () => {
+    const { title, description, startDate, endDate, status, priority, stage } = newTask;
+    
+    if (!title || !startDate || !endDate) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+
+    if (new Date(endDate) < new Date(startDate)) {
+      toast.error("End date cannot be before start date");
+      return;
+    }
+
     try {
       setSaving(true);
-
-      const modifiedTasks = tasks.filter(task => {
-        const o = task.originalData || {};
-        return (
-          task.name !== o.name ||
-          new Date(task.start).toISOString() !== new Date(o.start).toISOString() ||
-          new Date(task.end).toISOString() !== new Date(o.end).toISOString() ||
-          task.progress !== o.progress ||
-          task.project !== o.project ||
-          task.description !== o.description ||
-          task.status !== o.status ||
-          JSON.stringify(task.dependencies || []) !== JSON.stringify(o.dependencies || [])
-        );
+      await createTask(newTask);
+      setNewTask({
+        title: "",
+        description: "",
+        startDate: "",
+        endDate: "",
+        workerId: null,
+        status: "upcoming",
+        priority: "medium",
+        stage: "Design"
       });
-
-      if (modifiedTasks.length === 0) {
-        toast.info("No changes to save");
-        return;
-      }
-
-      const updatePromises = modifiedTasks.map(task => {
-        const payload = {
-          name: task.name,
-          start: new Date(task.start),
-          end: new Date(task.end),
-          progress: task.progress,
-          dependencies: task.dependencies || [],
-          project: task.project || "General",
-          description: task.description || "",
-          status: task.status || "pending",
-        };
-
-        return axios
-          .put(`${BASE_URL}/api/project-gantt-chart/update/${task.id}`, payload)
-          .then(() => {
-            setTasks(prev =>
-              prev.map(t =>
-                t.id === task.id
-                  ? { ...t, originalData: { ...t.originalData, ...payload } }
-                  : t
-              )
-            );
-          })
-          .catch(err => {
-            console.error("Failed to update task:", task.name, err);
-            toast.error(`Failed to update "${task.name}"`);
-          });
-      });
-
-      await Promise.all(updatePromises);
-      setHasChanges(false);
-      toast.success("All changes saved successfully");
+      setOpen(false);
     } catch (error) {
-      console.error("Error saving changes:", error);
-      toast.error("Failed to save changes");
+      console.error("Error creating task:", error);
     } finally {
       setSaving(false);
     }
@@ -462,14 +392,14 @@ export default function GanttChart({ projectId, data }) {
     console.log("Editing task:", task);
     setEditingTask(task);
     setNewTask({
-      name: task.name,
-      start: formatDateForInput(task.start),
-      end: formatDateForInput(task.end),
-      progress: task.progress,
-      project: task.project,
+      title: task.name,
       description: task.description || "",
+      startDate: task.start.toISOString().split('T')[0],
+      endDate: task.end.toISOString().split('T')[0],
+      workerId: task.assignedWorker?.id || null,
       status: task.status,
-      dependencies: task.dependencies || []
+      priority: task.priority,
+      stage: task.project
     });
     setOpen(true);
   };
@@ -484,46 +414,37 @@ export default function GanttChart({ projectId, data }) {
   const handleUpdateExistingTask = async () => {
     if (!editingTask) return;
 
-    const { name, start, end, progress, project, description, status, dependencies } = newTask;
+    const { title, description, startDate, endDate, status, priority, stage } = newTask;
     
-    if (!name || !start || !end) {
-      return toast.error("Please fill all required fields");
+    if (!title || !startDate || !endDate) {
+      toast.error("Please fill all required fields");
+      return;
     }
 
-    if (new Date(end) < new Date(start)) {
-      return toast.error("End date cannot be before start date");
+    if (new Date(endDate) < new Date(startDate)) {
+      toast.error("End date cannot be before start date");
+      return;
     }
 
     try {
       setSaving(true);
-      const updatedData = {
-        name,
-        start: convertToDate(start),
-        end: convertToDate(end),
-        progress: parseFloat(progress) || 0,
-        dependencies: dependencies || [],
-        project: project || "General",
-        description: description || "",
-        status: status || "pending"
+      const updatedTask = {
+        ...editingTask,
+        name: title,
+        description: description,
+        start: new Date(startDate),
+        end: new Date(endDate),
+        status: status,
+        priority: priority,
+        project: stage,
+        dependencies: editingTask.dependencies || [] // Ensure dependencies exists
       };
 
-      await handleUpdateTask(editingTask.id, updatedData);
-      
-      setNewTask({
-        name: "",
-        start: "",
-        end: "",
-        progress: 0,
-        project: "Design",
-        description: "",
-        status: "pending",
-        dependencies: []
-      });
+      await updateTask(editingTask.id, updatedTask);
       setEditingTask(null);
       setOpen(false);
     } catch (error) {
       console.error("Error updating task:", error);
-      toast.error("Failed to update task");
     } finally {
       setSaving(false);
     }
@@ -543,14 +464,14 @@ export default function GanttChart({ projectId, data }) {
     setOpen(false);
     setEditingTask(null);
     setNewTask({
-      name: "",
-      start: "",
-      end: "",
-      progress: 0,
-      project: "Design",
+      title: "",
       description: "",
-      status: "pending",
-      dependencies: []
+      startDate: "",
+      endDate: "",
+      workerId: null,
+      status: "upcoming",
+      priority: "medium",
+      stage: "Design"
     });
   };
 
@@ -564,65 +485,39 @@ export default function GanttChart({ projectId, data }) {
         return "#fde68a";
       case "Installation":
         return "#fca5a5";
+      case "Delivery":
+        return "#d8b4fe";
+      case "Assembly":
+        return "#f9a8d4";
       default:
         return "#cbd5e1";
     }
   };
 
-  // Create sample tasks if no tasks exist (for testing)
-  const createSampleTasks = () => {
-    const sampleTasks = [
-      {
-        id: "1",
-        name: "Project Planning",
-        type: "task",
-        start: new Date(2024, 0, 1),
-        end: new Date(2024, 0, 15),
-        progress: 100,
-        dependencies: [],
-        project: "Design",
-        description: "Initial project planning phase",
-        status: "completed",
-        originalData: {}
-      },
-      {
-        id: "2",
-        name: "Design Phase",
-        type: "task",
-        start: new Date(2024, 0, 16),
-        end: new Date(2024, 1, 15),
-        progress: 75,
-        dependencies: ["1"],
-        project: "Design",
-        description: "Detailed design work",
-        status: "in-progress",
-        originalData: {}
-      },
-      {
-        id: "3",
-        name: "Production",
-        type: "task",
-        start: new Date(2024, 1, 16),
-        end: new Date(2024, 2, 15),
-        progress: 0,
-        dependencies: ["2"],
-        project: "Production",
-        description: "Manufacturing phase",
-        status: "pending",
-        originalData: {}
-      }
-    ];
-    setTasks(sampleTasks);
+  // Get all unique stages from tasks for legend
+  const getUniqueStages = () => {
+    const stages = [...new Set(tasks.map(task => task.project))];
+    return stages.length > 0 ? stages : ["Design", "Production", "Logistics", "Installation", "Delivery", "Assembly"];
+  };
+
+  // Safe task processing to ensure all required fields exist
+  const processTasksForGantt = (ganttTasks) => {
+    return ganttTasks.map(task => ({
+      ...task,
+      dependencies: task.dependencies || [], // Ensure dependencies is always an array
+      type: task.type || "task",
+      progress: task.progress || 0
+    }));
   };
 
   useEffect(() => {
     if (data?.id) {
-      getGanttChart();
-    } else {
-      setLoading(false);
-      createSampleTasks();
+      getTasks();
     }
   }, [data?.id]);
+
+  // Process tasks before passing to Gantt component
+  const processedTasks = processTasksForGantt(tasks);
 
   if (loading) {
     return (
@@ -643,7 +538,15 @@ export default function GanttChart({ projectId, data }) {
               viewMode === ViewMode.Day ? "bg-blue-600 text-white" : "bg-gray-200"
             }`}
           >
-            Weekly
+            Day
+          </button>
+          <button
+            onClick={() => setViewMode(ViewMode.Week)}
+            className={`px-3 py-1 rounded ${
+              viewMode === ViewMode.Week ? "bg-blue-600 text-white" : "bg-gray-200"
+            }`}
+          >
+            Week
           </button>
           <button
             onClick={() => setViewMode(ViewMode.Month)}
@@ -653,7 +556,7 @@ export default function GanttChart({ projectId, data }) {
                 : "bg-gray-200"
             }`}
           >
-            Monthly
+            Month
           </button>
         </div>
 
@@ -662,11 +565,11 @@ export default function GanttChart({ projectId, data }) {
             <Button
               variant="contained"
               startIcon={<SaveIcon />}
-              onClick={handleSaveChanges}
+              onClick={getTasks}
               disabled={saving}
               color="primary"
             >
-              {saving ? "Saving..." : "Save Changes"}
+              {saving ? "Refreshing..." : "Refresh"}
             </Button>
           )}
           
@@ -676,14 +579,14 @@ export default function GanttChart({ projectId, data }) {
             onClick={() => {
               setEditingTask(null);
               setNewTask({
-                name: "",
-                start: "",
-                end: "",
-                progress: 0,
-                project: "Design",
+                title: "",
                 description: "",
-                status: "pending",
-                dependencies: []
+                startDate: "",
+                endDate: "",
+                workerId: null,
+                status: "upcoming",
+                priority: "medium",
+                stage: "Design"
               });
               setOpen(true);
             }}
@@ -691,22 +594,13 @@ export default function GanttChart({ projectId, data }) {
           >
             Add Task
           </Button>
-
-          {tasks.length === 0 && (
-            <Button
-              variant="outlined"
-              onClick={createSampleTasks}
-            >
-              Load Sample Tasks
-            </Button>
-          )}
         </div>
       </div>
 
       {/* Legend */}
       <div className="flex justify-between items-center mb-4">
-        <div className="flex gap-4 text-sm">
-          {projectStages.map(stage => (
+        <div className="flex flex-wrap gap-2 text-sm">
+          {getUniqueStages().map(stage => (
             <Chip
               key={stage}
               label={stage}
@@ -722,20 +616,19 @@ export default function GanttChart({ projectId, data }) {
 
       {/* Debug Info */}
       <div className="mb-2 text-sm text-gray-600">
-        Tasks loaded: {tasks.length}
+        Tasks loaded: {processedTasks.length} | Project ID: {data?.id}
       </div>
 
       {/* Gantt Chart */}
-      {tasks.length > 0 ? (
+      {processedTasks.length > 0 ? (
         <div className="overflow-x-auto min-w-[1000px] border rounded">
           <Gantt
-            tasks={tasks}
+            tasks={processedTasks}
             viewMode={viewMode}
             onDateChange={(task, changes) => handleTaskChange(task, changes)}
             onProgressChange={(task, changes) => handleTaskChange(task, changes)}
-            onDelete={(task) => handleDeleteTask(task.id)}
             onTaskClick={handleTaskClick}
-            listCellWidth="150px"
+            listCellWidth="180px"
             columnWidth={viewMode === ViewMode.Day ? 80 : 120}
             locale="en-GB"
             barBackgroundColor={(task) => getBarStyle(task.project)}
@@ -746,11 +639,11 @@ export default function GanttChart({ projectId, data }) {
             handleWidth={8}
             fontFamily="inherit"
             fontSize="12"
-            // Use the custom task list with dates
+            // Use the custom task list
             TaskListTable={(props) => (
               <CustomTaskListTable
                 {...props}
-                tasks={tasks}
+                tasks={processedTasks}
                 onTaskClick={handleTaskClick}
                 onEditTask={handleEditTask}
                 onDeleteTask={handleDeleteTask}
@@ -764,14 +657,27 @@ export default function GanttChart({ projectId, data }) {
             No tasks found
           </Typography>
           <Typography variant="body2" color="textSecondary" className="mb-4">
-            Click "Add Task" to create your first task or "Load Sample Tasks" to see demo data
+            Click "Add Task" to create your first task
           </Typography>
           <Button
             variant="contained"
-            onClick={createSampleTasks}
+            onClick={() => {
+              setEditingTask(null);
+              setNewTask({
+                title: "",
+                description: "",
+                startDate: "",
+                endDate: "",
+                workerId: null,
+                status: "upcoming",
+                priority: "medium",
+                stage: "Design"
+              });
+              setOpen(true);
+            }}
             startIcon={<AddIcon />}
           >
-            Load Sample Tasks
+            Add Task
           </Button>
         </div>
       )}
@@ -785,8 +691,8 @@ export default function GanttChart({ projectId, data }) {
         setNewTask={setNewTask}
         onSave={handleModalSave}
         saving={saving}
-        projectStages={projectStages}
-        tasks={tasks}
+        projectStages={getUniqueStages()}
+        tasks={processedTasks}
       />
     </div>
   );
