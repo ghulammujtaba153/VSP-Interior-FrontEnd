@@ -11,7 +11,8 @@ import {
   Button,
   Tabs,
   Tab,
-  Typography
+  Typography,
+  Paper
 } from '@mui/material';
 import Link from 'next/link';
 import ProjectOverview from '@/components/project-ui/scheduling/project-details/ProjectOverview';
@@ -49,7 +50,7 @@ const Page = () => {
   if (loading) return <Loader />;
 
   return (
-    <Box sx={{ width: '100%', typography: 'body1' }}>
+    <Box sx={{ width: '100%', typography: 'body1', p: 2 }}  component={Paper}>
       <Button
         component={Link}
         href="/projects"
