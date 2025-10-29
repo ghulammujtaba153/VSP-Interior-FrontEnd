@@ -338,7 +338,7 @@ const InventoryTable = () => {
               <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Unit</TableCell>
               {/* <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Unit</TableCell> */}
               <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Price</TableCell>
-              <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Quantity</TableCell>
+              <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Quantity in Stock</TableCell>
               <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Status</TableCell>
               <TableCell sx={{ minWidth: 180, fontWeight: 'bold' }}>Notes</TableCell>
               <TableCell sx={{ minWidth: 120, fontWeight: 'bold' }}>Date</TableCell>

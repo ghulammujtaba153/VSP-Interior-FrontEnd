@@ -40,6 +40,7 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import { BASE_URL } from "@/configs/url";
 import EditIcon from "@mui/icons-material/Edit";
+import { useAuth } from "@/context/authContext";
 
 const statusOptions = [
   { value: "to-start", label: "To Start" },
@@ -50,6 +51,7 @@ const statusOptions = [
 ];
 
 const TodayTab = ({ tasks: initialTasks = [], onStatusChange }) => {
+  const { user } = useAuth();
   const [tasks, setTasks] = useState(initialTasks);
   const [commentDialogOpen, setCommentDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -139,7 +141,7 @@ const TodayTab = ({ tasks: initialTasks = [], onStatusChange }) => {
         content: newComment.trim(),
         file: fileData,
         timestamp: new Date().toISOString(),
-        author: "Current User", // You can get this from auth context
+        author: user?.name || "Current User", // Use actual user name from auth context
       };
 
       // Get existing comments or initialize empty array
@@ -284,7 +286,7 @@ const TodayTab = ({ tasks: initialTasks = [], onStatusChange }) => {
                 
                 {/* Action Buttons */}
                 <Stack direction="row" spacing={1}>
-                  <Tooltip title="Add Comment">
+                  <Tooltip title={task.comments && task.comments.length > 0 ? "View Comments" : "Add Comment"}>
                     <IconButton
                       size="small"
                       onClick={() => openCommentDialog(task)}

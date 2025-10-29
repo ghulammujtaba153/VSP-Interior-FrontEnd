@@ -71,7 +71,9 @@ import { CSS } from '@dnd-kit/utilities'
 import axios from 'axios'
 import { BASE_URL } from '@/configs/url'
 import { toast } from 'react-toastify'
-import CommentDialog from '@/components/trackboards/CommentDialog'
+import CommentDialog from './CommentDialog'
+import { useAuth } from '@/context/authContext'
+import Loader from '../loader/Loader'
 
 // Status options with icons and colors
 const statusConfig = {
@@ -89,18 +91,18 @@ const processColumns = {
   //   color: '#757575',
   //   stage: 'To Do', // Map to your backend stage
   // },
-  machining: {
-    id: 'machining',
-    title: 'Machining',
-    color: '#1976d2',
-    stage: 'Machining',
-  },
-  assembly: {
-    id: 'assembly',
-    title: 'Assembly',
-    color: '#2e7d32',
-    stage: 'Assembly',
-  },
+//   machining: {
+//     id: 'machining',
+//     title: 'Machining',
+//     color: '#1976d2',
+//     stage: 'Machining',
+//   },
+//   assembly: {
+//     id: 'assembly',
+//     title: 'Assembly',
+//     color: '#2e7d32',
+//     stage: 'Assembly',
+//   },
   delivery: {
     id: 'delivery',
     title: 'Delivery',
@@ -580,7 +582,7 @@ const Column = ({ column, tasks, onAddTask, onEditTask, onDeleteTask, workers, i
 }
 
 // Main Kanban Component
-const Kanban = ({ projectId, data }) => {
+const SiteTab = ({ projectId, data }) => {
   const [columns, setColumns] = useState({})
   const [activeTask, setActiveTask] = useState(null)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
@@ -597,6 +599,7 @@ const Kanban = ({ projectId, data }) => {
     stage: 'todo', // Default to first stage
   })
   const [activeColumn, setActiveColumn] = useState(null)
+  const {user} = useAuth()
   
   // Comment dialog state
   const [commentDialogOpen, setCommentDialogOpen] = useState(false)
@@ -970,7 +973,7 @@ const Kanban = ({ projectId, data }) => {
   const workers = data?.workers || []
 
 
-  if(loading) return <p>loadin..</p>
+  if(loading) return <Loader/>
 
   return (
     <Box sx={{ p: 3 }}>
@@ -1202,4 +1205,4 @@ const Kanban = ({ projectId, data }) => {
   )
 }
 
-export default Kanban
+export default SiteTab

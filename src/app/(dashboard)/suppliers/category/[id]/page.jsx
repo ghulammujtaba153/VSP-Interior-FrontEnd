@@ -42,6 +42,8 @@ const SupplierCategoryPage = () => {
   const { id } = useParams()
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState([])
+  const [suppliers, setSuppliers] = useState([])
+  const [loadingSuppliers, setLoadingSuppliers] = useState(true)
 
   // Search
   const [searchQuery, setSearchQuery] = useState('')
@@ -58,6 +60,7 @@ const SupplierCategoryPage = () => {
     description: '',
     unit: '',
     price: '',
+    supplierId: '',
     status: 'Active' // default active, status dropdown removed
   })
 
@@ -78,6 +81,20 @@ const SupplierCategoryPage = () => {
   const [historyVersions, setHistoryVersions] = useState([])
   const [historyVersionSelected, setHistoryVersionSelected] = useState('All')
 
+  // Fetch suppliers
+  const fetchSuppliers = async () => {
+    setLoadingSuppliers(true)
+    try {
+      const response = await axios.get(`${BASE_URL}/api/suppliers/get?limit=1000`)
+      setSuppliers(response.data.data || [])
+    } catch (error) {
+      console.error('Failed to fetch suppliers', error)
+      toast.error('Failed to fetch suppliers')
+    } finally {
+      setLoadingSuppliers(false)
+    }
+  }
+
   // Fetch category (pricebooks under category)
   const fetchCategory = async () => {
     setLoading(true)
@@ -88,7 +105,6 @@ const SupplierCategoryPage = () => {
       // Store category info for later use
       if (response.data.length > 0 && response.data[0].PriceBookCategory) {
         setCategoryInfo({
-          supplierId: response.data[0].PriceBookCategory.supplierId,
           categoryName: response.data[0].PriceBookCategory.name
         })
       }
@@ -102,8 +118,8 @@ const SupplierCategoryPage = () => {
   // Fetch available versions for a given item name + category
   const fetchAvailableVersions = async itemName => {
     setAvailableLoading(true)
-    // if no category or no name, default to v1
-    if (!categoryInfo?.supplierId || !itemName) {
+    // if no name, default to v1
+    if (!itemName) {
       setAvailableVersions(['v1'])
       setAvailableLoading(false)
       return
@@ -130,6 +146,7 @@ const SupplierCategoryPage = () => {
 
   useEffect(() => {
     fetchCategory()
+    fetchSuppliers()
   }, [id])
 
   useEffect(() => {
@@ -157,6 +174,7 @@ const SupplierCategoryPage = () => {
       description: row.description,
       unit: row.unit,
       price: row.price,
+      supplierId: row.supplierId || '',
       status: 'Active' // ensure status remains active on update
     })
     // keep version unchanged for updates
@@ -169,8 +187,8 @@ const SupplierCategoryPage = () => {
 
   const handleUpdate = async () => {
     // Validate required fields
-    if (!formData.name || !formData.unit || !formData.price) {
-      toast.error('Please fill all required fields')
+    if (!formData.name || !formData.unit || !formData.price || !formData.supplierId) {
+      toast.error('Please fill all required fields including Supplier')
       return
     }
 
@@ -225,9 +243,10 @@ const SupplierCategoryPage = () => {
         return
       }
 
-      // Create new pricebook item (status default Active)
+      // Create new pricebook item (status default Active) - supplierId is required
       await axios.post(`${BASE_URL}/api/pricebook/create`, {
         ...formData,
+        supplierId: formData.supplierId,
         priceBookCategoryId: id,
         version: version,
         status: 'Active'
@@ -236,7 +255,7 @@ const SupplierCategoryPage = () => {
       toast.dismiss()
       toast.success('Item added successfully')
       setOpenVersionDialog(false)
-      setFormData({ name: '', description: '', unit: '', price: '', status: 'Active' })
+      setFormData({ name: '', description: '', unit: '', price: '', supplierId: '', status: 'Active' })
       fetchCategory()
     } catch (error) {
       toast.dismiss()
@@ -253,6 +272,7 @@ const SupplierCategoryPage = () => {
       description: '',
       unit: '',
       price: '',
+      supplierId: '',
       status: 'Active'
     })
   }
@@ -264,6 +284,7 @@ const SupplierCategoryPage = () => {
       description: '',
       unit: '',
       price: '',
+      supplierId: '',
       status: 'Active'
     })
     setVersionAction('new')
@@ -285,6 +306,7 @@ const SupplierCategoryPage = () => {
       Unit: item.unit,
       Price: item.price,
       Version: item.version,
+      Supplier: item.Suppliers ? item.Suppliers.name : 'N/A',
       Status: item.status,
       Category: item.PriceBookCategory ? item.PriceBookCategory.name : '',
       CreatedAt: item.createdAt,
@@ -296,7 +318,7 @@ const SupplierCategoryPage = () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'PriceBook')
     XLSX.writeFile(
       workbook,
-      `${data[0]?.PriceBookCategory?.Supplier?.name || 'Supplier'} - ${
+      `${data[0]?.Suppliers?.name || 'Supplier'} - ${
         data[0]?.PriceBookCategory?.name || 'Category'
       } VSP.xlsx`
     )
@@ -403,6 +425,9 @@ const SupplierCategoryPage = () => {
                 <b>Version</b>
               </TableCell>
               <TableCell>
+                <b>Supplier</b>
+              </TableCell>
+              <TableCell>
                 <b>Status</b>
               </TableCell>
               <TableCell align='center'>
@@ -420,6 +445,7 @@ const SupplierCategoryPage = () => {
                   <TableCell>{row.unit}</TableCell>
                   <TableCell>{row.price}</TableCell>
                   <TableCell>{row.version}</TableCell>
+                  <TableCell>{row.Supplier?.name || 'N/A'}</TableCell>
                   <TableCell>{row.status}</TableCell>
                   <TableCell align='center'>
                     <IconButton color='info' onClick={() => handleViewHistory(row)} title='History'>
@@ -436,7 +462,7 @@ const SupplierCategoryPage = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={8} align='center'>
+                <TableCell colSpan={9} align='center'>
                   No data found
                 </TableCell>
               </TableRow>
@@ -492,6 +518,21 @@ const SupplierCategoryPage = () => {
             value={formData.price}
             onChange={e => setFormData({ ...formData, price: e.target.value })}
           />
+          <FormControl fullWidth margin='dense' required>
+            <InputLabel>Supplier</InputLabel>
+            <Select
+              value={formData.supplierId}
+              label='Supplier'
+              onChange={e => setFormData({ ...formData, supplierId: e.target.value })}
+              disabled={loadingSuppliers}
+            >
+              {suppliers.map(supplier => (
+                <MenuItem key={supplier.id} value={supplier.id}>
+                  {supplier.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           {/* status removed; default 'Active' is used */}
         </DialogContent>
 
