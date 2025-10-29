@@ -146,38 +146,49 @@ code {
   transform-origin: top center;
 }
 
+@media (min-width: 1290px) {
+  .zoom-67 {
+    zoom: 0.75;
+  }
+}
+
+@media (min-width: 1024px) {
+  .zoom-67 {
+    zoom: 0.55;
+  }
+}
 /* 15–17 inch */
 @media (min-width: 1600px) {
   .zoom-67 {
-    zoom: 1.0;
+    zoom: 0.85;
   }
 }
 
 /* 18–24 inch */
 @media (min-width: 1920px) {
   .zoom-67 {
-    zoom: 1.25;
+    zoom: 1.0;
   }
 }
 
 /* 25–32 inch */
 @media (min-width: 2560px) {
   .zoom-67 {
-    zoom: 1.5;
+    zoom: 1.40;
   }
 }
 
 /* 33–40 inch */
 @media (min-width: 3440px) {
   .zoom-67 {
-    zoom: 1.75;
+    zoom: 1.65;
   }
 }
 
 /* 41–50 inch */
 @media (min-width: 3840px) {
   .zoom-67 {
-    zoom: 2.3;
+    zoom: 1.95;
   }
 }
 
