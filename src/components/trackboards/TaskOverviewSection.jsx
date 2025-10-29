@@ -50,11 +50,11 @@ const processColumns = {
       color: '#9c27b0',
       stage: 'Installation',
     },
-}
+  }
 
 const TaskOverviewSection = ({ data }) => {
   const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(true);
   const [stageProgress, setStageProgress] = useState({});
 
   // Calculate task status based on dates and completion
@@ -141,7 +141,7 @@ const TaskOverviewSection = ({ data }) => {
     }
   };
 
-  // API functions
+    // API functions
   const getTasks = async () => {
     if (!data?.id) return;
     
@@ -174,7 +174,7 @@ const TaskOverviewSection = ({ data }) => {
 
   if (loading) return <Loader />;
 
-  return (
+    return (
     <Card sx={{ mt: 2 }}>
       <CardContent>
         <Typography variant="h6" gutterBottom>

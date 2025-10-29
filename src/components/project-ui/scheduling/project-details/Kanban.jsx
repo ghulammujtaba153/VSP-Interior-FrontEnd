@@ -280,13 +280,13 @@ const SortableTask = ({ task, onEdit, onDelete, workers, onViewComments }) => {
             {/* Comments Section */}
             <Box sx={{ mt: 1, display: 'flex', gap: 1, alignItems: 'center' }}>
               {/* Comments Button */}
-              <Chip
-                icon={<ChatIcon />}
+                <Chip
+                  icon={<ChatIcon />}
                 label={task.comments && task.comments.length > 0 ? "View Comments" : "Add Comment"}
-                size="small"
-                variant="outlined"
+                  size="small"
+                  variant="outlined"
                 color="primary"
-                onClick={() => onViewComments(task)}
+                  onClick={() => onViewComments(task)}
                 sx={{ cursor: "pointer", '&:hover': { backgroundColor: 'primary.light', color: 'white' } }}
               />
               

@@ -282,13 +282,13 @@ const SortableTask = ({ task, onEdit, onDelete, workers, onViewComments }) => {
             {/* Comments Section */}
             <Box sx={{ mt: 1, display: 'flex', gap: 1, alignItems: 'center' }}>
               {/* Comments Button */}
-              <Chip
-                icon={<ChatIcon />}
+                <Chip
+                  icon={<ChatIcon />}
                 label={task.comments && task.comments.length > 0 ? "View Comments" : "Add Comment"}
-                size="small"
-                variant="outlined"
+                  size="small"
+                  variant="outlined"
                 color="primary"
-                onClick={() => onViewComments(task)}
+                  onClick={() => onViewComments(task)}
                 sx={{ cursor: "pointer", '&:hover': { backgroundColor: 'primary.light', color: 'white' } }}
               />
               
@@ -889,24 +889,24 @@ const SiteTab = ({ projectId, data }) => {
 
   const handleCommentAdded = (taskId, updatedComments) => {
     // Update local state when a comment is added
-    setColumns((prevColumns) => {
-      const updatedColumns = { ...prevColumns }
-      Object.keys(updatedColumns).forEach(columnId => {
-        const column = updatedColumns[columnId]
+      setColumns((prevColumns) => {
+        const updatedColumns = { ...prevColumns }
+        Object.keys(updatedColumns).forEach(columnId => {
+          const column = updatedColumns[columnId]
         const taskIndex = column.tasks.findIndex(task => task.id === taskId)
-        if (taskIndex !== -1) {
-          updatedColumns[columnId] = {
-            ...column,
-            tasks: column.tasks.map((task, index) => 
-              index === taskIndex 
-                ? { ...task, comments: updatedComments }
-                : task
-            )
+          if (taskIndex !== -1) {
+            updatedColumns[columnId] = {
+              ...column,
+              tasks: column.tasks.map((task, index) => 
+                index === taskIndex 
+                  ? { ...task, comments: updatedComments }
+                  : task
+              )
+            }
           }
-        }
+        })
+        return updatedColumns
       })
-      return updatedColumns
-    })
   }
 
   const handleAddTask = async (columnId, taskData) => {

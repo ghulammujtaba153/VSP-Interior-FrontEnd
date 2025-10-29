@@ -973,7 +973,7 @@ const FactorysiteTab = ({ projectId, data }) => {
 
   if(loading) return <Loader/>
 
-  return (
+    return (
     <Box sx={{ p: 3 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h4" gutterBottom>
@@ -1199,8 +1199,8 @@ const FactorysiteTab = ({ projectId, data }) => {
         task={selectedTask}
         onCommentAdded={handleCommentAdded}
       />
-    </Box>
-  )
+        </Box>
+    )
 }
 
 export default FactorysiteTab

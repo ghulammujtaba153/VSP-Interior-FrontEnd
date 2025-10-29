@@ -30,7 +30,7 @@ import { RemoveRedEye } from "@mui/icons-material";
 import Link from "next/link";
 import Loader from "@/components/loader/Loader";
 
-const PriceBookCategoriesTable = ({ id }) => {
+const PriceBookCategoriesTable = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,7 +49,7 @@ const PriceBookCategoriesTable = ({ id }) => {
     setLoading(true);
     try {
       const response = await axios.get(
-        `${BASE_URL}/api/pricebook-categories/get/${id}?search=${search}`
+        `${BASE_URL}/api/pricebook-categories/get${search ? `?search=${search}` : ''}`
       );
       setCategories(response.data);
     } catch (error) {
@@ -61,7 +61,7 @@ const PriceBookCategoriesTable = ({ id }) => {
 
   useEffect(() => {
     fetchCategories();
-  }, [id]);
+  }, []);
 
   const handleDelete = async (categoryId) => {
     toast.loading("Please wait...");
@@ -91,21 +91,24 @@ const PriceBookCategoriesTable = ({ id }) => {
   };
 
   const handleSubmit = async () => {
+    if (!categoryName.trim()) {
+      toast.error("Category name is required");
+      return;
+    }
+
     toast.loading("Please wait...");
     try {
       if (selectedCategory) {
         await axios.put(
           `${BASE_URL}/api/pricebook-categories/update/${selectedCategory.id}`,
           {
-            name: categoryName,
-            supplierId: id,
+            name: categoryName.trim(),
           }
         );
         toast.success("Category updated successfully");
       } else {
         await axios.post(`${BASE_URL}/api/pricebook-categories/create`, {
-          name: categoryName,
-          supplierId: id,
+          name: categoryName.trim(),
         });
         toast.success("Category added successfully");
       }
@@ -127,7 +130,6 @@ const PriceBookCategoriesTable = ({ id }) => {
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       fetchCategories();
-      fetchAvailableVersions();
     }, 500); // 500ms debounce delay
   
     return () => clearTimeout(delayDebounce);
