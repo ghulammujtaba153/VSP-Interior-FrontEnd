@@ -10,12 +10,9 @@ import {
   Tabs, 
   Tab, 
   Container, 
-  Paper 
+  Paper
 } from "@mui/material";
-import FactoryIcon from "@mui/icons-material/Factory";
-import LocalShippingIcon from "@mui/icons-material/LocalShipping";
-import BarChartIcon from "@mui/icons-material/BarChart";
-import DescriptionIcon from "@mui/icons-material/Description";
+import ProjectsTable from "@/components/trackboards/ProjectsTable";
 
 
 
@@ -24,8 +21,8 @@ const Index = () => {
 
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
-      
+    <Box sx={{ minHeight: "100vh", p: 2 }} component={Paper}>
+      <ProjectsTable/>
     </Box>
   );
 };

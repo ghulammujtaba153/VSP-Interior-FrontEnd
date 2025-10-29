@@ -15,9 +15,9 @@ import {
   Paper,
   Divider,
   Box,
+  Chip,
   Avatar,
   Stack,
-  Chip,
   IconButton,
   Tooltip,
 } from '@mui/material';
@@ -35,10 +35,12 @@ import {
   AttachMoney as MoneyIcon,
   Note as NoteIcon,
   CheckCircle as StatusIcon,
+  Edit as EditIcon,
   Info as InfoIcon,
 } from '@mui/icons-material';
+import TaskOverviewSection from './TaskOverviewSection';
 
-const ProjectOverview = ({ data }) => {
+const OverviewTab = ({ data }) => {
   const project = data.projectSetup || {};
   const client = project.client || {};
   const rates = project.rates || [];
@@ -204,8 +206,8 @@ const ProjectOverview = ({ data }) => {
                   </Box>
                 </Box>
               </Stack>
-            </Grid>
           </Grid>
+        </Grid>
 
           
         </CardContent>
@@ -405,77 +407,6 @@ const ProjectOverview = ({ data }) => {
         </Card>
       )}
 
-        {/* Rates Table */}
-        {/* {rates.length > 0 && (
-          <>
-            <Divider sx={{ my: 3 }} />
-            <Typography variant="h6" gutterBottom>Rates</Typography>
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Type</TableCell>
-                    <TableCell>Cost</TableCell>
-                    <TableCell>Markup</TableCell>
-                    <TableCell>Sell</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {rates.map((rate) => (
-                    <TableRow key={rate.id}>
-                      <TableCell>{rate.type}</TableCell>
-                      <TableCell>{rate.cost}</TableCell>
-                      <TableCell>{rate.markup}</TableCell>
-                      <TableCell>{rate.sell}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </>
-        )} */}
-
-        {/* Materials Table */}
-        {/* {materials.length > 0 && (
-          <>
-            <Divider sx={{ my: 3 }} />
-            <Typography variant="h6" gutterBottom>Materials</Typography>
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Finish Material</TableCell>
-                    <TableCell>Material Type</TableCell>
-                    <TableCell>Measure</TableCell>
-                    <TableCell>Material Cost</TableCell>
-                    <TableCell>Edging Cost</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {materials.map((mat) => (
-                    <TableRow key={mat.id}>
-                      <TableCell>{mat.finishMaterial}</TableCell>
-                      <TableCell>{mat.materialType}</TableCell>
-                      <TableCell>{mat.measure}</TableCell>
-                      <TableCell>{mat.materialCost}</TableCell>
-                      <TableCell>{mat.edgingCost}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </>
-        )} */}
-
-        {/* Variations */}
-        {/* {variations.length > 0 && (
-          <>
-            <Divider sx={{ my: 3 }} />
-            <Typography variant="h6" gutterBottom>Variations</Typography>
-            <Typography>{JSON.stringify(variations, null, 2)}</Typography>
-          </>
-        )} */}
-
       {/* Project Amendments */}
       {amends.length > 0 && (
         <Card sx={{ mb: 3, boxShadow: 3 }}>
@@ -500,8 +431,11 @@ const ProjectOverview = ({ data }) => {
           </CardContent>
         </Card>
       )}
+
+      {/* Task Overview Section */}
+      <TaskOverviewSection data={data} />
     </Box>
   );
 };
 
-export default ProjectOverview;
+export default OverviewTab;
