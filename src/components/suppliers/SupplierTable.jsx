@@ -572,7 +572,7 @@ const SupplierTable = () => {
     return (
         <Paper sx={layout.container} className="zoom-67">
             <Box sx={layout.header}>
-                <Typography variant="h5">Suppliers</Typography>
+                <Typography variant="h5">Supplier List</Typography>
                 <Box sx={layout.buttonGroup}>
                     <Button variant="outlined" color="success" onClick={handleImportCSV}>
                         Import CSV
@@ -689,12 +689,12 @@ const SupplierTable = () => {
                                 <TableCell sx={{ minWidth: 100 }}><strong>Supplier ID</strong></TableCell>
                                 <TableCell sx={{ minWidth: 100 }}><strong>Name</strong></TableCell>
                                 <TableCell sx={{ minWidth: 220 }}><strong>Email</strong></TableCell>
-                                <TableCell sx={{ minWidth: 160 }}><strong>Phone</strong></TableCell>
-                                <TableCell sx={{ minWidth: 300 }}><strong>Address</strong></TableCell>
-                                <TableCell sx={{ minWidth: 100 }}><strong>Post Code</strong></TableCell>
-                                <TableCell sx={{ minWidth: 100 }}><strong>Contacts</strong></TableCell>
-                                <TableCell sx={{ minWidth: 100 }}><strong>Status</strong></TableCell>
-                                <TableCell sx={{ minWidth: 350 }}><strong>Actions</strong></TableCell>
+                                <TableCell sx={{ minWidth: 100 }}><strong>Phone</strong></TableCell>
+                                <TableCell sx={{ minWidth: 250 }}><strong>Address</strong></TableCell>
+                                <TableCell sx={{ minWidth: 60 }}><strong>Post Code</strong></TableCell>
+                                <TableCell sx={{ minWidth: 60 }}><strong>Contacts</strong></TableCell>
+                                <TableCell sx={{ minWidth: 60 }}><strong>Status</strong></TableCell>
+                                <TableCell sx={{ minWidth: 100 }}><strong>Actions</strong></TableCell>
                             </TableRow>
                         </TableHead>
                         <TableBody>
@@ -772,11 +772,7 @@ const SupplierTable = () => {
                                                             <DeleteIcon />
                                                         </IconButton>
                                                 </Tooltip>
-                                                <Link href={`/suppliers/${supplier.id}`} passHref>
-                                                                        <Button size="small" variant="outlined" color="primary">
-                                                                          Manage Price Book
-                                                                        </Button>
-                                                                      </Link>
+                                                
 
                                                 
                                             </Box>

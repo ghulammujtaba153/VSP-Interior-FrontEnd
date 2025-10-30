@@ -97,7 +97,7 @@ const VerticalMenu = ({ scrollMenu }) => {
         <SubMenu label='Supplier Management' icon={<i className='tabler-building-warehouse' />}>
           {/* <PermissionWrapper resource='suppliers'> */}
             <MenuItem href='/suppliers' >
-              Suppliers
+              Supplier List
             </MenuItem>
           {/* </PermissionWrapper> */}
 

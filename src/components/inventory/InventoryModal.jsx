@@ -22,6 +22,8 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
   const [suppliers, setSuppliers] = useState([]);
   const [supplierCategories, setSupplierCategories] = useState([]);
   const [supplierPriceBooks, setSupplierPriceBooks] = useState([]);
+  const [availableSupplierIds, setAvailableSupplierIds] = useState([]);
+  const [allCategoryPriceBooks, setAllCategoryPriceBooks] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -104,21 +106,31 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
   };
 
   // Fetch pricebooks for a category and filter by supplier
-  const fetchPriceBooks = async (categoryId, supplierId) => {
+  const fetchPriceBooks = async (categoryId) => {
     setLoadingPriceBooks(true);
     try {
       const res = await axios.get(`${BASE_URL}/api/pricebook/get/${categoryId}`);
       const allPriceBooks = res.data || [];
-      
-      // Filter pricebooks by selected supplier
-      const filteredPriceBooks = supplierId 
-        ? allPriceBooks.filter(pb => pb.supplierId === parseInt(supplierId))
-        : allPriceBooks;
-      
-      setSupplierPriceBooks(filteredPriceBooks);
+
+      setAllCategoryPriceBooks(allPriceBooks);
+
+      // Derive suppliers that have pricebooks in this category
+      const supplierIds = Array.from(new Set(allPriceBooks.map(pb => pb.supplierId))).filter(Boolean);
+      setAvailableSupplierIds(supplierIds);
+
+      // Initialize filtered list based on currently selected supplier (if valid)
+      setSupplierPriceBooks(prev => {
+        const currentSupplierId = formData.supplierId ? parseInt(formData.supplierId) : null;
+        if (currentSupplierId && supplierIds.includes(currentSupplierId)) {
+          return allPriceBooks.filter(pb => pb.supplierId === currentSupplierId);
+        }
+        return [];
+      });
     } catch (error) {
       console.error("Error fetching pricebooks:", error);
       setSupplierPriceBooks([]);
+      setAvailableSupplierIds([]);
+      setAllCategoryPriceBooks([]);
     } finally {
       setLoadingPriceBooks(false);
     }
@@ -132,25 +144,35 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
   // When supplier changes, clear pricebook-related fields if needed
   useEffect(() => {
     if (formData.supplierId) {
-      // If supplier changes and category is already selected, refetch pricebooks with new supplier filter
-      if (formData.category) {
-        fetchPriceBooks(formData.category, formData.supplierId);
-      }
       // Clear pricebook selection when supplier changes
       setFormData(prev => ({ ...prev, priceBookId: "", costPrice: "" }));
-      setSupplierPriceBooks([]);
+
+      if (formData.category) {
+        const supplierIdNum = parseInt(formData.supplierId);
+        const supplierOk = availableSupplierIds.includes(supplierIdNum);
+        if (supplierOk) {
+          setSupplierPriceBooks(allCategoryPriceBooks.filter(pb => pb.supplierId === supplierIdNum));
+        } else {
+          setFormData(prev => ({ ...prev, supplierId: "", priceBookId: "", costPrice: "" }));
+          setSupplierPriceBooks([]);
+        }
+      } else {
+        setSupplierPriceBooks([]);
+      }
     }
   }, [formData.supplierId]);
 
   // When category changes, fetch and filter pricebooks by supplier
   useEffect(() => {
-    if (formData.category && formData.supplierId) {
-      fetchPriceBooks(formData.category, formData.supplierId);
+    if (formData.category) {
+      fetchPriceBooks(formData.category);
       setFormData(prev => ({ ...prev, priceBookId: "", costPrice: "" }));
-    } else if (formData.category) {
-      // Category selected but no supplier - clear pricebooks
+    } else {
+      // No category selected, reset filters
       setSupplierPriceBooks([]);
-      setFormData(prev => ({ ...prev, priceBookId: "", costPrice: "" }));
+      setAvailableSupplierIds([]);
+      setAllCategoryPriceBooks([]);
+      setFormData(prev => ({ ...prev, supplierId: "", priceBookId: "", costPrice: "" }));
     }
   }, [formData.category]);
 
@@ -327,7 +349,10 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
                 }}
               >
                 <MenuItem value="">Select supplier</MenuItem>
-                {suppliers.map((supplier) => (
+                {(formData.category
+                  ? suppliers.filter(s => availableSupplierIds.includes(parseInt(s.id)))
+                  : suppliers
+                 ).map((supplier) => (
                   <MenuItem key={supplier.id} value={supplier.id}>
                     {supplier.name}
                   </MenuItem>
@@ -359,7 +384,7 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
                 </MenuItem>
                 {supplierPriceBooks.map((pb) => (
                   <MenuItem key={pb.id || pb._id} value={pb.id}>
-                    {pb.name} ({pb.unit}) - {pb.Suppliers?.name || pb.Supplier?.name || 'N/A'}
+                    {pb.name} ({pb.unit}) • {pb.version || 'v1'} • {pb.Suppliers?.name || pb.Supplier?.name || 'N/A'}
                   </MenuItem>
                 ))}
               </TextField>

@@ -120,7 +120,7 @@ const SupplierCategoryPage = () => {
     setAvailableLoading(true)
     // if no name, default to v1
     if (!itemName) {
-      setAvailableVersions(['v1'])
+      setAvailableVersions([])
       setAvailableLoading(false)
       return
     }
@@ -135,10 +135,10 @@ const SupplierCategoryPage = () => {
         .filter(Boolean)
         .sort((a, b) => parseInt(a.replace('v', '')) - parseInt(b.replace('v', '')))
 
-      setAvailableVersions(versions.length > 0 ? versions : ['v1'])
+      setAvailableVersions(versions.length > 0 ? versions : [])
     } catch (error) {
       console.error('Failed to fetch versions', error)
-      setAvailableVersions(['v1'])
+      setAvailableVersions([])
     } finally {
       setAvailableLoading(false)
     }
@@ -227,9 +227,12 @@ const SupplierCategoryPage = () => {
       // For creation only: calculate version based on selection
       let version = selectedVersion
       if (versionAction === 'new') {
-        const maxVersion =
-          availableVersions.length > 0 ? Math.max(...availableVersions.map(v => parseInt(v.replace('v', '')))) : 0
-        version = `v${maxVersion + 1}`
+        if (availableVersions.length === 0) {
+          version = 'v1'
+        } else {
+          const maxVersion = Math.max(...availableVersions.map(v => parseInt(v.replace('v', ''))))
+          version = `v${maxVersion + 1}`
+        }
       }
 
       // Check for duplicates (same name and version in this category)
