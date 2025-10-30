@@ -5,10 +5,9 @@ import MaterialTable from '@/components/cabinet/cabinet-updated/MaterialTable'
 import CabinetImport from '@/components/cabinet/cabinet-updated/CabinetImport'
 import SubCategories from '@/components/cabinet/cabinet-updated/SubCategories'
 import { useParams } from 'next/navigation'
-import { Tabs, Tab, Box, Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography } from '@mui/material'
+import { Tabs, Tab, Box, Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Paper } from '@mui/material'
 import axios from 'axios'
 import { BASE_URL } from '@/configs/url'
-import Link from 'next/link'
 
 
 const SubCategoriesPage = () => {
@@ -55,8 +54,10 @@ const SubCategoriesPage = () => {
   }
 
   return (
-    <Box>
-      <Link href="/cabinet/categories">&larr; Back to Categories</Link>
+    <Box component={Paper} sx={{ p: 2 }}>
+      <Button variant="contained" color="primary" onClick={() => window.history.back('/cabinet/categories')}>
+        &larr; Back to Categories
+      </Button>
       <Typography variant="h4" gutterBottom>{data.name}</Typography>
       <Tabs
         value={tabIndex}

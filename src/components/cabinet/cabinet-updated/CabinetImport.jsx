@@ -436,9 +436,11 @@ const CabinetImport = ({ id, setIsInProgress }) => {
       const descriptionHeader = columns.find(col => col.toLowerCase() === "description")
 
       // Prepare a map for fast lookup: { name: id }
+      // Use lowercase for case-insensitive matching
       const subCatMap = {}
       subCategoryList.forEach(sub => {
-        subCatMap[sub.name] = sub.id
+        const normalizedName = sub.name.toLowerCase()
+        subCatMap[normalizedName] = sub.id
       })
 
       // Flatten groupedData to a single array of rows
@@ -469,15 +471,18 @@ const CabinetImport = ({ id, setIsInProgress }) => {
         })
 
         const subcategoryName = row[codeHeader]?.toString().trim()
-        const subcategoryId = subCatMap[subcategoryName]
+        // Use lowercase for case-insensitive lookup
+        const normalizedSubcategoryName = subcategoryName?.toLowerCase()
+        const subcategoryId = subCatMap[normalizedSubcategoryName]
 
         if (!subcategoryId) {
-          console.warn(`No subcategory found for: ${subcategoryName}`)
+          console.error(`No subcategory found for: "${subcategoryName}". Available subcategories:`, Object.keys(subCatMap))
+          throw new Error(`Subcategory "${subcategoryName}" not found. Please ensure all subcategories are uploaded first.`)
         }
 
         return {
-          cabinetCategoryId: id,
-          cabinetSubCategoryId: subcategoryId,
+          cabinetCategoryId: parseInt(id, 10),
+          cabinetSubCategoryId: parseInt(subcategoryId, 10),
           code: row[subCodeHeader],
           description: row[descriptionHeader],
           dynamicData: { arrayList },
