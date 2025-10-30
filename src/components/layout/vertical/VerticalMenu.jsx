@@ -95,18 +95,18 @@ const VerticalMenu = ({ scrollMenu }) => {
 
 
         <SubMenu label='Supplier Management' icon={<i className='tabler-building-warehouse' />}>
-          <PermissionWrapper resource='suppliers'>
-            <MenuItem href='/suppliers' icon={<i className='tabler-file-text' />}>
+          {/* <PermissionWrapper resource='suppliers'> */}
+            <MenuItem href='/suppliers' >
               Suppliers
             </MenuItem>
-          </PermissionWrapper>
+          {/* </PermissionWrapper> */}
 
-          <PermissionWrapper resource='suppliers'>
+          {/* <PermissionWrapper resource='suppliers'> */}
 
-          <MenuItem href='/suppliers/category' icon={<i className='tabler-file-text' />}>
+          <MenuItem href='/suppliers/category'>
             Price Book
           </MenuItem>
-          </PermissionWrapper>
+          {/* </PermissionWrapper> */}
         </SubMenu> 
 
         
@@ -152,12 +152,17 @@ const VerticalMenu = ({ scrollMenu }) => {
           Purchasing
         </MenuItem> */}
 
+<<<<<<< HEAD
         {/* <SubMenu label='Job Scheduling' icon={<i className='tabler-calendar' />}>
           <MenuItem href='/workers' icon={<i className='tabler-users' />}>
+=======
+        <SubMenu label='Job Scheduling' icon={<i className='tabler-calendar' />}>
+          <MenuItem href='/workers'>
+>>>>>>> dev
             Workers
           </MenuItem>
 
-          <MenuItem href='/projects' icon={<i className='tabler-file-text' />}>
+          <MenuItem href='/projects'>
             Projects
           </MenuItem>
         </SubMenu>  */}
@@ -177,12 +182,17 @@ const VerticalMenu = ({ scrollMenu }) => {
         </MenuItem>  */}
         
 
+<<<<<<< HEAD
         {/* <SubMenu label='HR & Documentation' icon={<i className='tabler-file-text' />}>
           <MenuItem href='/human-resource' icon={<i className='tabler-file-text' />}>
+=======
+        <SubMenu label='HR & Documentation' icon={<i className='tabler-file-text' />}>
+          <MenuItem href='/human-resource'>
+>>>>>>> dev
             HR & Documentation
           </MenuItem>
 
-          <MenuItem href='/employee-leave' icon={<i className='tabler-file-text' />}>
+          <MenuItem href='/employee-leave'>
             Employee Access
           </MenuItem>
         
