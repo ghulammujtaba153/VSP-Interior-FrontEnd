@@ -117,7 +117,7 @@ const InventoryTable = () => {
   // Fetch suppliers
   const fetchSuppliers = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/api/suppliers/get`);
+      const res = await axios.get(`${BASE_URL}/api/suppliers/get?page=1&limit=10000`);
       setSuppliers(res.data.data || []);
     } catch (error) {
       console.error("Error fetching suppliers:", error);
@@ -127,7 +127,7 @@ const InventoryTable = () => {
   // Fetch categories
   const fetchCategories = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/api/pricebook-categories/get`);
+      const res = await axios.get(`${BASE_URL}/api/pricebook-categories/get?page=1&limit=10000`);
       setCategories(res.data || []);
     } catch (error) {
       console.error("Error fetching categories:", error);

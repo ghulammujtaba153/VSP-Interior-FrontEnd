@@ -107,6 +107,7 @@ const VerticalMenu = ({ scrollMenu }) => {
             Price Book
           </MenuItem>
            </PermissionWrapper> 
+           
         </SubMenu> 
 
         

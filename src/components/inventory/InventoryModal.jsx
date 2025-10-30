@@ -107,34 +107,59 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
 
   // Fetch pricebooks for a category and filter by supplier
   const fetchPriceBooks = async (categoryId) => {
-    setLoadingPriceBooks(true);
-    try {
-      const res = await axios.get(`${BASE_URL}/api/pricebook/get/${categoryId}`);
-      const allPriceBooks = res.data || [];
+  setLoadingPriceBooks(true);
+  try {
+    const res = await axios.get(`${BASE_URL}/api/pricebook/get/${categoryId}`);
+    const allPriceBooks = res.data || [];
+    
+    console.log('Fetched price books:', allPriceBooks); // Debug log
 
-      setAllCategoryPriceBooks(allPriceBooks);
+    setAllCategoryPriceBooks(allPriceBooks);
 
-      // Derive suppliers that have pricebooks in this category
-      const supplierIds = Array.from(new Set(allPriceBooks.map(pb => pb.supplierId))).filter(Boolean);
-      setAvailableSupplierIds(supplierIds);
+    // Get unique suppliers from the price books data
+    const uniqueSuppliers = [];
+    const supplierIds = [];
+    
+    allPriceBooks.forEach(pb => {
+      if (pb.Supplier && !supplierIds.includes(pb.Supplier.id)) {
+        supplierIds.push(pb.Supplier.id);
+        uniqueSuppliers.push(pb.Supplier);
+      }
+    });
 
-      // Initialize filtered list based on currently selected supplier (if valid)
-      setSupplierPriceBooks(prev => {
-        const currentSupplierId = formData.supplierId ? parseInt(formData.supplierId) : null;
-        if (currentSupplierId && supplierIds.includes(currentSupplierId)) {
-          return allPriceBooks.filter(pb => pb.supplierId === currentSupplierId);
-        }
-        return [];
+    console.log('Unique suppliers from price books:', uniqueSuppliers); // Debug log
+    
+    setAvailableSupplierIds(supplierIds);
+    
+    // Update suppliers state with the unique suppliers
+    if (uniqueSuppliers.length > 0) {
+      setSuppliers(prevSuppliers => {
+        const existingIds = prevSuppliers.map(s => s.id);
+        const newSuppliers = uniqueSuppliers.filter(s => !existingIds.includes(s.id));
+        return [...prevSuppliers, ...newSuppliers];
       });
-    } catch (error) {
-      console.error("Error fetching pricebooks:", error);
-      setSupplierPriceBooks([]);
-      setAvailableSupplierIds([]);
-      setAllCategoryPriceBooks([]);
-    } finally {
-      setLoadingPriceBooks(false);
     }
-  };
+
+    // Filter price books by currently selected supplier
+    const currentSupplierId = formData.supplierId ? parseInt(formData.supplierId) : null;
+    if (currentSupplierId && supplierIds.includes(currentSupplierId)) {
+      setSupplierPriceBooks(allPriceBooks.filter(pb => pb.supplierId === currentSupplierId));
+    } else {
+      setSupplierPriceBooks([]);
+      // Clear supplier selection if it's not available for this category
+      if (formData.supplierId && !supplierIds.includes(parseInt(formData.supplierId))) {
+        setFormData(prev => ({ ...prev, supplierId: "", priceBookId: "", costPrice: "" }));
+      }
+    }
+  } catch (error) {
+    console.error("Error fetching pricebooks:", error);
+    setSupplierPriceBooks([]);
+    setAvailableSupplierIds([]);
+    setAllCategoryPriceBooks([]);
+  } finally {
+    setLoadingPriceBooks(false);
+  }
+};
 
   useEffect(() => {
     fetchSuppliers();
