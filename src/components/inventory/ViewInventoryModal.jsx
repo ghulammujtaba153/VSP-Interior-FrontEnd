@@ -10,7 +10,10 @@ import {
   Typography,
   Box,
   Stack,
-  Grid
+  Grid,
+  Paper,
+  Chip,
+  Divider
 } from "@mui/material";
 import {
   Inventory,
@@ -24,11 +27,50 @@ import {
   Phone,
   LocationOn,
   QrCode,
-  Description
+  Description,
+  Close
 } from "@mui/icons-material";
 
 const ViewInventoryModal = ({ open, setOpen, inventory }) => {
   if (!inventory) return null;
+
+  const InfoRow = ({ icon: Icon, label, value }) => (
+    <Box sx={{ 
+      display: 'flex', 
+      alignItems: 'flex-start', 
+      gap: 1.5,
+      py: 1.5
+    }}>
+      <Box sx={{ 
+        minWidth: 40, 
+        height: 40, 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        bgcolor: '#f0f0f5',
+        color: '#6366f1',
+        borderRadius: 1,
+        flexShrink: 0
+      }}>
+        <Icon fontSize="small" />
+      </Box>
+      <Box flex={1} minWidth={0}>
+        <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600, fontSize: '0.7rem' }}>
+          {label}
+        </Typography>
+        <Typography 
+          variant="body1" 
+          sx={{ 
+            mt: 0.5, 
+            fontWeight: 500,
+            wordBreak: 'break-word'
+          }}
+        >
+          {value || 'N/A'}
+        </Typography>
+      </Box>
+    </Box>
+  );
 
   return (
     <Dialog 
@@ -36,228 +78,273 @@ const ViewInventoryModal = ({ open, setOpen, inventory }) => {
       onClose={() => setOpen(false)} 
       maxWidth="md" 
       fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: 2
+      sx={{
+        '& .MuiDialog-paper': {
+          borderRadius: 2,
+          maxHeight: '90vh'
         }
       }}
     >
-      <DialogTitle sx={{ py: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Inventory color="primary" />
+      <DialogTitle sx={{ 
+        pb: 2, 
+        pt: 3,
+        px: 3,
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
+        <Box display="flex" alignItems="center" gap={1.5}>
+          <Inventory sx={{ fontSize: 28 }} />
           <Box>
             <Typography variant="h5" fontWeight="bold">
-              Inventory Details
+              {inventory.name || 'Inventory Details'}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Complete information about the inventory item
+            <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+              Complete item information
             </Typography>
           </Box>
         </Box>
+        <Chip 
+          label={inventory.status || 'N/A'} 
+          size="small"
+          sx={{ 
+            bgcolor: inventory.status === 'active' ? 'success.light' : 'error.light',
+            color: 'white',
+            fontWeight: 'bold',
+            textTransform: 'uppercase',
+            fontSize: '0.7rem'
+          }}
+        />
       </DialogTitle>
 
-      <DialogContent>
-        <Stack spacing={4}>
+      <DialogContent sx={{ p: 0 }}>
+        <Stack spacing={0}>
           {/* Basic Information */}
-          <Box>
-            <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
+          <Box sx={{ p: 3, bgcolor: 'background.paper' }}>
+            <Typography 
+              variant="h6" 
+              fontWeight="bold" 
+              gutterBottom 
+              sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 1,
+                mb: 2,
+                color: 'primary.main'
+              }}
+            >
+              <Inventory />
               Basic Information
             </Typography>
-            
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6}>
-                <Stack spacing={3}>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <QrCode fontSize="small" />
-                      ID & Code
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 1, flexDirection: 'column' }}>
-                      <Typography variant="body1">ID: {inventory.id}</Typography>
-                      {inventory.itemCode && (
-                        <Typography variant="body1">Code: {inventory.itemCode}</Typography>
-                      )}
-                    </Box>
-                  </Box>
 
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Inventory fontSize="small" />
-                      Item Name
-                    </Typography>
-                    <Typography variant="body1" fontWeight={500}>
-                      {inventory.name}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <Stack spacing={3}>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Category fontSize="small" />
-                      Category
-                    </Typography>
-                    <Typography variant="body1">
-                      {inventory.categoryDetails?.name || "N/A"}
-                    </Typography>
-                  </Box>
-
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Numbers fontSize="small" />
-                      Quantity
-                    </Typography>
-                    <Typography variant="body1" fontWeight={500}>
-                      {inventory.quantity} units
-                    </Typography>
-                  </Box>
-                </Stack>
-              </Grid>
-            </Grid>
+            <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden', bgcolor: 'white' }}>
+              <Box sx={{ p: 3 }}>
+                <Grid container spacing={4}>
+                  <Grid item xs={6} sx={{ mr: 20 }}>
+                    <InfoRow 
+                      icon={QrCode} 
+                      label="Item Code" 
+                      value={inventory.itemCode || `ID: ${inventory.id}`} 
+                    />
+                  </Grid>
+                  <Grid item xs={6} sx={{ mr: 20 }}>
+                    <InfoRow 
+                      icon={Inventory} 
+                      label="Item Name" 
+                      value={inventory.name} 
+                    />
+                  </Grid>
+                  <Grid item xs={6} sx={{ mr: 20 }}>
+                    <InfoRow 
+                      icon={Category} 
+                      label="Category" 
+                      value={inventory.categoryDetails?.name} 
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={6}>
+                    <InfoRow 
+                      icon={Numbers} 
+                      label="Quantity" 
+                      value={`${inventory.quantity} units`} 
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+            </Paper>
           </Box>
+
+          <Divider />
 
           {/* Pricing Information */}
-          <Box>
-            <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
+          <Box sx={{ p: 3, bgcolor: 'grey.50' }}>
+            <Typography 
+              variant="h6" 
+              fontWeight="bold" 
+              gutterBottom 
+              sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 1,
+                mb: 2,
+                color: 'primary.main'
+              }}
+            >
+              <AttachMoney />
               Pricing Information
             </Typography>
-            
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6}>
-                <Stack spacing={3}>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <AttachMoney fontSize="small" />
-                      Cost Price
-                    </Typography>
-                    <Typography variant="body1" fontWeight={500}>
-                      ${parseFloat(inventory.costPrice || 0).toFixed(2)}
-                    </Typography>
-                  </Box>
 
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Receipt fontSize="small" />
-                      Price Book
-                    </Typography>
-                    <Typography variant="body1">
-                      {inventory.priceBooks?.name || "N/A"}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <Stack spacing={3}>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Scale fontSize="small" />
-                      Unit
-                    </Typography>
-                    <Typography variant="body1">
-                      {inventory.priceBooks?.unit || "N/A"}
-                    </Typography>
-                  </Box>
-
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-                      Status
-                    </Typography>
-                    <Typography variant="body1" sx={{ 
-                      textTransform: 'capitalize',
-                      color: inventory.status === 'active' ? 'success.main' : 'text.primary'
-                    }}>
-                      {inventory.status}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </Grid>
-            </Grid>
+            <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden', bgcolor: 'white' }}>
+              <Box sx={{ p: 3 }} >
+                <Grid container spacing={4} >
+                  <Grid item xs={6} sx={{ mr: 20 }}>
+                    <InfoRow 
+                      icon={AttachMoney} 
+                      label="Cost Price" 
+                      value={`$${parseFloat(inventory.costPrice || 0).toFixed(2)}`} 
+                    />
+                  </Grid>
+                  <Grid item xs={6} sx={{ mr: 20 }}>
+                    <InfoRow 
+                      icon={Scale} 
+                      label="Unit" 
+                      value={inventory.priceBooks?.unit} 
+                    />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <InfoRow 
+                      icon={Receipt} 
+                      label="Price Book" 
+                      value={inventory.priceBooks?.name} 
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
+            </Paper>
           </Box>
+
+          <Divider />
 
           {/* Description */}
           {inventory.description && (
-            <Box>
-              <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
-                Description
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <Description color="action" sx={{ mt: 0.5 }} />
-                <Typography variant="body1" sx={{ lineHeight: 1.6 }}>
-                  {inventory.description}
+            <>
+              <Box sx={{ p: 3, bgcolor: 'background.paper' }}>
+                <Typography 
+                  variant="h6" 
+                  fontWeight="bold" 
+                  gutterBottom 
+                  sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 1,
+                    mb: 2,
+                    color: 'primary.main'
+                  }}
+                >
+                  <Description />
+                  Description
                 </Typography>
+
+                <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden', bgcolor: 'white' }}>
+                  <Box sx={{ p: 3 }}>
+                    <Typography variant="body1" sx={{ lineHeight: 1.8 }}>
+                      {inventory.description}
+                    </Typography>
+                  </Box>
+                </Paper>
               </Box>
-            </Box>
+              <Divider />
+            </>
           )}
 
           {/* Supplier Information */}
-          <Box>
-            <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
+          <Box sx={{ p: 3, bgcolor: 'grey.50' }}>
+            <Typography 
+              variant="h6" 
+              fontWeight="bold" 
+              gutterBottom 
+              sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 1,
+                mb: 2,
+                color: 'primary.main'
+              }}
+            >
+              <Business />
               Supplier Information
             </Typography>
-            
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6}>
-                <Stack spacing={3}>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Business fontSize="small" />
-                      Supplier Name
-                    </Typography>
-                    <Typography variant="body1" fontWeight={500}>
-                      {inventory.supplier?.name || "N/A"}
-                    </Typography>
-                  </Box>
 
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Email fontSize="small" />
-                      Email
-                    </Typography>
-                    <Typography variant="body1">
-                      {inventory.supplier?.email || "N/A"}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <Stack spacing={3}>
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <Phone fontSize="small" />
-                      Phone
-                    </Typography>
-                    <Typography variant="body1">
-                      {inventory.supplier?.phone || "N/A"}
-                    </Typography>
-                  </Box>
-
-                  <Box>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                      <LocationOn fontSize="small" />
-                      Address
-                    </Typography>
-                    <Typography variant="body1">
-                      {inventory.supplier?.address || "N/A"}
-                    </Typography>
-                  </Box>
-                </Stack>
-              </Grid>
-            </Grid>
+            {inventory.supplier && (inventory.supplier.name || inventory.supplier.email || inventory.supplier.phone) ? (
+              <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden', bgcolor: 'white' }}>
+                <Box sx={{ p: 3 }}>
+                  <Grid container spacing={4}>
+                    <Grid item xs={6} sx={{ mr: 20 }}>
+                      <InfoRow 
+                        icon={Business} 
+                        label="Supplier Name" 
+                        value={inventory.supplier?.name} 
+                      />
+                    </Grid>
+                    <Grid item xs={6} sx={{ mr: 20 }}>
+                      <InfoRow 
+                        icon={Phone} 
+                        label="Phone" 
+                        value={inventory.supplier?.phone} 
+                      />
+                    </Grid>
+                    <Grid item xs={6}>
+                      <InfoRow 
+                        icon={Email} 
+                        label="Email" 
+                        value={inventory.supplier?.email} 
+                      />
+                    </Grid>
+                    <Grid item xs={6}>
+                      <InfoRow 
+                        icon={LocationOn} 
+                        label="Address" 
+                        value={inventory.supplier?.address} 
+                      />
+                    </Grid>
+                  </Grid>
+                </Box>
+              </Paper>
+            ) : (
+              <Paper 
+                variant="outlined" 
+                sx={{ 
+                  p: 4, 
+                  textAlign: 'center',
+                  borderRadius: 2,
+                  bgcolor: 'background.paper'
+                }}
+              >
+                <Business color="disabled" sx={{ fontSize: 48, mb: 1 }} />
+                <Typography variant="body1" color="text.secondary" fontWeight={500}>
+                  No supplier information available
+                </Typography>
+              </Paper>
+            )}
           </Box>
         </Stack>
       </DialogContent>
 
-      <DialogActions sx={{ p: 3 }}>
+      <DialogActions sx={{ p: 2, justifyContent: 'flex-end', bgcolor: 'grey.50' }}>
         <Button 
           onClick={() => setOpen(false)} 
           variant="contained" 
           color="primary"
           size="large"
-          sx={{ minWidth: 120 }}
+          startIcon={<Close />}
+          sx={{ 
+            minWidth: 120,
+            borderRadius: 2,
+            textTransform: 'none',
+            fontWeight: 600
+          }}
         >
           Close
         </Button>

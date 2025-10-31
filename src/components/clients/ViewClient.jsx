@@ -12,7 +12,8 @@ import {
     Divider,
     Paper,
     Box,
-    Stack
+    Stack,
+    Chip
 } from '@mui/material';
 import {
     Business,
@@ -23,252 +24,409 @@ import {
     AccountCircle,
     Notes,
     ContactPhone,
-    Person,
-    Badge,
-    Work
+    Close
 } from '@mui/icons-material';
 
 const ViewClient = ({ open, onClose, client }) => {
     if (!client) return null;
 
+    const InfoRow = ({ icon: Icon, label, value, color }) => (
+        <Box
+            sx={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 1.5,
+                py: 1
+            }}
+        >
+            <Box
+                sx={{
+                    minWidth: 40,
+                    height: 40,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: '#f0f0f5',
+                    color: '#6366f1',
+                    borderRadius: 1,
+                    flexShrink: 0
+                }}
+            >
+                <Icon fontSize="small" />
+            </Box>
+            <Box flex={1} minWidth={0}>
+                <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{
+                        textTransform: 'uppercase',
+                        letterSpacing: 0.5,
+                        fontWeight: 600,
+                        fontSize: '0.7rem'
+                    }}
+                >
+                    {label}
+                </Typography>
+                <Typography
+                    variant="body1"
+                    sx={{
+                        mt: 0.5,
+                        fontWeight: 500,
+                        wordBreak: 'break-word',
+                        color: color || 'text.primary'
+                    }}
+                >
+                    {value || 'N/A'}
+                </Typography>
+            </Box>
+        </Box>
+    );
+
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-            <DialogTitle sx={{ pb: 1 }}>
-                <Box display="flex" alignItems="center" gap={1}>
-                    <Business color="primary" />
-                    <Typography variant="h6" fontWeight="bold">
-                        Client Details
-                    </Typography>
-                </Box>
-            </DialogTitle>
-            
-            <DialogContent dividers>
-                <Stack spacing={3}>
-                    {/* Company Information Section */}
+        <Dialog
+            open={open}
+            onClose={onClose}
+            maxWidth="md"
+            fullWidth
+            sx={{
+                '& .MuiDialog-paper': {
+                    borderRadius: 2,
+                    maxHeight: '90vh'
+                }
+            }}
+        >
+            <DialogTitle
+                sx={{
+                    pb: 2,
+                    pt: 3,
+                    px: 3,
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                }}
+            >
+                <Box display="flex" alignItems="center" gap={1.5}>
+                    <Business sx={{ fontSize: 28 }} />
                     <Box>
-                        <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Business fontSize="small" />
-                            Company Information
+                        <Typography variant="h5" fontWeight="bold">
+                            {client.companyName || 'Client Details'}
                         </Typography>
-                        <Divider sx={{ mb: 2 }} />
-                        
-                        <Stack spacing={2}>
-                            {/* Company Name */}
-                            <Box display="flex" alignItems="flex-start" gap={2}>
-                                <Business color="action" sx={{ mt: 0.5 }} />
-                                <Box flex={1}>
-                                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                        Company Name
-                                    </Typography>
-                                    <Typography variant="body1" fontWeight={600}>
-                                        {client.companyName || 'N/A'}
-                                    </Typography>
-                                </Box>
-                            </Box>
+                        <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+                            Complete client and contact information
+                        </Typography>
+                    </Box>
+                </Box>
+                <Chip
+                    label={client.accountStatus || 'N/A'}
+                    size="small"
+                    sx={{
+                        bgcolor:
+                            client.accountStatus === 'active'
+                                ? 'success.light'
+                                : 'error.light',
+                        color: 'white',
+                        fontWeight: 'bold',
+                        textTransform: 'uppercase',
+                        fontSize: '0.7rem'
+                    }}
+                />
+            </DialogTitle>
 
-                            {/* Email Address */}
-                            <Box display="flex" alignItems="flex-start" gap={2}>
-                                <Email color="action" sx={{ mt: 0.5 }} />
-                                <Box flex={1}>
-                                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                        Email Address
-                                    </Typography>
-                                    <Typography variant="body1" fontWeight={600}>
-                                        {client.emailAddress || 'N/A'}
-                                    </Typography>
-                                </Box>
-                            </Box>
+            <DialogContent sx={{ p: 0 }}>
+                <Stack spacing={0}>
+                    {/* Company Information Section */}
+                    <Box sx={{ p: 3, bgcolor: 'background.paper' }}>
+                        <Typography
+                            variant="h6"
+                            fontWeight="bold"
+                            gutterBottom
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                mb: 2,
+                                color: 'primary.main'
+                            }}
+                        >
+                            <Business />
+                            Information
+                        </Typography>
 
-                            {/* Phone Number */}
-                            <Box display="flex" alignItems="flex-start" gap={2}>
-                                <Phone color="action" sx={{ mt: 0.5 }} />
-                                <Box flex={1}>
-                                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                        Phone Number
-                                    </Typography>
-                                    <Typography variant="body1" fontWeight={600}>
-                                        {client.phoneNumber || 'N/A'}
-                                    </Typography>
-                                </Box>
-                            </Box>
+                        <Paper
+                            variant="outlined"
+                            sx={{ borderRadius: 2, overflow: 'hidden', bgcolor: 'white' }}
+                        >
+                            <Box sx={{ p: 3 }}>
+                                <Grid container spacing={3}>
+                                    {/* Row 1 */}
+                                    <Grid item xs={12} md={6} sx={{ mr: 20 }}>
+                                        <InfoRow
+                                            icon={Email}
+                                            label="Email Address"
+                                            value={client.emailAddress}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} md={6} sx={{ mr: 20 }}>
+                                        <InfoRow
+                                            icon={Phone}
+                                            label="Phone Number"
+                                            value={client.phoneNumber}
+                                        />
+                                    </Grid>
 
-                            {/* Address */}
-                            <Box display="flex" alignItems="flex-start" gap={2}>
-                                <LocationOn color="action" sx={{ mt: 0.5 }} />
-                                <Box flex={1}>
-                                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                        Address
-                                    </Typography>
-                                    <Typography variant="body1" fontWeight={600}>
-                                        {client.address || 'N/A'}
-                                    </Typography>
-                                </Box>
-                            </Box>
+                                    {/* Row 2 */}
+                                    <Grid item xs={12} md={12} sx={{ mr: 3 }}>
+                                        <InfoRow
+                                            icon={LocationOn}
+                                            label="Address"
+                                            value={client.address}
+                                        />
+                                    </Grid>
 
-                            {/* Post Code */}
-                            <Box display="flex" alignItems="flex-start" gap={2}>
-                                <LocalPostOffice color="action" sx={{ mt: 0.5 }} />
-                                <Box flex={1}>
-                                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                        Post Code
-                                    </Typography>
-                                    <Typography variant="body1" fontWeight={600}>
-                                        {client.postCode || 'N/A'}
-                                    </Typography>
-                                </Box>
-                            </Box>
+                                    {/* Row 3 */}
+                                    <Grid item xs={12} md={6} sx={{ mr: 20 }}>
+                                        <InfoRow
+                                            icon={LocalPostOffice}
+                                            label="Post Code"
+                                            value={client.postCode}
+                                        />
+                                    </Grid>
+                                    <Grid item xs={12} md={6} sx={{ mr: 20 }}>
+                                        <InfoRow
+                                            icon={Business}
+                                            label="Company Type"
+                                            value={
+                                                typeof client.isCompany === 'boolean'
+                                                    ? client.isCompany
+                                                        ? 'Registered Company'
+                                                        : 'Individual'
+                                                    : 'N/A'
+                                            }
+                                        />
+                                    </Grid>
 
-                            {/* Account Status */}
-                            <Box display="flex" alignItems="flex-start" gap={2}>
-                                <AccountCircle color="action" sx={{ mt: 0.5 }} />
-                                <Box flex={1}>
-                                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                        Account Status
-                                    </Typography>
-                                    <Typography 
-                                        variant="body1" 
-                                        fontWeight={600}
-                                        color={client.accountStatus === 'active' ? 'success.main' : 'error.main'}
-                                    >
-                                        {client.accountStatus || 'N/A'}
-                                    </Typography>
-                                </Box>
+                                    {/* Row 4 */}
+                                    <Grid item xs={12} md={6} sx={{ mr: 42 }}>
+                                        <InfoRow
+                                            icon={AccountCircle}
+                                            label="Account Status"
+                                            value={client.accountStatus}
+                                            color={
+                                                client.accountStatus === 'active'
+                                                    ? 'success.main'
+                                                    : 'error.main'
+                                            }
+                                        />
+                                    </Grid>
+                                    {client.notes && (
+                                        <Grid item xs={12} sx={{ mr: 20 }}>
+                                            <InfoRow
+                                                icon={Notes}
+                                                label="Notes"
+                                                value={client.notes}
+                                            />
+                                        </Grid>
+                                    )}
+                                </Grid>
                             </Box>
-
-                            {/* Is Company */}
-                            <Box display="flex" alignItems="flex-start" gap={2}>
-                                <Business color="action" sx={{ mt: 0.5 }} />
-                                <Box flex={1}>
-                                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                        Company Type
-                                    </Typography>
-                                    <Typography variant="body1" fontWeight={600}>
-                                        {typeof client.isCompany === "boolean" 
-                                            ? (client.isCompany ? "Registered Company" : "Individual") 
-                                            : "N/A"}
-                                    </Typography>
-                                </Box>
-                            </Box>
-
-                            {/* Notes */}
-                            <Box display="flex" alignItems="flex-start" gap={2}>
-                                <Notes color="action" sx={{ mt: 0.5 }} />
-                                <Box flex={1}>
-                                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                        Notes
-                                    </Typography>
-                                    <Typography variant="body1" fontWeight={600}>
-                                        {client.notes || 'No notes available'}
-                                    </Typography>
-                                </Box>
-                            </Box>
-                        </Stack>
+                        </Paper>
                     </Box>
 
+                    <Divider />
+
                     {/* Contacts Section */}
-                    <Box>
-                        <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <ContactPhone fontSize="small" />
-                            Contacts
-                            <Typography variant="body2" color="text.secondary" sx={{ ml: 1 }}>
-                                ({client.contacts?.length || 0})
-                            </Typography>
+                    <Box sx={{ p: 3, bgcolor: 'grey.50' }}>
+                        <Typography
+                            variant="h6"
+                            fontWeight="bold"
+                            gutterBottom
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                mb: 2,
+                                color: 'primary.main'
+                            }}
+                        >
+                            <ContactPhone />
+                            Contact Persons
+                            <Chip
+                                label={client.contacts?.length || 0}
+                                size="small"
+                                color="primary"
+                                sx={{ ml: 1 }}
+                            />
                         </Typography>
-                        <Divider sx={{ mb: 2 }} />
-                        
+
                         {client.contacts && client.contacts.length > 0 ? (
-                            <Stack spacing={2}>
-                                {client.contacts.map((contact, index) => (
-                                    <Paper key={contact.id} variant="outlined" sx={{ p: 2 }}>
-                                        <Stack spacing={2}>
-                                            {/* Contact Header */}
-                                            <Box display="flex" alignItems="center" gap={1}>
-                                                <Person color="primary" fontSize="small" />
-                                                <Typography variant="subtitle1" fontWeight="bold">
-                                                    Contact {index + 1}
-                                                </Typography>
+                            <Grid container spacing={2}>
+                                {client.contacts.map((contact) => (
+                                    <Grid item xs={12} md={6} key={contact.id}>
+                                        <Paper
+                                            elevation={2}
+                                            sx={{
+                                                p: 2.5,
+                                                borderRadius: 2,
+                                                height: '100%',
+                                                transition: 'all 0.3s ease',
+                                                '&:hover': {
+                                                    transform: 'translateY(-4px)',
+                                                    boxShadow: 6
+                                                }
+                                            }}
+                                        >
+                                            <Box
+                                                display="flex"
+                                                alignItems="center"
+                                                gap={1.5}
+                                                mb={2}
+                                            >
+                                                <Box
+                                                    sx={{
+                                                        width: 48,
+                                                        height: 48,
+                                                        borderRadius: '50%',
+                                                        bgcolor: '#f0f0f5',
+                                                        color: '#6366f1',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        fontWeight: 'bold',
+                                                        fontSize: '1.2rem'
+                                                    }}
+                                                >
+                                                    {contact.firstName?.[0] || '?'}
+                                                    {contact.lastName?.[0] || ''}
+                                                </Box>
+                                                <Box flex={1}>
+                                                    <Typography
+                                                        variant="h6"
+                                                        fontWeight="bold"
+                                                        noWrap
+                                                    >
+                                                        {contact.firstName || '—'}{' '}
+                                                        {contact.lastName || '—'}
+                                                    </Typography>
+                                                    <Typography
+                                                        variant="body2"
+                                                        color="text.secondary"
+                                                        noWrap
+                                                    >
+                                                        {contact.role || 'No role specified'}
+                                                    </Typography>
+                                                </Box>
                                             </Box>
 
-                                            {/* Contact Details */}
-                                            <Grid container spacing={2}>
-                                                <Grid item xs={12} sm={6}>
-                                                    <Box display="flex" alignItems="flex-start" gap={1}>
-                                                        <Badge color="action" fontSize="small" sx={{ mt: 0.5 }} />
-                                                        <Box flex={1}>
-                                                            <Typography variant="subtitle2" color="text.secondary">
-                                                                Full Name
-                                                            </Typography>
-                                                            <Typography variant="body1" fontWeight={600}>
-                                                                {contact.firstName || '—'} {contact.lastName || '—'}
-                                                            </Typography>
-                                                        </Box>
-                                                    </Box>
-                                                </Grid>
+                                            <Divider sx={{ my: 1.5 }} />
 
-                                                <Grid item xs={12} sm={6}>
-                                                    <Box display="flex" alignItems="flex-start" gap={1}>
-                                                        <Work color="action" fontSize="small" sx={{ mt: 0.5 }} />
-                                                        <Box flex={1}>
-                                                            <Typography variant="subtitle2" color="text.secondary">
-                                                                Role
-                                                            </Typography>
-                                                            <Typography variant="body1" fontWeight={600}>
-                                                                {contact.role || '—'}
-                                                            </Typography>
-                                                        </Box>
+                                            <Stack spacing={1.5}>
+                                                <Box
+                                                    display="flex"
+                                                    alignItems="center"
+                                                    gap={1.5}
+                                                >
+                                                    <Email
+                                                        color="action"
+                                                        fontSize="small"
+                                                    />
+                                                    <Box flex={1} minWidth={0}>
+                                                        <Typography
+                                                            variant="caption"
+                                                            color="text.secondary"
+                                                        >
+                                                            Email
+                                                        </Typography>
+                                                        <Typography
+                                                            variant="body2"
+                                                            fontWeight={500}
+                                                            noWrap
+                                                        >
+                                                            {contact.emailAddress || '—'}
+                                                        </Typography>
                                                     </Box>
-                                                </Grid>
+                                                </Box>
 
-                                                <Grid item xs={12} sm={6}>
-                                                    <Box display="flex" alignItems="flex-start" gap={1}>
-                                                        <Email color="action" fontSize="small" sx={{ mt: 0.5 }} />
-                                                        <Box flex={1}>
-                                                            <Typography variant="subtitle2" color="text.secondary">
-                                                                Email
-                                                            </Typography>
-                                                            <Typography variant="body1" fontWeight={600}>
-                                                                {contact.emailAddress || '—'}
-                                                            </Typography>
-                                                        </Box>
+                                                <Box
+                                                    display="flex"
+                                                    alignItems="center"
+                                                    gap={1.5}
+                                                >
+                                                    <Phone
+                                                        color="action"
+                                                        fontSize="small"
+                                                    />
+                                                    <Box flex={1} minWidth={0}>
+                                                        <Typography
+                                                            variant="caption"
+                                                            color="text.secondary"
+                                                        >
+                                                            Phone
+                                                        </Typography>
+                                                        <Typography
+                                                            variant="body2"
+                                                            fontWeight={500}
+                                                            noWrap
+                                                        >
+                                                            {contact.phoneNumber || '—'}
+                                                        </Typography>
                                                     </Box>
-                                                </Grid>
-
-                                                <Grid item xs={12} sm={6}>
-                                                    <Box display="flex" alignItems="flex-start" gap={1}>
-                                                        <Phone color="action" fontSize="small" sx={{ mt: 0.5 }} />
-                                                        <Box flex={1}>
-                                                            <Typography variant="subtitle2" color="text.secondary">
-                                                                Phone
-                                                            </Typography>
-                                                            <Typography variant="body1" fontWeight={600}>
-                                                                {contact.phoneNumber || '—'}
-                                                            </Typography>
-                                                        </Box>
-                                                    </Box>
-                                                </Grid>
-                                            </Grid>
-                                        </Stack>
-                                    </Paper>
+                                                </Box>
+                                            </Stack>
+                                        </Paper>
+                                    </Grid>
                                 ))}
-                            </Stack>
+                            </Grid>
                         ) : (
-                            <Paper variant="outlined" sx={{ p: 3, textAlign: 'center' }}>
-                                <ContactPhone color="disabled" sx={{ fontSize: 48, mb: 1 }} />
-                                <Typography variant="body1" color="text.secondary">
-                                    No contacts available for this client
+                            <Paper
+                                variant="outlined"
+                                sx={{
+                                    p: 4,
+                                    textAlign: 'center',
+                                    borderRadius: 2,
+                                    bgcolor: 'background.paper'
+                                }}
+                            >
+                                <ContactPhone
+                                    color="disabled"
+                                    sx={{ fontSize: 48, mb: 1 }}
+                                />
+                                <Typography
+                                    variant="body1"
+                                    color="text.secondary"
+                                    fontWeight={500}
+                                >
+                                    No contacts available
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    Add contact persons to keep track of your connections
                                 </Typography>
                             </Paper>
                         )}
                     </Box>
                 </Stack>
             </DialogContent>
-            
-            <DialogActions sx={{ p: 2 }}>
-                <Button 
-                    onClick={onClose} 
-                    variant="contained" 
+
+            <DialogActions
+                sx={{
+                    p: 2,
+                    justifyContent: 'flex-end',
+                    bgcolor: 'grey.50'
+                }}
+            >
+                <Button
+                    onClick={onClose}
+                    variant="contained"
                     color="primary"
                     size="large"
+                    startIcon={<Close />}
+                    sx={{
+                        minWidth: 120,
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        fontWeight: 600
+                    }}
                 >
                     Close
                 </Button>
