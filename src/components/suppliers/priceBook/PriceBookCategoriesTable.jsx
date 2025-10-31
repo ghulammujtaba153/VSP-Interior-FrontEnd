@@ -233,7 +233,7 @@ const PriceBookCategoriesTable = () => {
                           <DeleteIcon />
                         </IconButton>
                         <Button component={Link} href={`/suppliers/category/${row.id}`} variant="outlined" color="primary" size="small"> 
-                          Manage Suppliers
+                          Manage Price Books
                         </Button>
                       </TableCell>
                     </TableRow>
