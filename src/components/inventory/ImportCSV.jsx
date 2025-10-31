@@ -31,15 +31,16 @@ import {
   CheckCircle as SuccessIcon,
   DeleteOutline as DeleteIcon,
 } from "@mui/icons-material";
+import ConfirmationDialog from "../ConfirmationDialog";
 
 // ✅ Inventory schema fields (first letter capitalized for CSV)
 const schemaFields = [
   "Name",
   "Description",
   "Category",
+  "Supplier Name",
   "PriceBook",
   "Unit",
-  "Supplier Name",
   "CostPrice",
   "Quantity",
   "Notes",
@@ -52,9 +53,9 @@ const templateData = [
     Name: "Wood Screws 2 inch",
     Description: "Phillips head wood screws for cabinet assembly",
     Category: "Hardware",
+    "Supplier Name": "Premier hardware co.",
     PriceBook: "Cabinet hinges",
     Unit: "pieces",
-    "Supplier Name": "Premier hardware co.",
     CostPrice: 0.25,
     Quantity: 500,
     Notes: "For cabinet jobs",
@@ -64,9 +65,9 @@ const templateData = [
     Name: "Cabinet Hinges",
     Description: "Soft-close hinges for cabinet doors",
     Category: "Hardware",
+    "Supplier Name": "Premier hardware co.",
     PriceBook: "Cabinet hinges",
     Unit: "pairs",
-    "Supplier Name": "Premier hardware co.",
     CostPrice: 12.50,
     Quantity: 75,
     Notes: "Quality hinges",
@@ -76,9 +77,9 @@ const templateData = [
     Name: "Oak Wood Board",
     Description: "Premium oak board 1x6x8 feet",
     Category: "Materials",
+    "Supplier Name": "Premier hardware co.",
     PriceBook: "Cabinet hinges",
     Unit: "pieces",
-    "Supplier Name": "Premier hardware co.",
     CostPrice: 45.00,
     Quantity: 25,
     Notes: "Premium stock",
@@ -92,6 +93,7 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
   const { user } = useAuth();
 
   // Validate rows according to schema
@@ -312,8 +314,23 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
     }
   };
 
+  // Handle close with confirmation
+  const handleCloseRequest = () => {
+    // Only show confirmation if there's data loaded
+    if (rows.length > 0) {
+      setCloseConfirmOpen(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const handleConfirmClose = () => {
+    setCloseConfirmOpen(false);
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth>
+    <Dialog open={open} onClose={handleCloseRequest} maxWidth="xl" fullWidth>
       <DialogTitle>
         <Box display="flex" alignItems="center" gap={1}>
           <InventoryIcon />
@@ -540,7 +557,7 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
         )}
       </DialogContent>
       <DialogActions sx={{ p: 2, gap: 1 }}>
-        <Button onClick={onClose} size="large">
+        <Button onClick={handleCloseRequest} size="large">
           Cancel
         </Button>
         <Button
@@ -565,6 +582,17 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
           }
         </Button>
       </DialogActions>
+      
+      <ConfirmationDialog
+        open={closeConfirmOpen}
+        onClose={() => setCloseConfirmOpen(false)}
+        onConfirm={handleConfirmClose}
+        title="Close Import Modal"
+        message="Are you sure you want to close the import modal? All unsaved data will be lost."
+        severity="warning"
+        confirmText="Close"
+        cancelText="Cancel"
+      />
     </Dialog>
   );
 };

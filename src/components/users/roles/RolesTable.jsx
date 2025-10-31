@@ -151,14 +151,19 @@ const RolesTable = () => {
         const row = params.row; // Fix: avoid direct usage of params.row inline
 
         
-return (
+        return (
           <>
           <PermissionWrapper resource="roles" action="canView">
-            <IconButton>
-            <Link href={`/users/roles/${row.id}`} sx={{color: 'inherit', mt: 4, textDecoration: 'none'}}>
-              <VisibilityIcon />
-            </Link>
-            </IconButton>
+            <Button
+              component={Link}
+              href={`/users/roles/${row.id}`}
+              variant="outlined"
+              size="small"
+              startIcon={<VisibilityIcon />}
+              sx={{ textTransform: 'none' }}
+            >
+              Manage permissions
+            </Button>
             </PermissionWrapper>
 
             <PermissionWrapper resource="roles" action="canEdit">

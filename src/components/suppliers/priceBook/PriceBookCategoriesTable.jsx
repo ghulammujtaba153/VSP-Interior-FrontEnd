@@ -26,7 +26,6 @@ import {
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { RemoveRedEye } from "@mui/icons-material";
 import Link from "next/link";
 import Loader from "@/components/loader/Loader";
 
@@ -233,11 +232,9 @@ const PriceBookCategoriesTable = () => {
                         >
                           <DeleteIcon />
                         </IconButton>
-                        <Link href={`/suppliers/category/${row.id}`} passHref>
-                          <IconButton color="primary">
-                            <RemoveRedEye />
-                          </IconButton>
-                        </Link>
+                        <Button component={Link} href={`/suppliers/category/${row.id}`} variant="outlined" color="primary" size="small"> 
+                          Manage Suppliers
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))

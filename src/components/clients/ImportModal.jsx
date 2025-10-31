@@ -40,6 +40,7 @@ import {
   Search as SearchIcon,
 } from "@mui/icons-material";
 import CircularProgress from "@mui/material/CircularProgress";
+import ConfirmationDialog from "../ConfirmationDialog";
 
 // ✅ Text transformation helper - capitalize first letter, rest lowercase
 const capitalizeText = (text) => {
@@ -224,6 +225,7 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [mapping, setMapping] = useState(false); // <-- Add this
+  const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
   const { user } = useAuth();
   
   // ✅ Use ref for debounced validation
@@ -621,6 +623,21 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
     }
   }, [rows, errors, user.id, refreshClients, onClose]);
 
+  // Handle close with confirmation
+  const handleCloseRequest = () => {
+    // Only show confirmation if there's data loaded
+    if (rows.length > 0) {
+      setCloseConfirmOpen(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const handleConfirmClose = () => {
+    setCloseConfirmOpen(false);
+    onClose();
+  };
+
   // ✅ Memoized table rows to prevent unnecessary re-renders
   const TableRows = useMemo(() => {
     const getOriginalIndex = (displayIndex) => {
@@ -708,7 +725,7 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
   }, [paginatedRows, errors, currentPage, rowsPerPage, handleEdit, searchTerm, filterStatus]);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth>
+    <Dialog open={open} onClose={handleCloseRequest} maxWidth="xl" fullWidth>
       <DialogTitle>
         <Box display="flex" alignItems="center" gap={1}>
           <PeopleIcon />
@@ -997,7 +1014,7 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
         )}
       </DialogContent>
       <DialogActions sx={{ p: 2, gap: 1 }}>
-        <Button onClick={onClose} size="large">
+        <Button onClick={handleCloseRequest} size="large">
           Cancel
         </Button>
         <Button
@@ -1023,6 +1040,17 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
           }
         </Button>
       </DialogActions>
+      
+      <ConfirmationDialog
+        open={closeConfirmOpen}
+        onClose={() => setCloseConfirmOpen(false)}
+        onConfirm={handleConfirmClose}
+        title="Close Import Modal"
+        message="Are you sure you want to close the import modal? All unsaved data will be lost."
+        severity="warning"
+        confirmText="Close"
+        cancelText="Cancel"
+      />
     </Dialog>
   );
 };

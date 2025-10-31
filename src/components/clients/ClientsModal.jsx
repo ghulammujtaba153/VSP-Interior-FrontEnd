@@ -7,19 +7,34 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  Typography,
   Button,
   CircularProgress,
   FormControlLabel,
-  Switch
+  Radio,
+  RadioGroup,
+  FormControl,
+  FormLabel,
+  Box,
+  Stack,
+  Divider
 } from '@mui/material'
 import { toast } from 'react-toastify'
 import axios from 'axios'
 import ConfirmationDialog from '../ConfirmationDialog'
 import { MuiTelInput } from 'mui-tel-input'
+import {
+  Business,
+  Person,
+  Email,
+  Phone,
+  LocationOn,
+  LocalPostOffice,
+  Notes
+} from '@mui/icons-material'
 
 import { BASE_URL } from '@/configs/url'
 import { useAuth } from '@/context/authContext'
-import ImportModal from './ImportModal'
 
 const initialClientState = {
   companyName: '',
@@ -118,101 +133,304 @@ const ClientsModal = ({ open, handleClose, editClient, refreshClients }) => {
   }
 
   return (
-    <Dialog open={open} onClose={handleClose} fullWidth maxWidth='sm'>
-      <DialogTitle>{editClient ? 'Edit Client' : 'Add Client'}</DialogTitle>
+    <Dialog 
+      open={open} 
+      onClose={handleClose} 
+      fullWidth 
+      maxWidth='sm'
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+        }
+      }}
+    >
+      <DialogTitle sx={{ 
+        bgcolor: 'primary.main', 
+        color: 'white',
+        py: 2,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1
+      }}>
+        <Business />
+        <Box>
+          <Typography variant="h6" fontWeight="bold">
+            {editClient ? 'Edit Client' : 'Add New Client'}
+          </Typography>
+          <Typography variant="body2" sx={{ opacity: 0.9 }}>
+            {editClient ? 'Update client information' : 'Create a new client profile'}
+          </Typography>
+        </Box>
+      </DialogTitle>
+      
       <form onSubmit={handleSubmit}>
-        <DialogContent dividers>
-          <TextField
-            fullWidth
-            label='Name'
-            name='companyName'
-            value={client.companyName}
-            onChange={handleChange}
-            margin='normal'
-            required={client.isCompany} // required only if isCompany is true
-          />
+        <DialogContent dividers sx={{ p: 3 }}>
+          <Stack spacing={3}>
+            {/* Client Type Selection */}
+            <FormControl component="fieldset" fullWidth>
+              <FormLabel component="legend" sx={{ 
+                mb: 2, 
+                fontWeight: 600,
+                color: 'text.primary',
+                fontSize: '1rem'
+              }}>
+                Client Type
+              </FormLabel>
+              <RadioGroup
+                row
+                value={client.isCompany}
+                onChange={(e) => setClient({ ...client, isCompany: e.target.value === 'true' })}
+                sx={{ 
+                  gap: 3,
+                  justifyContent: 'space-between',
+                  '& .MuiFormControlLabel-root': {
+                    margin: 0,
+                    flex: 1
+                  }
+                }}
+              >
+                <FormControlLabel
+                  value={false}
+                  control={
+                    <Radio 
+                      icon={<Person />}
+                      checkedIcon={<Person />}
+                      sx={{
+                        color: 'primary.main',
+                        '&.Mui-checked': {
+                          color: 'primary.main',
+                        },
+                      }}
+                    />
+                  }
+                  label={
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <Typography variant="body1" fontWeight={600}>
+                        Individual
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Personal client
+                      </Typography>
+                    </Box>
+                  }
+                  sx={{
+                    border: client.isCompany ? 1 : 2,
+                    borderColor: client.isCompany ? 'grey.300' : 'primary.main',
+                    borderRadius: 2,
+                    p: 2,
+                    m: 0,
+                    backgroundColor: !client.isCompany ? 'primary.50' : 'transparent',
+                    '&:hover': {
+                      backgroundColor: !client.isCompany ? 'primary.100' : 'grey.50',
+                    }
+                  }}
+                />
+                <FormControlLabel
+                  value={true}
+                  control={
+                    <Radio 
+                      icon={<Business />}
+                      checkedIcon={<Business />}
+                      sx={{
+                        color: 'primary.main',
+                        '&.Mui-checked': {
+                          color: 'primary.main',
+                        },
+                      }}
+                    />
+                  }
+                  label={
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <Typography variant="body1" fontWeight={600}>
+                        Company
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Business client
+                      </Typography>
+                    </Box>
+                  }
+                  sx={{
+                    border: client.isCompany ? 2 : 1,
+                    borderColor: client.isCompany ? 'primary.main' : 'grey.300',
+                    borderRadius: 2,
+                    p: 2,
+                    m: 0,
+                    backgroundColor: client.isCompany ? 'primary.50' : 'transparent',
+                    '&:hover': {
+                      backgroundColor: client.isCompany ? 'primary.100' : 'grey.50',
+                    }
+                  }}
+                />
+              </RadioGroup>
+            </FormControl>
 
-          <FormControlLabel
-            control={
-              <div style={{ display: "flex", gap: 24 }}>
-                <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <input
-                    type="radio"
-                    name="clientType"
-                    checked={!client.isCompany}
-                    onChange={() => setClient({ ...client, isCompany: false })}
-                    style={{ accentColor: "#1976d2" }}
-                  />
-                  <span style={{ fontSize: 16 }}>Individual Client</span>
-                </label>
-                <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <input
-                    type="radio"
-                    name="clientType"
-                    checked={client.isCompany}
-                    onChange={() => setClient({ ...client, isCompany: true })}
-                    style={{ accentColor: "#1976d2" }}
-                  />
-                  <span style={{ fontSize: 16 }}>Company</span>
-                </label>
-              </div>
-            }
-            label=""
-            sx={{ mb: 2, alignItems: "center" }}
-          />
+            <Divider />
 
-          <TextField
-            fullWidth
-            label='Email Address'
-            name='emailAddress'
-            type='email'
-            value={client.emailAddress}
-            onChange={handleChange}
-            margin='normal'
-            required
-          />
-          <MuiTelInput
-            fullWidth
-            defaultCountry='NZ'
-            label='Phone Number'
-            value={client.phoneNumber}
-            onChange={value => setClient({ ...client, phoneNumber: value })}
-            margin='normal'
-            required
-          />
-          <TextField
-            fullWidth
-            label='Address'
-            name='address'
-            value={client.address}
-            onChange={handleChange}
-            margin='normal'
-            required
-          />
-          <TextField
-            fullWidth
-            label='Post Code'
-            name='postCode'
-            value={client.postCode}
-            onChange={handleChange}
-            margin='normal'
-            required
-          />
-          <TextField
-            fullWidth
-            label='Notes'
-            name='notes'
-            value={client.notes}
-            onChange={handleChange}
-            margin='normal'
-          />
+            {/* Name Field */}
+            <Box sx={{ position: 'relative' }}>
+              <TextField
+                fullWidth
+                label={client.isCompany ? "Company Name" : "Client Name"}
+                name='companyName'
+                value={client.companyName}
+                onChange={handleChange}
+                required={client.isCompany}
+                variant="outlined"
+                InputProps={{
+                  startAdornment: (
+                    <Box sx={{ mr: 1, color: 'action.active' }}>
+                      {client.isCompany ? <Business /> : <Person />}
+                    </Box>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    pl: 1
+                  }
+                }}
+              />
+            </Box>
+
+            {/* Contact Information */}
+            <Box>
+              
+              <Stack spacing={2} >
+                <TextField
+                  fullWidth
+                  label='Email Address'
+                  name='emailAddress'
+                  type='email'
+                  value={client.emailAddress}
+                  onChange={handleChange}
+                  required
+                  variant="outlined"
+                  InputProps={{
+                    startAdornment: (
+                      <Email sx={{ mr: 1, color: 'action.active' }} />
+                    ),
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      pl: 1
+                    }
+                  }}
+                />
+                
+                <MuiTelInput
+                  fullWidth
+                  defaultCountry='NZ'
+                  label='Phone Number'
+                  value={client.phoneNumber}
+                  onChange={value => setClient({ ...client, phoneNumber: value })}
+                  required
+                  variant="outlined"
+                  InputProps={{
+                    startAdornment: (
+                      <Phone sx={{ mr: 1, color: 'action.active' }} />
+                    ),
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      pl: 1
+                    }
+                  }}
+                />
+              </Stack>
+            </Box>
+
+            {/* Address Information */}
+            <Box>
+              
+              <Stack spacing={2}>
+                <TextField
+                  fullWidth
+                  label='Address'
+                  name='address'
+                  value={client.address}
+                  onChange={handleChange}
+                  required
+                  variant="outlined"
+                  InputProps={{
+                    startAdornment: (
+                      <LocationOn sx={{ mr: 1, color: 'action.active' }} />
+                    ),
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      pl: 1
+                    }
+                  }}
+                />
+                
+                <TextField
+                  fullWidth
+                  label='Post Code'
+                  name='postCode'
+                  value={client.postCode}
+                  onChange={handleChange}
+                  required
+                  variant="outlined"
+                  InputProps={{
+                    startAdornment: (
+                      <LocalPostOffice sx={{ mr: 1, color: 'action.active' }} />
+                    ),
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      pl: 1
+                    }
+                  }}
+                />
+              </Stack>
+            </Box>
+
+            {/* Notes */}
+            <Box>
+              
+              <Box>
+                <TextField
+                  fullWidth
+                  label='Notes'
+                  name='notes'
+                  value={client.notes}
+                  onChange={handleChange}
+                  multiline
+                  rows={3}
+                  variant="outlined"
+                  placeholder="Add any additional notes or comments about this client..."
+                />
+              </Box>
+            </Box>
+          </Stack>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleClose} color='secondary' disabled={loading}>
+        
+        <DialogActions sx={{ p: 3, gap: 1 }}>
+          <Button 
+            onClick={handleClose} 
+            color='secondary' 
+            disabled={loading}
+            variant="outlined"
+            size="large"
+            sx={{ minWidth: 100 }}
+          >
             Cancel
           </Button>
-          <Button type='submit' variant='contained' color='primary' disabled={loading}>
-            {loading ? <CircularProgress size={24} /> : editClient ? 'Update' : 'Create'}
+          <Button 
+            type='submit' 
+            variant='contained' 
+            color='primary' 
+            disabled={loading}
+            size="large"
+            sx={{ minWidth: 120 }}
+          >
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : editClient ? (
+              'Update Client'
+            ) : (
+              'Create Client'
+            )}
           </Button>
         </DialogActions>
       </form>

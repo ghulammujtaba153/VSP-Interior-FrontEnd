@@ -195,7 +195,7 @@ const ClientsTable = () => {
   // Fetch all clients for export (without pagination)
   const fetchAllClients = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/api/client/get`); // Large limit to get all
+      const response = await axios.get(`${BASE_URL}/api/client/get?page=1&limit=10000`); // Large limit to get all
       return response.data.data;
     } catch (error) {
       toast.error("Failed to fetch clients for export");
@@ -274,6 +274,34 @@ const ClientsTable = () => {
       });
 
       const worksheet = XLSX.utils.json_to_sheet(exportData);
+      
+      // Set column widths for better readability
+      const columnWidths = [];
+      if (exportData.length > 0) {
+        // Get all column names from the first row
+        const columnNames = Object.keys(exportData[0]);
+        columnNames.forEach((col, index) => {
+          let maxLength = col.length; // Start with header length
+          // Find max length in this column
+          exportData.forEach(row => {
+            const cellValue = String(row[col] || '');
+            if (cellValue.length > maxLength) {
+              maxLength = cellValue.length;
+            }
+          });
+          // Set width: min 12, max 50, or content width + 5 for padding
+          columnWidths[index] = { wch: Math.min(Math.max(maxLength + 5, 12), 50) };
+        });
+      } else {
+        // Default widths if no data
+        const defaultColumns = ['Client ID', 'Name', 'Is Company', 'Client Email', 'Client Phone', 'Address', 'City', 'Client Status', 'Client Created At', 'Contact #', 'Contact ID', 'Contact First Name', 'Contact Last Name', 'Contact Full Name', 'Contact Role', 'Contact Email', 'Contact Phone', 'Contact Created At'];
+        defaultColumns.forEach(() => {
+          columnWidths.push({ wch: 15 });
+        });
+      }
+      
+      worksheet['!cols'] = columnWidths;
+      
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Clients & Contacts");
       XLSX.writeFile(workbook, "Clients + Contacts VSP.xlsx");
