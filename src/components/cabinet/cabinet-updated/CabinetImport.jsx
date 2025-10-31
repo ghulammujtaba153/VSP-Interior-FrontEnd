@@ -40,13 +40,14 @@ import axios from "axios"
 import { BASE_URL } from "@/configs/url"
 import { useParams } from "next/navigation"
 import Notification from "@/components/Notification"
+import ConfirmationDialog from "@/components/ConfirmationDialog"
 
 // Utility to normalize header names (lowercase, trimmed)
 function normalizeHeader(header) {
   return header?.toString().trim().toLowerCase();
 }
 
-const CabinetImport = ({ id, setIsInProgress }) => {
+const CabinetImport = ({ id, setIsInProgress, categoryName }) => {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState(1)
@@ -70,6 +71,13 @@ const CabinetImport = ({ id, setIsInProgress }) => {
   // Lock-in states
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false)
   const [pendingNavigation, setPendingNavigation] = useState(null)
+  
+  // File upload confirmation states
+  const [uploadConfirmOpen, setUploadConfirmOpen] = useState(false)
+  const [pendingFile, setPendingFile] = useState(null)
+  
+  // Close confirmation state
+  const [closeConfirmOpen, setCloseConfirmOpen] = useState(false)
 
   // Fetch template from API
   const fetchTemplate = async () => {
@@ -87,7 +95,7 @@ const CabinetImport = ({ id, setIsInProgress }) => {
     fetchTemplate()
   }, [id])
 
-  // Handle file upload and parse excel
+  // Handle file selection - show confirmation dialog
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -97,6 +105,15 @@ const CabinetImport = ({ id, setIsInProgress }) => {
       setError("Please select a valid Excel file (.xlsx or . xls)")
       return
     }
+
+    // Store file and show confirmation dialog
+    setPendingFile(file)
+    setUploadConfirmOpen(true)
+  }
+
+  // Process file upload and parse excel
+  const processFileUpload = (file) => {
+    if (!file) return
 
     setLoading(true)
     setError("")
@@ -570,9 +587,10 @@ const CabinetImport = ({ id, setIsInProgress }) => {
     <Button
       variant="text"
       onClick={(e) => {
-        if (isInProgress) {
+        // Check if there's any data loaded
+        if (excelData.length > 0 || uniqueSubcategories.length > 0 || columns.length > 0 || Object.keys(groupedData || {}).length > 0) {
           setPendingNavigation('/cabinet/categories')
-          setCancelConfirmOpen(true)
+          setCloseConfirmOpen(true)
         } else {
           router.push('/cabinet/categories')
         }
@@ -878,6 +896,61 @@ const CabinetImport = ({ id, setIsInProgress }) => {
         </DialogActions>
       </Dialog>
 
+      {/* File Upload Confirmation Dialog */}
+      <Dialog 
+        open={uploadConfirmOpen}
+        onClose={() => {
+          setUploadConfirmOpen(false)
+          setPendingFile(null)
+          if (fileInputRef.current) {
+            fileInputRef.current.value = ""
+          }
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Typography variant="h6">Confirm File Upload</Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            Do you want to upload the template <strong>{pendingFile?.name}</strong> for this category?
+          </Typography>
+          {categoryName && (
+            <Typography variant="body2" color="text.secondary">
+              Category: <strong>{categoryName}</strong>
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => {
+              setUploadConfirmOpen(false)
+              setPendingFile(null)
+              if (fileInputRef.current) {
+                fileInputRef.current.value = ""
+              }
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => {
+              setUploadConfirmOpen(false)
+              const file = pendingFile
+              setPendingFile(null)
+              if (file) {
+                processFileUpload(file)
+              }
+            }}
+          >
+            Confirm Upload
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Cancel Confirmation Dialog */}
       <Dialog 
         open={cancelConfirmOpen}
@@ -915,6 +988,26 @@ const CabinetImport = ({ id, setIsInProgress }) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Close Confirmation Dialog */}
+      <ConfirmationDialog
+        open={closeConfirmOpen}
+        onClose={() => setCloseConfirmOpen(false)}
+        onConfirm={() => {
+          handleReset()
+          setCloseConfirmOpen(false)
+          if (pendingNavigation) {
+            const to = pendingNavigation
+            setPendingNavigation(null)
+            router.push(to)
+          }
+        }}
+        title="Close Import"
+        message="Are you sure you want to close the import? All unsaved data will be lost."
+        severity="warning"
+        confirmText="Close"
+        cancelText="Cancel"
+      />
     </Container>
   )
 }

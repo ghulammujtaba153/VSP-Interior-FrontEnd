@@ -74,6 +74,7 @@ const SubCategoriesPage = () => {
         <CabinetImport
           id={id}
           setIsInProgress={setIsInProgress}
+          categoryName={data.name}
         />
       )}
 

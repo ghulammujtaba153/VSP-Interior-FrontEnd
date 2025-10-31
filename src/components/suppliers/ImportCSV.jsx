@@ -31,6 +31,7 @@ import {
   CheckCircle as SuccessIcon,
   DeleteOutline as DeleteIcon,
 } from "@mui/icons-material";
+import ConfirmationDialog from "../ConfirmationDialog";
 
 // ✅ Text transformation helper - capitalize first letter, rest lowercase
 const capitalizeText = (text) => {
@@ -80,6 +81,7 @@ const ImportModal = ({ open, onClose, fetchSuppliers }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
   const { user } = useAuth();
 
   // Sample template data for suppliers with contacts
@@ -473,8 +475,23 @@ const ImportModal = ({ open, onClose, fetchSuppliers }) => {
     }
   };
 
+  // Handle close with confirmation
+  const handleCloseRequest = () => {
+    // Only show confirmation if there's data loaded
+    if (rows.length > 0) {
+      setCloseConfirmOpen(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const handleConfirmClose = () => {
+    setCloseConfirmOpen(false);
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth>
+    <Dialog open={open} onClose={handleCloseRequest} maxWidth="xl" fullWidth>
       <DialogTitle>
         <Box display="flex" alignItems="center" gap={1}>
           <BusinessIcon />
@@ -729,7 +746,7 @@ const ImportModal = ({ open, onClose, fetchSuppliers }) => {
         )}
       </DialogContent>
       <DialogActions sx={{ p: 2, gap: 1 }}>
-        <Button onClick={onClose} size="large">
+        <Button onClick={handleCloseRequest} size="large">
           Cancel
         </Button>
         <Button
@@ -755,6 +772,17 @@ const ImportModal = ({ open, onClose, fetchSuppliers }) => {
           }
         </Button>
       </DialogActions>
+      
+      <ConfirmationDialog
+        open={closeConfirmOpen}
+        onClose={() => setCloseConfirmOpen(false)}
+        onConfirm={handleConfirmClose}
+        title="Close Import Modal"
+        message="Are you sure you want to close the import modal? All unsaved data will be lost."
+        severity="warning"
+        confirmText="Close"
+        cancelText="Cancel"
+      />
     </Dialog>
   );
 };

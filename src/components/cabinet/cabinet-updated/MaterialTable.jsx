@@ -224,6 +224,34 @@ setUniqueSubCodes(subCodes);
       return baseData;
     });
     const worksheet = XLSX.utils.json_to_sheet(formatted);
+    
+    // Set column widths for better readability
+    const columnWidths = [];
+    if (formatted.length > 0) {
+      // Get all column names from the first row
+      const columnNames = Object.keys(formatted[0]);
+      columnNames.forEach((col, index) => {
+        let maxLength = col.length; // Start with header length
+        // Find max length in this column
+        formatted.forEach(row => {
+          const cellValue = String(row[col] || '');
+          if (cellValue.length > maxLength) {
+            maxLength = cellValue.length;
+          }
+        });
+        // Set width: min 12, max 50, or content width + 5 for padding
+        columnWidths[index] = { wch: Math.min(Math.max(maxLength + 5, 12), 50) };
+      });
+    } else {
+      // Default widths if no data
+      const defaultColumns = ['ID', 'Code', 'Category', 'Subcategory', 'Description', 'Status', 'Created Date', 'Updated Date'];
+      defaultColumns.forEach(() => {
+        columnWidths.push({ wch: 15 });
+      });
+    }
+    
+    worksheet['!cols'] = columnWidths;
+    
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Cabinets');
     XLSX.writeFile(workbook, selectedSubCode === 'all' ? 'Cabinet Items VSP.xlsx' : `${selectedSubCode} Cabinets.xlsx`);
@@ -277,16 +305,31 @@ setUniqueSubCodes(subCodes);
     return []
   }
 
+  // Helper function to format numbers to 2 decimal places
+  const formatNumber = (value) => {
+    if (value === null || value === undefined || value === '') {
+      return 'N/A'
+    }
+    // Check if value is a number (can be string or number)
+    const numValue = typeof value === 'string' ? parseFloat(value) : value
+    if (!isNaN(numValue) && isFinite(numValue)) {
+      return parseFloat(numValue).toFixed(2)
+    }
+    // Return original value if it's not a number
+    return value ?? 'N/A'
+  }
+
   // Helper function to get dynamic data value by column name/label
   const getDynamicValue = (cabinet, columnName) => {
     const list = getArrayList(cabinet?.dynamicData)
+    // to fix to 2 decimal places
     if (list.length > 0) {
       const found = list.find(item => item.label === columnName || item.columnName === columnName)
-      return found ? (found.value ?? 'N/A') : 'N/A'
+      return found ? formatNumber(found.value) : 'N/A'
     }
     // fallback to object map
     if (cabinet?.dynamicData && typeof cabinet.dynamicData === 'object') {
-      return cabinet.dynamicData[columnName] ?? 'N/A'
+      return formatNumber(cabinet.dynamicData[columnName])
     }
     return 'N/A'
   }
