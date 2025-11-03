@@ -243,7 +243,7 @@ const CabinetCategoriesTable = () => {
         <TableContainer>
           <Table>
             <TableHead>
-              <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+              <TableRow >
                 <TableCell><strong>Category ID</strong></TableCell>
                 <TableCell><strong>Category Name</strong></TableCell>
                 <TableCell><strong>Subcategories</strong></TableCell>
@@ -257,12 +257,12 @@ const CabinetCategoriesTable = () => {
                 <TableRow
                   key={category.id}
                   hover
-                  sx={{
-                    backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
-                    '&:hover': {
-                      backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
-                    }
-                  }}
+                  // sx={{
+                  //   backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
+                  //   '&:hover': {
+                  //     backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
+                  //   }
+                  // }}
                 >
                   <TableCell>{category.id}</TableCell>
                   <TableCell>

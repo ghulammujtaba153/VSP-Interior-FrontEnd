@@ -510,7 +510,7 @@ const SupplierTable = () => {
                 <TableContainer component={Paper} elevation={1}>
                     <Table size="small">
                         <TableHead>
-                            <TableRow sx={table.header}>
+                            <TableRow >
                                 <TableCell sx={{ minWidth: 100 }}><strong>Contact ID</strong></TableCell>
                                 <TableCell sx={{ minWidth: 100 }}><strong>Name</strong></TableCell>
                                 <TableCell sx={{ minWidth: 100 }}><strong>Role</strong></TableCell>
@@ -525,12 +525,12 @@ const SupplierTable = () => {
                                 <TableRow 
                                     key={contact.id} 
                                     hover
-                                    sx={{
-                                        backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
-                                        '&:hover': {
-                                            backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
-                                        }
-                                    }}
+                                    // sx={{
+                                    //     backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
+                                    //     '&:hover': {
+                                    //         backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
+                                    //     }
+                                    // }}
                                 >
                                     <TableCell>{contact.id}</TableCell>
                                     <TableCell>
@@ -712,7 +712,7 @@ const SupplierTable = () => {
                 <TableContainer>
                     <Table>
                         <TableHead>
-                            <TableRow sx={table.header}>
+                            <TableRow>
                                 <TableCell width="50px"></TableCell>
                                 <TableCell sx={{ minWidth: 100 }}><strong>Supplier ID</strong></TableCell>
                                 <TableCell sx={{ minWidth: 100 }}><strong>Name</strong></TableCell>
@@ -731,12 +731,12 @@ const SupplierTable = () => {
                                     {/* Main supplier row */}
                                     <TableRow 
                                         hover
-                                        sx={{
-                                            backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
-                                            '&:hover': {
-                                                backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
-                                            }
-                                        }}
+                                        // sx={{
+                                        //     backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
+                                        //     '&:hover': {
+                                        //         backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
+                                        //     }
+                                        // }}
                                     >
                                         <TableCell>
                                             <IconButton

@@ -281,7 +281,7 @@ const UserTable = () => {
               Add User
             </Button>
           </PermissionWrapper>
-          <Button variant="outlined" color="success" onClick={handleExportExcel}>
+          <Button variant="outlined" color="primary" onClick={handleExportExcel}>
             Export Excel
           </Button>
         </Box>

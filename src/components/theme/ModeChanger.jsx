@@ -12,9 +12,32 @@ import { useSettings } from '@core/hooks/useSettings'
 
 const ModeChanger = ({ systemMode }) => {
   // Hooks
-  const { setMode } = useColorScheme()
+  const { setMode, mode } = useColorScheme()
   const { settings } = useSettings()
   const isDark = useMedia('(prefers-color-scheme: dark)', systemMode === 'dark')
+
+
+  useEffect(() => {
+    console.log('=== MODE CHANGER DEBUG ===')
+    console.log('Settings mode:', settings.mode)
+    console.log('System prefers dark:', isDark)
+    console.log('Current MUI mode:', mode)
+    console.log('SystemMode prop:', systemMode)
+    
+    if (settings.mode) {
+      if (settings.mode === 'system') {
+        const newMode = isDark ? 'dark' : 'light'
+        console.log('Setting system mode:', newMode)
+        setMode(newMode)
+      } else {
+        console.log('Setting manual mode:', settings.mode)
+        setMode(settings.mode)
+      }
+    }
+    console.log('=========================')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settings.mode, isDark])
+
 
   useEffect(() => {
     if (settings.mode) {

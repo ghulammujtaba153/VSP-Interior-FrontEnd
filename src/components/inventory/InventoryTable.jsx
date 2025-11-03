@@ -44,10 +44,8 @@ const InventoryTable = () => {
   const [importCSV, setImportCSV] = useState(false);
   const [suppliers, setSuppliers] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [priceBooks, setPriceBooks] = useState([]);
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [selectedPriceBook, setSelectedPriceBook] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
 
   // Pagination + search
@@ -98,7 +96,6 @@ const InventoryTable = () => {
         `search=${searchTerm}`,
         selectedSupplier ? `supplierId=${selectedSupplier}` : "",
         selectedCategory ? `categoryId=${selectedCategory}` : "",
-        selectedPriceBook ? `priceBookId=${selectedPriceBook}` : "",
         selectedStatus ? `status=${selectedStatus}` : "",
       ]
         .filter(Boolean)
@@ -134,20 +131,9 @@ const InventoryTable = () => {
     }
   };
 
-  // Fetch priceBooks
-  const fetchPriceBooks = async () => {
-    try {
-      const res = await axios.get(`${BASE_URL}/api/pricebook/get`);
-      setPriceBooks(res.data || []);
-    } catch (error) {
-      console.error("Error fetching priceBooks:", error);
-    }
-  };
-
   useEffect(() => {
     fetchSuppliers();
     fetchCategories();
-    fetchPriceBooks();
     // eslint-disable-next-line
   }, []);
 
@@ -202,13 +188,11 @@ const InventoryTable = () => {
       Name: item.name,
       Description: item.description,
       Category: item.categoryDetails?.name || item.category || "N/A",
-      PriceBook: item.priceBooks?.name || "N/A",
-      Unit: item.priceBooks?.unit || "N/A",
-      Price: item.costPrice,
+      "Supplier Name": item.supplier?.name || item.supplier?.companyName || "N/A",
+      "Cost Price": item.costPrice,
       Quantity: item.quantity,
       Status: item.status,
       Notes: item.notes,
-      Supplier: item.supplier?.name || item.supplier?.companyName || "N/A",
       SupplierEmail: item.supplier?.email || "N/A",
       SupplierPhone: item.supplier?.phone || "N/A",
       SupplierAddress: item.supplier?.address || "N/A",
@@ -236,7 +220,7 @@ const InventoryTable = () => {
       });
     } else {
       // Default widths if no data
-      const defaultColumns = ['ID', 'Name', 'Description', 'Category', 'PriceBook', 'Unit', 'Price', 'Quantity', 'Status', 'Notes', 'Supplier', 'SupplierEmail', 'SupplierPhone', 'SupplierAddress', 'Date'];
+      const defaultColumns = ['ID', 'Name', 'Description', 'Category', 'Supplier Name', 'Cost Price', 'Quantity', 'Status', 'Notes', 'SupplierEmail', 'SupplierPhone', 'SupplierAddress', 'Date'];
       defaultColumns.forEach(() => {
         columnWidths.push({ wch: 15 });
       });
@@ -363,9 +347,9 @@ const InventoryTable = () => {
               <TableCell sx={{ minWidth: 160, fontWeight: 'bold' }}>Name</TableCell>
               <TableCell sx={{ minWidth: 220, fontWeight: 'bold' }}>Description</TableCell>
               <TableCell sx={{ minWidth: 120, fontWeight: 'bold' }}>Category</TableCell>
-              <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Unit</TableCell>
+              <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Supplier</TableCell>
               {/* <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Unit</TableCell> */}
-              <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Price</TableCell>
+              <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Purchase Price</TableCell>
               <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Quantity in Stock</TableCell>
               <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Status</TableCell>
               <TableCell sx={{ minWidth: 180, fontWeight: 'bold' }}>Notes</TableCell>
@@ -378,18 +362,18 @@ const InventoryTable = () => {
               <TableRow 
                 key={item.id}
                 hover
-                sx={{
-                  backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
-                  '&:hover': {
-                    backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
-                  }
-                }}
+                // sx={{
+                //   backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
+                //   '&:hover': {
+                //     backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
+                //   }
+                // }}
               >
                 <TableCell sx={{ minWidth: 80 }}>{item.id}</TableCell>
                 <TableCell sx={{ minWidth: 160 }}>{item.name}</TableCell>
                 <TableCell sx={{ minWidth: 220 }}>{item.description}</TableCell>
                 <TableCell sx={{ minWidth: 120 }}>{item.categoryDetails.name}</TableCell>
-                <TableCell sx={{ minWidth: 100 }}>{item.priceBooks?.name || "N/A"}</TableCell>
+                <TableCell sx={{ minWidth: 100 }}>{item.supplier?.name || "N/A"}</TableCell>
                 {/* <TableCell sx={{ minWidth: 100 }}>{item.priceBooks?.unit || "N/A"}</TableCell> */}
                 <TableCell sx={{ minWidth: 100 }}>{item.costPrice}</TableCell>
                 <TableCell sx={{ minWidth: 100 }}>{item.quantity}</TableCell>
