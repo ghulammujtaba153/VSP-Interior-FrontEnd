@@ -536,11 +536,7 @@ const ClientsTable = () => {
         <TableContainer component={Paper} elevation={1}>
           <Table size="small">
             <TableHead>
-              <TableRow sx={{ 
-                backgroundColor: theme.palette.mode === 'dark' 
-                  ? theme.palette.action.hover
-                  : '#f5f5f5' 
-              }}>
+              <TableRow>
                 <TableCell><strong>Contact ID</strong></TableCell>
                 <TableCell><strong>Name</strong></TableCell>
                 <TableCell><strong>Role</strong></TableCell>
@@ -555,16 +551,16 @@ const ClientsTable = () => {
                 <TableRow 
                   key={contact.id} 
                   hover
-                  sx={{
-                    backgroundColor: theme.palette.mode === 'dark' 
-                      ? (index % 2 === 0 ? theme.palette.action.hover : 'transparent')
-                      : (index % 2 === 0 ? '#f9fafb' : theme.palette.background.paper),
-                    '&:hover': {
-                      backgroundColor: theme.palette.mode === 'dark' 
-                        ? theme.palette.action.selected
-                        : (index % 2 === 0 ? '#f3f4f6' : '#f9fafb'),
-                    }
-                  }}
+                  // sx={{
+                  //   backgroundColor: theme.palette.mode === 'dark' 
+                  //     ? (index % 2 === 0 ? theme.palette.action.hover : 'transparent')
+                  //     : (index % 2 === 0 ? '#f9fafb' : theme.palette.background.paper),
+                  //   '&:hover': {
+                  //     backgroundColor: theme.palette.mode === 'dark' 
+                  //       ? theme.palette.action.selected
+                  //       : (index % 2 === 0 ? '#f3f4f6' : '#f9fafb'),
+                  //   }
+                  // }}
                 >
                   <TableCell>{contact.id}</TableCell>
                   <TableCell>
@@ -750,11 +746,7 @@ const ClientsTable = () => {
         <TableContainer sx={{ overflowX: 'auto' }}>
           <Table>
             <TableHead>
-              <TableRow sx={{ 
-                backgroundColor: theme.palette.mode === 'dark' 
-                  ? theme.palette.action.hover
-                  : '#f5f5f5' 
-              }}>
+              <TableRow>
                 <TableCell width="50px"></TableCell>
                 <TableCell sx={{ minWidth: 90 }}><strong>Client ID</strong></TableCell>
                 <TableCell sx={{ minWidth: 260 }}><strong>Name</strong></TableCell>
@@ -773,16 +765,16 @@ const ClientsTable = () => {
                   {/* Main client row */}
                   <TableRow 
                     hover
-                    sx={{
-                      backgroundColor: theme.palette.mode === 'dark' 
-                        ? (index % 2 === 0 ? theme.palette.action.hover : 'transparent')
-                        : (index % 2 === 0 ? '#f9fafb' : theme.palette.background.paper),
-                      '&:hover': {
-                        backgroundColor: theme.palette.mode === 'dark' 
-                          ? theme.palette.action.selected
-                          : (index % 2 === 0 ? '#f3f4f6' : '#f9fafb'),
-                      }
-                    }}
+                    // sx={{
+                    //   backgroundColor: theme.palette.mode === 'dark' 
+                    //     ? (index % 2 === 0 ? theme.palette.action.hover : 'transparent')
+                    //     : (index % 2 === 0 ? '#f9fafb' : theme.palette.background.paper),
+                    //   '&:hover': {
+                    //     backgroundColor: theme.palette.mode === 'dark' 
+                    //       ? theme.palette.action.selected
+                    //       : (index % 2 === 0 ? '#f3f4f6' : '#f9fafb'),
+                    //   }
+                    // }}
                   >
                     <TableCell>
                       {/* Only show expand icon if isCompany is true */}
