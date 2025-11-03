@@ -23,6 +23,7 @@ import {
   InputAdornment,
   Chip,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -54,6 +55,7 @@ const ClientsTable = () => {
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState(false);
   const [editClient, setEditClient] = useState(null);
+  
 
   const [openContactModal, setOpenContactModal] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState(null);
@@ -85,6 +87,15 @@ const ClientsTable = () => {
   });
 
   const { user } = useAuth();
+  const theme = useTheme();
+  useEffect(() => {
+    console.log("=== THEME DEBUG ===");
+    console.log("Theme mode:", theme.palette.mode);
+    console.log("Theme object:", theme);
+    console.log("Primary color:", theme.palette.primary.main);
+    console.log("Background:", theme.palette.background.default);
+    console.log("==================");
+  }, [theme]);
 
   const fetchClients = async (currentPage = page, currentRowsPerPage = rowsPerPage, search = searchTerm) => {
     try {
@@ -460,7 +471,7 @@ const ClientsTable = () => {
               <Button
                 size="small"
                 variant="outlined"
-                color="success"
+                color="primary"
                 onClick={() => handleAddContact(clientId)}
                 sx={{ ml: 1 }}
               >
@@ -525,7 +536,11 @@ const ClientsTable = () => {
         <TableContainer component={Paper} elevation={1}>
           <Table size="small">
             <TableHead>
-              <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+              <TableRow sx={{ 
+                backgroundColor: theme.palette.mode === 'dark' 
+                  ? theme.palette.action.hover
+                  : '#f5f5f5' 
+              }}>
                 <TableCell><strong>Contact ID</strong></TableCell>
                 <TableCell><strong>Name</strong></TableCell>
                 <TableCell><strong>Role</strong></TableCell>
@@ -541,9 +556,13 @@ const ClientsTable = () => {
                   key={contact.id} 
                   hover
                   sx={{
-                    backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
+                    backgroundColor: theme.palette.mode === 'dark' 
+                      ? (index % 2 === 0 ? theme.palette.action.hover : 'transparent')
+                      : (index % 2 === 0 ? '#f9fafb' : theme.palette.background.paper),
                     '&:hover': {
-                      backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
+                      backgroundColor: theme.palette.mode === 'dark' 
+                        ? theme.palette.action.selected
+                        : (index % 2 === 0 ? '#f3f4f6' : '#f9fafb'),
                     }
                   }}
                 >
@@ -620,11 +639,11 @@ const ClientsTable = () => {
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h5">Clients</Typography>
         <Box display="flex" gap={1}>
-          <Button variant="outlined" color="success" onClick={handleImportModalOpen}>
+          <Button variant="outlined" color="primary" onClick={handleImportModalOpen}>
             Import Clients
           </Button>
 
-          <Button variant="outlined" color="success" onClick={handleExportExcel}>
+          <Button variant="outlined" color="primary" onClick={handleExportExcel}>
             Export Excel
           </Button>
           <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={handleAdd}>
@@ -687,6 +706,7 @@ const ClientsTable = () => {
         </Typography>
       </Box>
 
+
       <ClientsModal
         open={openModal}
         handleClose={() => setOpenModal(false)}
@@ -730,7 +750,11 @@ const ClientsTable = () => {
         <TableContainer sx={{ overflowX: 'auto' }}>
           <Table>
             <TableHead>
-              <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+              <TableRow sx={{ 
+                backgroundColor: theme.palette.mode === 'dark' 
+                  ? theme.palette.action.hover
+                  : '#f5f5f5' 
+              }}>
                 <TableCell width="50px"></TableCell>
                 <TableCell sx={{ minWidth: 90 }}><strong>Client ID</strong></TableCell>
                 <TableCell sx={{ minWidth: 260 }}><strong>Name</strong></TableCell>
@@ -750,9 +774,13 @@ const ClientsTable = () => {
                   <TableRow 
                     hover
                     sx={{
-                      backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
+                      backgroundColor: theme.palette.mode === 'dark' 
+                        ? (index % 2 === 0 ? theme.palette.action.hover : 'transparent')
+                        : (index % 2 === 0 ? '#f9fafb' : theme.palette.background.paper),
                       '&:hover': {
-                        backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
+                        backgroundColor: theme.palette.mode === 'dark' 
+                          ? theme.palette.action.selected
+                          : (index % 2 === 0 ? '#f3f4f6' : '#f9fafb'),
                       }
                     }}
                   >

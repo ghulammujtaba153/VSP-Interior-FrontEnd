@@ -39,8 +39,6 @@ const schemaFields = [
   "Description",
   "Category",
   "Supplier Name",
-  "PriceBook",
-  "Unit",
   "CostPrice",
   "Quantity",
   "Notes",
@@ -52,38 +50,32 @@ const templateData = [
   {
     Name: "Wood Screws 2 inch",
     Description: "Phillips head wood screws for cabinet assembly",
-    Category: "Hardware",
+    Category: "Ply wood",
     "Supplier Name": "Premier hardware co.",
-    PriceBook: "Cabinet hinges",
-    Unit: "pieces",
     CostPrice: 0.25,
     Quantity: 500,
     Notes: "For cabinet jobs",
-    Status: "active"
+    Status: "In Stock"
   },
   {
     Name: "Cabinet Hinges",
     Description: "Soft-close hinges for cabinet doors",
     Category: "Hardware",
     "Supplier Name": "Premier hardware co.",
-    PriceBook: "Cabinet hinges",
-    Unit: "pairs",
     CostPrice: 12.50,
     Quantity: 75,
     Notes: "Quality hinges",
-    Status: "active"
+    Status: "In Stock"
   },
   {
     Name: "Oak Wood Board",
     Description: "Premium oak board 1x6x8 feet",
-    Category: "Materials",
-    "Supplier Name": "Premier hardware co.",
-    PriceBook: "Cabinet hinges",
-    Unit: "pieces",
+    Category: "Panels",
+    "Supplier Name": "Abc wood supplies",
     CostPrice: 45.00,
     Quantity: 25,
     Notes: "Premium stock",
-    Status: "active"
+    Status: "In Stock"
   }
 ];
 
@@ -120,9 +112,9 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
       // Status validation
       if (
         row.Status &&
-        !["active", "inactive"].includes(String(row.Status).toLowerCase())
+        !["In Stock", "Low Stock", "Out of Stock"].includes(String(row.Status).trim())
       ) {
-        rowErrors.push("Status must be Active or Inactive");
+        rowErrors.push("Status must be 'In Stock', 'Low Stock', or 'Out of Stock'");
       }
       if (rowErrors.length > 0) {
         newErrors[idx] = rowErrors;
@@ -253,14 +245,8 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
           // Special handling for specific fields
           if (field === "Supplier Name") {
             mapped["supplierName"] = row[field];
-          } else if (field === "PriceBook") {
-            mapped["priceBook"] = row[field]; // Send to backend for lookup
-            mapped["unit"] = row["Unit"]; // Include unit for pricebook
           } else if (field === "Category") {
             mapped["category"] = row[field]; // Send to backend for lookup
-          } else if (field === "Unit") {
-            // Unit is already handled in PriceBook mapping, skip adding it again
-            return;
           } else {
             const backendKey = field.charAt(0).toLowerCase() + field.slice(1);
             mapped[backendKey] = row[field];
@@ -296,14 +282,13 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
                   <div style={{ marginLeft: '10px', fontSize: '10px' }}>
                     <div>• Supplier: <strong>{item.supplierName}</strong></div>
                     <div>• Category: <strong>{item.category}</strong></div>
-                    <div>• Price Book: <strong>{item.priceBook}</strong></div>
                     <div style={{ color: '#d32f2f', marginTop: '4px' }}>❌ {item.reason}</div>
                   </div>
                 </div>
               ))}
             </div>
             <div style={{ marginTop: '8px', fontSize: '11px', color: '#666', fontStyle: 'italic' }}>
-              Please add the missing suppliers, categories, or pricebooks in the database first.
+              Please add the missing suppliers or categories in the database first.
             </div>
           </div>,
           { autoClose: 15000 }

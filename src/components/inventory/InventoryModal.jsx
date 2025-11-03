@@ -21,15 +21,11 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
   const [isSubmit, setIsSubmit] = useState(false);
   const [suppliers, setSuppliers] = useState([]);
   const [supplierCategories, setSupplierCategories] = useState([]);
-  const [supplierPriceBooks, setSupplierPriceBooks] = useState([]);
-  const [availableSupplierIds, setAvailableSupplierIds] = useState([]);
-  const [allCategoryPriceBooks, setAllCategoryPriceBooks] = useState([]);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     supplierId: "",
     category: "",
-    priceBookId: "",
     costPrice: "",
     quantity: "",
     notes: "",
@@ -37,7 +33,6 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
   });
   const [loadingSuppliers, setLoadingSuppliers] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(false);
-  const [loadingPriceBooks, setLoadingPriceBooks] = useState(false);
   const { user } = useAuth();
 
   // Confirmation dialog states
@@ -57,8 +52,7 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
         description: editData.description || "",
         supplierId: editData.supplier?.id || editData.supplierId || "",
         category: editData.categoryDetails?.id || editData.category || "",
-        priceBookId: editData.priceBooks?.id || editData.priceBookId || "",
-        costPrice: editData.costPrice || editData.priceBooks?.price || "",
+        costPrice: editData.costPrice || "",
         quantity: editData.quantity || "",
         notes: editData.notes || "",
         status: editData.status || "active",
@@ -69,7 +63,6 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
         description: "",
         supplierId: "",
         category: "",
-        priceBookId: "",
         costPrice: "",
         quantity: "",
         notes: "",
@@ -82,7 +75,7 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
   const fetchSuppliers = async () => {
     setLoadingSuppliers(true);
     try {
-      const res = await axios.get(`${BASE_URL}/api/suppliers/get`);
+      const res = await axios.get(`${BASE_URL}/api/suppliers/get?page=1&limit=10000`);
       setSuppliers(res.data.data || []);
     } catch (error) {
       console.error("Error fetching suppliers:", error);
@@ -105,114 +98,10 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
     }
   };
 
-  // Fetch pricebooks for a category and filter by supplier
-  const fetchPriceBooks = async (categoryId) => {
-  setLoadingPriceBooks(true);
-  try {
-    const res = await axios.get(`${BASE_URL}/api/pricebook/get/${categoryId}`);
-    const allPriceBooks = res.data || [];
-    
-    console.log('Fetched price books:', allPriceBooks); // Debug log
-
-    setAllCategoryPriceBooks(allPriceBooks);
-
-    // Get unique suppliers from the price books data
-    const uniqueSuppliers = [];
-    const supplierIds = [];
-    
-    allPriceBooks.forEach(pb => {
-      if (pb.Supplier && !supplierIds.includes(pb.Supplier.id)) {
-        supplierIds.push(pb.Supplier.id);
-        uniqueSuppliers.push(pb.Supplier);
-      }
-    });
-
-    console.log('Unique suppliers from price books:', uniqueSuppliers); // Debug log
-    
-    setAvailableSupplierIds(supplierIds);
-    
-    // Update suppliers state with the unique suppliers
-    if (uniqueSuppliers.length > 0) {
-      setSuppliers(prevSuppliers => {
-        const existingIds = prevSuppliers.map(s => s.id);
-        const newSuppliers = uniqueSuppliers.filter(s => !existingIds.includes(s.id));
-        return [...prevSuppliers, ...newSuppliers];
-      });
-    }
-
-    // Filter price books by currently selected supplier
-    const currentSupplierId = formData.supplierId ? parseInt(formData.supplierId) : null;
-    if (currentSupplierId && supplierIds.includes(currentSupplierId)) {
-      setSupplierPriceBooks(allPriceBooks.filter(pb => pb.supplierId === currentSupplierId));
-    } else {
-      setSupplierPriceBooks([]);
-      // Clear supplier selection if it's not available for this category
-      if (formData.supplierId && !supplierIds.includes(parseInt(formData.supplierId))) {
-        setFormData(prev => ({ ...prev, supplierId: "", priceBookId: "", costPrice: "" }));
-      }
-    }
-  } catch (error) {
-    console.error("Error fetching pricebooks:", error);
-    setSupplierPriceBooks([]);
-    setAvailableSupplierIds([]);
-    setAllCategoryPriceBooks([]);
-  } finally {
-    setLoadingPriceBooks(false);
-  }
-};
-
   useEffect(() => {
     fetchSuppliers();
-    fetchCategories(); // Fetch categories globally (independent of supplier)
+    fetchCategories();
   }, []);
-
-  // When supplier changes, clear pricebook-related fields if needed
-  useEffect(() => {
-    if (formData.supplierId) {
-      // Clear pricebook selection when supplier changes
-      setFormData(prev => ({ ...prev, priceBookId: "", costPrice: "" }));
-
-      if (formData.category) {
-        const supplierIdNum = parseInt(formData.supplierId);
-        const supplierOk = availableSupplierIds.includes(supplierIdNum);
-        if (supplierOk) {
-          setSupplierPriceBooks(allCategoryPriceBooks.filter(pb => pb.supplierId === supplierIdNum));
-        } else {
-          setFormData(prev => ({ ...prev, supplierId: "", priceBookId: "", costPrice: "" }));
-          setSupplierPriceBooks([]);
-        }
-      } else {
-        setSupplierPriceBooks([]);
-      }
-    }
-  }, [formData.supplierId]);
-
-  // When category changes, fetch and filter pricebooks by supplier
-  useEffect(() => {
-    if (formData.category) {
-      fetchPriceBooks(formData.category);
-      setFormData(prev => ({ ...prev, priceBookId: "", costPrice: "" }));
-    } else {
-      // No category selected, reset filters
-      setSupplierPriceBooks([]);
-      setAvailableSupplierIds([]);
-      setAllCategoryPriceBooks([]);
-      setFormData(prev => ({ ...prev, supplierId: "", priceBookId: "", costPrice: "" }));
-    }
-  }, [formData.category]);
-
-  // When priceBookId changes, set costPrice from selected pricebook
-  useEffect(() => {
-    if (formData.priceBookId && supplierPriceBooks.length > 0) {
-      const selectedPriceBook = supplierPriceBooks.find(pb => pb.id === Number(formData.priceBookId));
-      if (selectedPriceBook) {
-        setFormData(prev => ({
-          ...prev,
-          costPrice: selectedPriceBook.price
-        }));
-      }
-    }
-  }, [formData.priceBookId, supplierPriceBooks]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -374,42 +263,9 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
                 }}
               >
                 <MenuItem value="">Select supplier</MenuItem>
-                {(formData.category
-                  ? suppliers.filter(s => availableSupplierIds.includes(parseInt(s.id)))
-                  : suppliers
-                 ).map((supplier) => (
+                {suppliers.map((supplier) => (
                   <MenuItem key={supplier.id} value={supplier.id}>
                     {supplier.name}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            
-            {/* Price Book Field */}
-            <Grid item xs={12}>
-              <TextField
-                select
-                sx={{ width: '100%', mb:3 }}
-                label="Price Book Item"
-                name="priceBookId"
-                value={formData.priceBookId}
-                onChange={handleChange}
-                required
-                disabled={!formData.category || !formData.supplierId}
-                variant="outlined"
-                SelectProps={{
-                  IconComponent: loadingPriceBooks ? () => <CircularProgress size={20} /> : undefined
-                }}
-                helperText={!formData.supplierId && formData.category ? "Please select a supplier first" : (!formData.category ? "Please select a category first" : "")}
-              >
-                <MenuItem value="">
-                  {supplierPriceBooks.length === 0 && formData.category && formData.supplierId 
-                    ? "No pricebooks found for this supplier" 
-                    : "Select price book"}
-                </MenuItem>
-                {supplierPriceBooks.map((pb) => (
-                  <MenuItem key={pb.id || pb._id} value={pb.id}>
-                    {pb.name} ({pb.unit}) • {pb.version || 'v1'} • {pb.Suppliers?.name || pb.Supplier?.name || 'N/A'}
                   </MenuItem>
                 ))}
               </TextField>
@@ -471,8 +327,9 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
                 required
                 variant="outlined"
               >
-                <MenuItem value="active">Active</MenuItem>
-                <MenuItem value="inactive">Inactive</MenuItem>
+                <MenuItem value="In Stock">In Stock</MenuItem>
+                <MenuItem value="Low Stock">Low Stock</MenuItem>
+                <MenuItem value="Out of Stock">Out of Stock</MenuItem>
               </TextField>
             </Grid>
           </Grid>
