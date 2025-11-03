@@ -45,12 +45,8 @@ const CreateEditPO = () => {
   const [attachmentsToRemove, setAttachmentsToRemove] = useState([]);
   const fileInputRef = useRef(null);
   const searchParams = useSearchParams();
-  const params = useParams();
   const router = useRouter();
-  // Get id from either URL params (dynamic route) or query params
-  const idParam = params?.id;
-  const idQuery = searchParams?.get("id");
-  const id = (Array.isArray(idParam) ? idParam[0] : idParam) || idQuery || null;
+  const id = searchParams?.get("id");
 
   const fetchProjects = async () => {
     try {

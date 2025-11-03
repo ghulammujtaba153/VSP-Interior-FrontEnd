@@ -42,9 +42,9 @@ const Page = () => {
           <Typography variant="h4" fontWeight="bold" gutterBottom>
             Purchasing Module
           </Typography>
-          <Typography color="text.secondary">
+          {/* <Typography color="text.secondary">
             Complete procurement workflow for kitchen joinery projects
-          </Typography>
+          </Typography> */}
         </Box>
 
         {/* Card with Tabs */}
@@ -61,7 +61,7 @@ const Page = () => {
               icon={<ShoppingCartIcon fontSize="small" />}
               iconPosition="start"
             />
-            <Tab
+            {/* <Tab
               label="Create PO"
               icon={<DescriptionIcon fontSize="small" />}
               iconPosition="start"
@@ -70,8 +70,8 @@ const Page = () => {
               label="PO Details"
               icon={<VisibilityIcon fontSize="small" />}
               iconPosition="start"
-            />
-            <Tab
+            /> */}
+            {/* <Tab
               label="Delivery"
               icon={<LocalShippingIcon fontSize="small" />}
               iconPosition="start"
@@ -80,7 +80,7 @@ const Page = () => {
               label="Invoices"
               icon={<ReceiptIcon fontSize="small" />}
               iconPosition="start"
-            />
+            /> */}
             <Tab
               label="Reports"
               icon={<BarChartIcon fontSize="small" />}
@@ -92,7 +92,7 @@ const Page = () => {
           <TabPanel value={activeTab} index={0}>
             <Dashboard />
           </TabPanel>
-          <TabPanel value={activeTab} index={1}>
+          {/* <TabPanel value={activeTab} index={1}>
             <CreateEditPO />
           </TabPanel>
           <TabPanel value={activeTab} index={2}>
@@ -100,11 +100,11 @@ const Page = () => {
           </TabPanel>
           <TabPanel value={activeTab} index={3}>
             <DeliveryGRN />
-          </TabPanel>
-          <TabPanel value={activeTab} index={4}>
+          </TabPanel> */}
+          {/* <TabPanel value={activeTab} index={4}>
             <InvoicesAllocation />
-          </TabPanel>
-          <TabPanel value={activeTab} index={5}>
+          </TabPanel> */}
+          <TabPanel value={activeTab} index={1}>
             <Reports />
           </TabPanel>
         </Card>

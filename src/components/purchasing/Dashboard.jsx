@@ -41,6 +41,7 @@ import { toast } from "react-toastify";
 import { BASE_URL } from "@/configs/url";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import Loader from "../loader/Loader";
 
 const Dashboard = () => {
   const router = useRouter();
@@ -129,7 +130,7 @@ const Dashboard = () => {
   };
 
   const handleEdit = (id) => {
-    router.push(`/purchasing/${id}`);
+    router.push(`/purchasing/form?id=${id}`);
   };
 
   const handleDelete = async (id) => {
@@ -146,8 +147,24 @@ const Dashboard = () => {
     }
   };
 
+  const handleStatusChange = async (orderId, newStatus) => {
+    try {
+      toast.loading("Updating status...");
+      await axios.put(`${BASE_URL}/api/purchases/update/${orderId}`, {
+        status: newStatus,
+      });
+      toast.dismiss();
+      toast.success("Status updated successfully");
+      fetchPurchaseOrders();
+    } catch (error) {
+      toast.dismiss();
+      console.error("Error updating status:", error);
+      toast.error("Failed to update status");
+    }
+  };
+
   const handleCreatePO = () => {
-    router.push("/dashboard/purchasing/create");
+    router.push("/purchasing/form");
   };
 
   const handlePageChange = (event, newPage) => {
@@ -272,7 +289,7 @@ const Dashboard = () => {
         <CardContent>
           {loading ? (
             <Box display="flex" justifyContent="center" alignItems="center" p={4}>
-              <CircularProgress />
+              <Loader/>
             </Box>
           ) : (
             <>
@@ -354,7 +371,30 @@ const Dashboard = () => {
                             )}
                           </TableCell>
                           <TableCell>
-                            <Box display="flex" gap={0.5}>
+                            <Box display="flex" gap={0.5} alignItems="center" flexWrap="wrap">
+                              {/* Status Dropdown */}
+                              <Select
+                                value={order.status || "submit"}
+                                onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                                size="small"
+                                sx={{ 
+                                  minWidth: 120,
+                                  height: 32,
+                                  fontSize: '0.875rem',
+                                  '& .MuiSelect-select': {
+                                    py: 0.5
+                                  }
+                                }}
+                              >
+                                <MenuItem value="submit">Submit</MenuItem>
+                                <MenuItem value="approved">Approved</MenuItem>
+                                <MenuItem value="rejected">Rejected</MenuItem>
+                                <MenuItem value="pending">Pending</MenuItem>
+                                <MenuItem value="delivered">Delivered</MenuItem>
+                                <MenuItem value="delayed">Delayed</MenuItem>
+                              </Select>
+                              
+                              {/* Action Buttons */}
                               <IconButton
                                 size="small"
                                 color="primary"

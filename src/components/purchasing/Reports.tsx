@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Button,
@@ -33,6 +33,8 @@ import {
   WarningAmber as AlertTriangleIcon,
 } from "@mui/icons-material";
 import { mockPurchaseOrders, mockSuppliers, mockJobs } from "@/data/mockData";
+import { BASE_URL } from "@/configs/url";
+import axios from "axios";
 
 const Reports = () => {
   const [reportType, setReportType] = useState("");
@@ -40,6 +42,19 @@ const Reports = () => {
   const [dateTo, setDateTo] = useState("");
   const [supplierFilter, setSupplierFilter] = useState("");
   const [jobFilter, setJobFilter] = useState("");
+
+  const fetchPurchaseStats = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/api/purchases/stats`);
+      console.log(res.data.data);
+    } catch (error) {
+      console.error("Error fetching purchase stats:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchPurchaseStats();
+  }, []);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-AU", {

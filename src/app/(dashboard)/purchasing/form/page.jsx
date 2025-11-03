@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 
 const Page = () => {
     const router = useRouter();
+    
     return (
         <Box sx={{ p: 3 }} component={Paper}>
             <Button variant="contained" startIcon={<ArrowBack />} onClick={() => router.back()}>

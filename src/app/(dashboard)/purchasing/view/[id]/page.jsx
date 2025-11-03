@@ -42,8 +42,10 @@ import axios from "axios";
 import { BASE_URL } from "@/configs/url";
 import Loader from "@/components/loader/Loader";
 import { toast } from "react-toastify";
+import { PurchasingTemplate } from "@/utils/PurchasingTemplate";
 
 const Page = () => {
+
     const router = useRouter();
     const { id } = useParams();
     const [loading, setLoading] = useState(true);
@@ -157,6 +159,40 @@ const Page = () => {
                         size="medium"
                     />
                 </Box>
+                
+                <Button 
+                    variant="contained" 
+                    startIcon={<Download />}
+                    onClick={async () => {
+                        try {
+                            const templateData = {
+                                purchaseOrder: purchaseOrder,
+                                supplier: purchaseOrder.suppliers || {},
+                                project: purchaseOrder.project || {},
+                                lineItems: purchaseOrder.lineItems || [],
+                                company: {
+                                    name: "VSP Interiors Limited",
+                                    address: "36 Parkway Drive, Rosedale,",
+                                    city: "Auckland 0632",
+                                    phone: "(09) 442 2588",
+                                    email: "vishal@vspinteriors.co.nz",
+                                    website: "www.vspinteriors.co.nz"
+                                },
+                                user: {
+                                    name: "Janet See Ooi",
+                                    phone: "Janet 021 383 914",
+                                    email: "janet@vspinteriors.co.nz"
+                                }
+                            };
+                            await PurchasingTemplate(templateData);
+                        } catch (error) {
+                            console.error("Error generating PDF:", error);
+                            toast.error("Failed to generate PDF");
+                        }
+                    }}
+                >
+                    Download PDF
+                </Button>
 
             </Box>
 
