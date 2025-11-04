@@ -199,10 +199,11 @@ const CreateEditPO = () => {
           if (field === "itemId" && value) {
             const selectedInventory = inventory.find((inv) => inv.id === parseInt(value));
             if (selectedInventory) {
-              updatedItem.description = selectedInventory.name;
+              updatedItem.description = selectedInventory.name || "";
               updatedItem.category = selectedInventory.categoryDetails?.name || "";
               updatedItem.unit = selectedInventory.priceBooks?.unit || "";
-              updatedItem.unitPrice = parseFloat(selectedInventory.priceBooks?.price || 0);
+              // Use costPrice from inventory item
+              updatedItem.unitPrice = parseFloat(selectedInventory.costPrice || 0);
               // Recalculate subtotal when item is selected
               updatedItem.subtotal =
                 Number(updatedItem.quantity) * Number(updatedItem.unitPrice);

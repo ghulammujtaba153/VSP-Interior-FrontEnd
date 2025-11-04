@@ -149,9 +149,9 @@ export const PurchasingTemplate = async (data) => {
           year: 'numeric' 
         })
       : "10/Jun/2025";
-    const poIssuedBy = user.name || "Janet See Ooi";
-    const poPhone = user.phone || "Janet 021 383 914";
-    const poEmail = user.email || "janet@vspinteriors.co.nz";
+    const poIssuedBy = user.name || "Vishal";
+    const poPhone = user.phone || "(09) 442 2588";
+    const poEmail = user.email || "vishal@vspinteriors.co.nz";
     const dueDate = purchaseOrder.expectedDelivery
       ? new Date(purchaseOrder.expectedDelivery).toLocaleDateString('en-NZ', {
           day: '2-digit',
