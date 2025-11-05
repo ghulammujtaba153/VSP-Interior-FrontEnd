@@ -32,6 +32,7 @@ import { toast } from 'react-toastify'
 import * as XLSX from 'xlsx'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { GenerateTenderTemplate } from '@/utils/GenerateTenderTemplate'
 
 const ProjectSetupTable = () => {
   const [loading, setLoading] = useState(true)
@@ -147,6 +148,16 @@ const ProjectSetupTable = () => {
     setOrderBy(property)
   }
 
+  const handleTenderTemplate = async (projectId) => {
+    if (!projectId) {
+      toast.error('Project ID is required');
+      return;
+    }
+    await GenerateTenderTemplate(projectId);
+  }
+
+
+  
   if (loading) return <Loader />
 
   return (
@@ -220,7 +231,9 @@ const ProjectSetupTable = () => {
               <TableCell>Client</TableCell>
               <TableCell>Revision</TableCell>
               <TableCell>Created At</TableCell>
+
               <TableCell sx={{minWidth: 250}}>Amendment</TableCell>
+              <TableCell sx={{minWidth: 250}}>Tender Template</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -294,6 +307,11 @@ const ProjectSetupTable = () => {
                   
 
 
+                </TableCell>
+                <TableCell>
+                  <Button variant='contained' color='primary' onClick={() => handleTenderTemplate(project.id)}>
+                    Generate Tender Template
+                  </Button>
                 </TableCell>
                 <TableCell>
                   <Box display='flex' gap={0.5}>

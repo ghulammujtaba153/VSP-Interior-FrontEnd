@@ -21,6 +21,7 @@ import ItemStats from "./ItemStats";
 import SupplierPerformance from "./SupplierPerformance";
 import AttachmentStats from "./AttachmentStats";
 import StatusCounts from "./StatusCounts";
+import PurchasingCharts from "./PurchasingCharts";
 import { PurchasingAnalysisTemplate } from "@/utils/PurchasingAnalysisTemplate";
 
 const Reports = () => {
@@ -98,6 +99,9 @@ const Reports = () => {
       {/* Summary Metrics */}
       <SummaryMetrics summary={statsData.summary} />
 
+      {/* Charts Section */}
+      <PurchasingCharts statsData={statsData} />
+
       {/* Status Counts */}
       <StatusCounts statusCounts={statsData.summary?.statusCounts} />
 
@@ -118,6 +122,8 @@ const Reports = () => {
 
       {/* Attachment Stats */}
       <AttachmentStats attachmentStats={statsData.attachmentStats} />
+
+      
     </Box>
   );
 };
