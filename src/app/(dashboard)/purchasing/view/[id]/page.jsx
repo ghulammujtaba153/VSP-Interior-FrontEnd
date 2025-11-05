@@ -127,7 +127,7 @@ const Page = () => {
 
     const InfoRow = ({ icon: Icon, label, value, color = "primary" }) => (
         <Box display="flex" alignItems="flex-start" gap={2} sx={{ mb: 2 }}>
-            <Avatar sx={{ bgcolor: `${color}.light`, width: 40, height: 40 }}>
+            <Avatar sx={{ bgcolor: `${color}.light/50`, width: 40, height: 40 }}>
                 <Icon sx={{ color: `${color}.main` }} fontSize="small" />
             </Avatar>
             <Box flex={1}>
@@ -262,7 +262,7 @@ const Page = () => {
                         />
                         <CardContent>
                             {purchaseOrder.suppliers ? (
-                                <Grid container spacing={{ xs: 2, sm: 10, md: 60, lg: 90 }}>
+                                <Grid container spacing={{ xs: 2, sm: 10, md: 50 }}>
                                     <Grid item xs={12} md={6}>
                                         <InfoRow
                                             icon={Business}
