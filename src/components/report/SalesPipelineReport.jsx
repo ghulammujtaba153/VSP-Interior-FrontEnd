@@ -40,13 +40,10 @@ export const SalesPipelineReport = ({ period, project }) => {
         
         // Pipeline Stages - Map from statusCounts
         stages: data.statusCounts.map(status => {
-          // Get total sell value for this status
-          // This is a simplified mapping - you might want to calculate actual values per status
-          const statusValue = data.summary.totalSell * (status.count / data.summary.totalProjects);
           return {
             name: status.status.charAt(0).toUpperCase() + status.status.slice(1),
             count: status.count,
-            value: statusValue,
+            value: status.totalCost || 0, // Use actual totalCost (SELL + GST) from API
           };
         }),
 
