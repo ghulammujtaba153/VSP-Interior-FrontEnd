@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Grid,
@@ -19,40 +19,116 @@ import {
   TrendingUp,
   TrendingDown,
 } from "@mui/icons-material";
-
-
+import axios from "axios";
+import { BASE_URL } from "@/configs/url";
+import Loader from "../loader/Loader";
 
 export const FinancialReport = ({ period, project }) => {
-  const financialData = {
-    totalRevenue: 1247500,
-    totalExpenses: 876200,
-    netProfit: 371300,
-    cashFlow: 245800,
-    profitMargin: 29.8,
-    projectProfitability: [
-      {
-        name: "Project Alpha",
-        revenue: 450000,
-        costs: 312000,
-        profit: 138000,
-        margin: 30.7,
-      },
-      {
-        name: "Project Beta",
-        revenue: 380000,
-        costs: 275000,
-        profit: 105000,
-        margin: 27.6,
-      },
-      {
-        name: "Project Gamma",
-        revenue: 417500,
-        costs: 289200,
-        profit: 128300,
-        margin: 30.7,
-      },
-    ],
+  const [loading, setLoading] = useState(true);
+  const [financialData, setFinancialData] = useState(null);
+
+  const fetchFinancialData = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (period?.startDate) params.append('startDate', period.startDate);
+      if (period?.endDate) params.append('endDate', period.endDate);
+      
+      const url = `${BASE_URL}/api/project-setup/get/financial/report${params.toString() ? `?${params.toString()}` : ''}`;
+      const res = await axios.get(url);
+      
+      const data = res.data.data;
+      
+      // Map API data to component structure
+      const mappedData = {
+        totalRevenue: data.totalRevenue || 0,
+        totalExpenses: data.totalExpenses || 0,
+        netProfit: data.netProfit || 0,
+        cashFlow: data.cashFlow || 0,
+        profitMargin: data.profitMargin || 0,
+        projectProfitability: data.projectProfitability || [],
+        breakdown: data.breakdown || {
+          expenses: { materials: 0, lineItems: 0, labour: 0 },
+          inflows: { projectPayments: 0 },
+          outflows: { materialsAndSupplies: 0, lineItems: 0, labourCosts: 0 },
+        },
+      };
+      
+      setFinancialData(mappedData);
+    } catch (error) {
+      console.error("Error fetching financial data:", error);
+      setFinancialData(null);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchFinancialData();
+  }, [period, project]);
+
+  if (loading) return <Loader />;
+
+  if (!financialData) {
+    return (
+      <Box sx={{ p: 3, textAlign: "center" }}>
+        <Typography variant="h6" color="error">
+          Failed to load financial data
+        </Typography>
+        <Button onClick={fetchFinancialData} variant="contained" sx={{ mt: 2 }}>
+          Retry
+        </Button>
+      </Box>
+    );
+  }
+
+  // Helper to calculate percentage change (mock data for now - can be enhanced with historical data)
+  const getChangePercentage = (value, type) => {
+    // This is a placeholder - in real scenario, you'd compare with previous period
+    return { value: 0, isPositive: value > 0 };
+  };
+
+  const revenueChange = getChangePercentage(financialData.totalRevenue, 'revenue');
+  const expensesChange = getChangePercentage(financialData.totalExpenses, 'expenses');
+  const profitChange = getChangePercentage(financialData.netProfit, 'profit');
+  const cashFlowChange = getChangePercentage(financialData.cashFlow, 'cashFlow');
+  const marginChange = getChangePercentage(financialData.profitMargin, 'margin');
+
+  // Calculate percentages for cash flow breakdown
+  const inflowTotal = financialData.breakdown.inflows.projectPayments;
+  const outflowTotal = financialData.breakdown.outflows.materialsAndSupplies + 
+                       financialData.breakdown.outflows.lineItems + 
+                       financialData.breakdown.outflows.labourCosts;
+
+  const calculatePercentage = (value, total) => {
+    return total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+  };
+
+  const cashInflows = [
+    { 
+      source: "Project Payments", 
+      amount: financialData.breakdown.inflows.projectPayments, 
+      percentage: calculatePercentage(financialData.breakdown.inflows.projectPayments, inflowTotal) 
+    },
+  ];
+
+  const cashOutflows = [
+    { 
+      source: "Materials & Supplies", 
+      amount: financialData.breakdown.outflows.materialsAndSupplies, 
+      percentage: calculatePercentage(financialData.breakdown.outflows.materialsAndSupplies, outflowTotal) 
+    },
+    { 
+      source: "Line Items (Rates)", 
+      amount: financialData.breakdown.outflows.lineItems, 
+      percentage: calculatePercentage(financialData.breakdown.outflows.lineItems, outflowTotal) 
+    },
+    { 
+      source: "Labour Costs", 
+      amount: financialData.breakdown.outflows.labourCosts, 
+      percentage: calculatePercentage(financialData.breakdown.outflows.labourCosts, outflowTotal) 
+    },
+  ];
 
   return (
     <Box sx={{ p: 2 }}>
@@ -71,7 +147,9 @@ export const FinancialReport = ({ period, project }) => {
             Profit/loss, cash flow, and project profitability
           </Typography>
         </Box>
-        <Button variant="contained">Generate Report</Button>
+        <Button variant="contained" onClick={fetchFinancialData}>
+          Refresh Data
+        </Button>
       </Box>
 
       {/* Key Financial Metrics */}
@@ -84,16 +162,16 @@ export const FinancialReport = ({ period, project }) => {
             />
             <CardContent>
               <Typography variant="h6" color="primary">
-                ${financialData.totalRevenue.toLocaleString()}
+                ${financialData.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </Typography>
               <Typography
                 variant="caption"
-                color="success.main"
+                color={revenueChange.isPositive ? "success.main" : "error"}
                 display="flex"
                 alignItems="center"
               >
-                <TrendingUp fontSize="small" sx={{ mr: 0.5 }} />
-                +18.2% from last month
+                {revenueChange.isPositive ? <TrendingUp fontSize="small" sx={{ mr: 0.5 }} /> : <TrendingDown fontSize="small" sx={{ mr: 0.5 }} />}
+                Active projects revenue
               </Typography>
             </CardContent>
           </Card>
@@ -107,16 +185,15 @@ export const FinancialReport = ({ period, project }) => {
             />
             <CardContent>
               <Typography variant="h6" color="error">
-                ${financialData.totalExpenses.toLocaleString()}
+                ${financialData.totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </Typography>
               <Typography
                 variant="caption"
-                color="error"
+                color="text.secondary"
                 display="flex"
                 alignItems="center"
               >
-                <TrendingUp fontSize="small" sx={{ mr: 0.5 }} />
-                +8.4% from last month
+                Materials + Rates + Labour
               </Typography>
             </CardContent>
           </Card>
@@ -129,17 +206,17 @@ export const FinancialReport = ({ period, project }) => {
               action={<AccountBalanceWallet color="action" />}
             />
             <CardContent>
-              <Typography variant="h6" color="success.main">
-                ${financialData.netProfit.toLocaleString()}
+              <Typography variant="h6" color={financialData.netProfit >= 0 ? "success.main" : "error"}>
+                ${financialData.netProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </Typography>
               <Typography
                 variant="caption"
-                color="success.main"
+                color={profitChange.isPositive ? "success.main" : "error"}
                 display="flex"
                 alignItems="center"
               >
-                <TrendingUp fontSize="small" sx={{ mr: 0.5 }} />
-                +32.1% from last month
+                {profitChange.isPositive ? <TrendingUp fontSize="small" sx={{ mr: 0.5 }} /> : <TrendingDown fontSize="small" sx={{ mr: 0.5 }} />}
+                Revenue - Expenses
               </Typography>
             </CardContent>
           </Card>
@@ -149,17 +226,17 @@ export const FinancialReport = ({ period, project }) => {
           <Card>
             <CardHeader title="Cash Flow" action={<TrendingUp color="action" />} />
             <CardContent>
-              <Typography variant="h6" color="primary">
-                ${financialData.cashFlow.toLocaleString()}
+              <Typography variant="h6" color={financialData.cashFlow >= 0 ? "primary" : "error"}>
+                ${financialData.cashFlow.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </Typography>
               <Typography
                 variant="caption"
-                color="success.main"
+                color={cashFlowChange.isPositive ? "success.main" : "error"}
                 display="flex"
                 alignItems="center"
               >
-                <TrendingUp fontSize="small" sx={{ mr: 0.5 }} />
-                +15.7% from last month
+                {cashFlowChange.isPositive ? <TrendingUp fontSize="small" sx={{ mr: 0.5 }} /> : <TrendingDown fontSize="small" sx={{ mr: 0.5 }} />}
+                Cash In - Cash Out
               </Typography>
             </CardContent>
           </Card>
@@ -170,16 +247,16 @@ export const FinancialReport = ({ period, project }) => {
             <CardHeader title="Profit Margin" action={<PieChart color="action" />} />
             <CardContent>
               <Typography variant="h6" color="primary">
-                {financialData.profitMargin}%
+                {financialData.profitMargin.toFixed(2)}%
               </Typography>
               <Typography
                 variant="caption"
-                color="success.main"
+                color={marginChange.isPositive ? "success.main" : "error"}
                 display="flex"
                 alignItems="center"
               >
-                <TrendingUp fontSize="small" sx={{ mr: 0.5 }} />
-                +4.2% from last month
+                {marginChange.isPositive ? <TrendingUp fontSize="small" sx={{ mr: 0.5 }} /> : <TrendingDown fontSize="small" sx={{ mr: 0.5 }} />}
+                Net Profit / Revenue
               </Typography>
             </CardContent>
           </Card>
@@ -193,52 +270,58 @@ export const FinancialReport = ({ period, project }) => {
           subheader="Revenue, costs, and profit margins by project"
         />
         <CardContent>
-          {financialData.projectProfitability.map((project, index) => (
-            <Box
-              key={index}
-              sx={{
-                p: 2,
-                mb: 2,
-                borderRadius: 2,
-                bgcolor: "grey.100",
-              }}
-            >
-              <Box display="flex" justifyContent="space-between" mb={1}>
-                <Typography variant="subtitle1" fontWeight="bold">
-                  {project.name}
-                </Typography>
-                <Typography variant="subtitle1" color="success.main">
-                  {project.margin}% margin
-                </Typography>
+          {financialData.projectProfitability.length > 0 ? (
+            financialData.projectProfitability.map((project, index) => (
+              <Box
+                key={project.id || index}
+                sx={{
+                  p: 2,
+                  mb: 2,
+                  borderRadius: 2,
+                  bgcolor: "grey.100",
+                }}
+              >
+                <Box display="flex" justifyContent="space-between" mb={1}>
+                  <Typography variant="subtitle1" fontWeight="bold">
+                    {project.name}
+                  </Typography>
+                  <Typography variant="subtitle1" color={project.margin >= 0 ? "success.main" : "error"}>
+                    {project.margin.toFixed(2)}% margin
+                  </Typography>
+                </Box>
+                <Grid container spacing={2}>
+                  <Grid item xs={4}>
+                    <Typography variant="body2" color="text.secondary">
+                      Revenue
+                    </Typography>
+                    <Typography fontWeight="bold">
+                      ${project.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={4}>
+                    <Typography variant="body2" color="text.secondary">
+                      Costs
+                    </Typography>
+                    <Typography fontWeight="bold">
+                      ${project.costs.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={4}>
+                    <Typography variant="body2" color="text.secondary">
+                      Profit
+                    </Typography>
+                    <Typography fontWeight="bold" color={project.profit >= 0 ? "success.main" : "error"}>
+                      ${project.profit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </Typography>
+                  </Grid>
+                </Grid>
               </Box>
-              <Grid container spacing={2}>
-                <Grid item xs={4}>
-                  <Typography variant="body2" color="text.secondary">
-                    Revenue
-                  </Typography>
-                  <Typography fontWeight="bold">
-                    ${project.revenue.toLocaleString()}
-                  </Typography>
-                </Grid>
-                <Grid item xs={4}>
-                  <Typography variant="body2" color="text.secondary">
-                    Costs
-                  </Typography>
-                  <Typography fontWeight="bold">
-                    ${project.costs.toLocaleString()}
-                  </Typography>
-                </Grid>
-                <Grid item xs={4}>
-                  <Typography variant="body2" color="text.secondary">
-                    Profit
-                  </Typography>
-                  <Typography fontWeight="bold" color="success.main">
-                    ${project.profit.toLocaleString()}
-                  </Typography>
-                </Grid>
-              </Grid>
-            </Box>
-          ))}
+            ))
+          ) : (
+            <Typography color="text.secondary" align="center" py={3}>
+              No project profitability data available
+            </Typography>
+          )}
         </CardContent>
       </Card>
 
@@ -246,7 +329,7 @@ export const FinancialReport = ({ period, project }) => {
       <Card sx={{ mt: 4 }}>
         <CardHeader
           title="Cash Flow Analysis"
-          subheader="Inflows vs outflows over time"
+          subheader="Inflows vs outflows breakdown"
         />
         <CardContent>
           <Grid container spacing={4}>
@@ -255,11 +338,7 @@ export const FinancialReport = ({ period, project }) => {
                 Cash Inflows
               </Typography>
               <Divider sx={{ my: 1 }} />
-              {[
-                { source: "Project Payments", amount: 420000, percentage: 68 },
-                { source: "Milestone Completions", amount: 180000, percentage: 29 },
-                { source: "Other Income", amount: 18000, percentage: 3 },
-              ].map((inflow, i) => (
+              {cashInflows.map((inflow, i) => (
                 <Box
                   key={i}
                   display="flex"
@@ -269,7 +348,7 @@ export const FinancialReport = ({ period, project }) => {
                   <Typography>{inflow.source}</Typography>
                   <Box textAlign="right">
                     <Typography fontWeight="bold">
-                      ${inflow.amount.toLocaleString()}
+                      ${inflow.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
                       {inflow.percentage}%
@@ -277,18 +356,20 @@ export const FinancialReport = ({ period, project }) => {
                   </Box>
                 </Box>
               ))}
+              <Divider sx={{ my: 1 }} />
+              <Box display="flex" justifyContent="space-between" mt={1}>
+                <Typography fontWeight="bold">Total Inflows</Typography>
+                <Typography fontWeight="bold" color="success.main">
+                  ${financialData.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </Typography>
+              </Box>
             </Grid>
             <Grid item xs={12} md={6}>
               <Typography variant="subtitle1" fontWeight="bold" color="error">
                 Cash Outflows
               </Typography>
               <Divider sx={{ my: 1 }} />
-              {[
-                { source: "Materials & Supplies", amount: 285000, percentage: 45 },
-                { source: "Labor Costs", amount: 190000, percentage: 30 },
-                { source: "Equipment & Tools", amount: 95000, percentage: 15 },
-                { source: "Overhead", amount: 63000, percentage: 10 },
-              ].map((outflow, i) => (
+              {cashOutflows.map((outflow, i) => (
                 <Box
                   key={i}
                   display="flex"
@@ -298,7 +379,7 @@ export const FinancialReport = ({ period, project }) => {
                   <Typography>{outflow.source}</Typography>
                   <Box textAlign="right">
                     <Typography fontWeight="bold">
-                      ${outflow.amount.toLocaleString()}
+                      ${outflow.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
                       {outflow.percentage}%
@@ -306,6 +387,13 @@ export const FinancialReport = ({ period, project }) => {
                   </Box>
                 </Box>
               ))}
+              <Divider sx={{ my: 1 }} />
+              <Box display="flex" justifyContent="space-between" mt={1}>
+                <Typography fontWeight="bold">Total Outflows</Typography>
+                <Typography fontWeight="bold" color="error">
+                  ${financialData.totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </Typography>
+              </Box>
             </Grid>
           </Grid>
         </CardContent>

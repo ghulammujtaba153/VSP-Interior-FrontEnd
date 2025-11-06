@@ -13,6 +13,7 @@ import {
   MenuItem,
   Button,
   IconButton,
+  Paper,
 } from "@mui/material";
 
 import {
@@ -44,71 +45,13 @@ const ReportsDashboard = () => {
     setTabValue(newValue);
   };
 
-  const handleExport = (type) => {
-    console.log(`Exporting as ${type}`);
-  };
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f9f9f9" }}>
-      {/* Header */}
-      <AppBar position="static" color="default" elevation={1}>
-        <Toolbar>
-          <Box flexGrow={1}>
-            <Typography variant="h6" color="textPrimary">
-              Reports Dashboard
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Comprehensive business intelligence and analytics
-            </Typography>
-          </Box>
-
-          {/* Filters */}
-          <Select
-            value={selectedProject}
-            onChange={(e) => setSelectedProject(e.target.value)}
-            size="small"
-            style={{ marginRight: "1rem", minWidth: "150px" }}
-          >
-            <MenuItem value="all">All Projects</MenuItem>
-            <MenuItem value="project-1">Project Alpha</MenuItem>
-            <MenuItem value="project-2">Project Beta</MenuItem>
-            <MenuItem value="project-3">Project Gamma</MenuItem>
-          </Select>
-
-          <Select
-            value={selectedPeriod}
-            onChange={(e) => setSelectedPeriod(e.target.value)}
-            size="small"
-            style={{ marginRight: "1rem", minWidth: "150px" }}
-          >
-            <MenuItem value="last-7-days">Last 7 days</MenuItem>
-            <MenuItem value="last-30-days">Last 30 days</MenuItem>
-            <MenuItem value="last-90-days">Last 90 days</MenuItem>
-            <MenuItem value="last-year">Last year</MenuItem>
-          </Select>
-
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<FilterList />}
-            style={{ marginRight: "0.5rem" }}
-          >
-            Advanced Filters
-          </Button>
-
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<Download />}
-            onClick={() => handleExport("pdf")}
-          >
-            Export
-          </Button>
-        </Toolbar>
-      </AppBar>
+    <Box sx={{ minHeight: "100vh" }} component={Paper}>
+      
 
       {/* Tabs */}
-      <Container style={{ marginTop: "2rem" }}>
+      <Container sx={{ marginTop: "2rem" }}>
         <Tabs
           value={tabValue}
           onChange={handleTabChange}
@@ -145,7 +88,7 @@ const ReportsDashboard = () => {
           )}
         </Box>
       </Container>
-    </div>
+    </Box>
   );
 };
 

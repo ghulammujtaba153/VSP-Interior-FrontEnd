@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -17,52 +17,56 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import TrackChangesIcon from "@mui/icons-material/TrackChanges";
+import axios from "axios";
+import { BASE_URL } from "@/configs/url";
+import Loader from "../loader/Loader";
 
 export default function JobPerformanceReport({ period, project }) {
-  const performanceData = {
-    averageEfficiency: 87.3,
-    onTimeDelivery: 92,
-    totalProjects: 24,
-    completedProjects: 18,
-    projects: [
-      {
-        name: "Office Renovation",
-        estimatedTime: 480,
-        actualTime: 456,
-        estimatedCost: 125000,
-        actualCost: 118500,
-        efficiency: 105.3,
-        status: "Completed",
-      },
-      {
-        name: "Warehouse Construction",
-        estimatedTime: 720,
-        actualTime: 798,
-        estimatedCost: 275000,
-        actualCost: 292000,
-        efficiency: 90.2,
-        status: "Completed",
-      },
-      {
-        name: "Retail Store Fit-out",
-        estimatedTime: 320,
-        actualTime: 285,
-        estimatedCost: 85000,
-        actualCost: 78000,
-        efficiency: 112.3,
-        status: "Completed",
-      },
-      {
-        name: "Apartment Complex",
-        estimatedTime: 960,
-        actualTime: 720,
-        estimatedCost: 450000,
-        actualCost: 420000,
-        efficiency: 75.0,
-        status: "In Progress",
-      },
-    ],
+  const [loading, setLoading] = useState(true);
+  const [performanceData, setPerformanceData] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const fetchPerformanceData = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (period?.startDate) params.append('startDate', period.startDate);
+      if (period?.endDate) params.append('endDate', period.endDate);
+      
+      const url = `${BASE_URL}/api/project-setup/get/job/performance/stats${params.toString() ? `?${params.toString()}` : ''}`;
+      const res = await axios.get(url);
+      
+      if (res.data.success) {
+        setPerformanceData(res.data.data);
+      } else {
+        setPerformanceData(null);
+      }
+    } catch (error) {
+      console.error("Error fetching job performance data:", error);
+      setPerformanceData(null);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchPerformanceData();
+  }, [period, project, refreshKey]);
+
+  if (loading) return <Loader />;
+
+  if (!performanceData) {
+    return (
+      <Box sx={{ p: 3, textAlign: "center" }}>
+        <Typography variant="h6" color="error">
+          Failed to load job performance data
+        </Typography>
+        <Button onClick={() => setRefreshKey(prev => prev + 1)} variant="contained" sx={{ mt: 2 }}>
+          Retry
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 3 }}>
@@ -76,7 +80,7 @@ export default function JobPerformanceReport({ period, project }) {
             Actual vs estimated time/costs and project efficiency
           </Typography>
         </Box>
-        <Button variant="contained">Generate Report</Button>
+        <Button variant="contained" onClick={() => setRefreshKey(prev => prev + 1)}>Refresh Data</Button>
       </Box>
 
       {/* Key Performance Metrics */}
@@ -92,9 +96,8 @@ export default function JobPerformanceReport({ period, project }) {
               <Typography variant="h6" color="primary">
                 {performanceData.averageEfficiency}%
               </Typography>
-              <Typography variant="caption" color="success.main" display="flex" alignItems="center">
-                <TrendingUpIcon fontSize="small" sx={{ mr: 0.5 }} />
-                +5.2% from last month
+              <Typography variant="caption" color="text.secondary">
+                Based on {performanceData.totalProjects} projects
               </Typography>
             </CardContent>
           </Card>
@@ -111,9 +114,8 @@ export default function JobPerformanceReport({ period, project }) {
               <Typography variant="h6" color="primary">
                 {performanceData.onTimeDelivery}%
               </Typography>
-              <Typography variant="caption" color="success.main" display="flex" alignItems="center">
-                <TrendingUpIcon fontSize="small" sx={{ mr: 0.5 }} />
-                +2.8% from last month
+              <Typography variant="caption" color="text.secondary">
+                {performanceData.completedProjects} completed projects
               </Typography>
             </CardContent>
           </Card>
@@ -146,10 +148,10 @@ export default function JobPerformanceReport({ period, project }) {
             />
             <CardContent>
               <Typography variant="h6" color="error">
-                3
+                {performanceData.projectsAtRisk}
               </Typography>
               <Typography variant="caption" color="error">
-                Behind schedule or budget
+                Projects with delayed jobs
               </Typography>
             </CardContent>
           </Card>
@@ -163,7 +165,8 @@ export default function JobPerformanceReport({ period, project }) {
           subheader="Detailed breakdown of time and cost performance by project"
         />
         <CardContent>
-          {performanceData.projects.map((project, index) => (
+          {performanceData.projects && performanceData.projects.length > 0 ? (
+            performanceData.projects.map((project, index) => (
             <Box key={index} sx={{ mb: 3, p: 2, border: "1px solid #eee", borderRadius: 2 }}>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                 <Box>
@@ -171,12 +174,12 @@ export default function JobPerformanceReport({ period, project }) {
                     {project.name}
                   </Typography>
                   <Chip
-                    label={project.status}
+                    label={project.status === "completed" ? "Completed" : project.status === "in-progress" ? "In Progress" : project.status}
                     size="small"
                     sx={{
                       mt: 1,
-                      backgroundColor: project.status === "Completed" ? "success.light" : "primary.light",
-                      color: project.status === "Completed" ? "success.main" : "primary.main",
+                      backgroundColor: project.status === "completed" ? "success.light/80" : "primary.light/80",
+                      color: project.status === "completed" ? "success.main" : "primary.main",
                     }}
                   />
                 </Box>
@@ -246,51 +249,15 @@ export default function JobPerformanceReport({ period, project }) {
                 />
               </Box>
             </Box>
-          ))}
+          ))
+          ) : (
+            <Typography color="text.secondary" align="center" py={3}>
+              No project performance data available
+            </Typography>
+          )}
         </CardContent>
       </Card>
 
-      {/* Performance Trends */}
-      <Card>
-        <CardHeader title="Performance Trends" subheader="Historical performance metrics over time" />
-        <CardContent>
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={4}>
-              <Box textAlign="center" p={2} bgcolor="success.light" borderRadius={2}>
-                <Typography variant="h6" color="success.main">
-                  +12%
-                </Typography>
-                <Typography variant="body2">Efficiency improvement</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  vs last quarter
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Box textAlign="center" p={2} bgcolor="primary.light" borderRadius={2}>
-                <Typography variant="h6" color="primary.main">
-                  -8%
-                </Typography>
-                <Typography variant="body2">Cost variance reduction</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  vs last quarter
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Box textAlign="center" p={2} bgcolor="success.light" borderRadius={2}>
-                <Typography variant="h6" color="success.main">
-                  +5%
-                </Typography>
-                <Typography variant="body2">On-time delivery rate</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  vs last quarter
-                </Typography>
-              </Box>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
     </Box>
   );
 }

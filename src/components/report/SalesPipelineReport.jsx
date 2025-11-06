@@ -1,11 +1,10 @@
 "use client"
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
   CardHeader,
-  CardActions,
   Typography,
   Button,
   LinearProgress,
@@ -13,26 +12,132 @@ import {
   Box,
 } from "@mui/material";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import TrendingDownIcon from "@mui/icons-material/TrendingDown";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 import PeopleIcon from "@mui/icons-material/People";
-
-
+import Loader from "../loader/Loader";
+import axios from "axios";
+import { BASE_URL } from "@/configs/url";
 
 export const SalesPipelineReport = ({ period, project }) => {
-  const pipelineData = {
-    totalPipelineValue: 847500,
-    conversionRate: 24.5,
-    quotesToJobs: 73,
-    activeLeads: 142,
-    stages: [
-      { name: "Leads", count: 142, value: 284000 },
-      { name: "Qualified", count: 89, value: 445000 },
-      { name: "Proposals", count: 34, value: 340000 },
-      { name: "Negotiations", count: 18, value: 180000 },
-      { name: "Won", count: 12, value: 120000 },
-    ],
+  const [loading, setLoading] = useState(true);
+  const [pipelineData, setPipelineData] = useState(null);
+
+  const fetchPipelineData = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`${BASE_URL}/api/project-setup/get/sales/stats`);
+      const data = res.data.data;
+
+      // Map API data to pipeline structure
+      const mappedData = {
+        // Key Metrics
+        totalPipelineValue: data.summary.totalSell || 0,
+        conversionRate: data.conversionRate || 0,
+        quotesToJobs: data.summary.projectsWithJobs || 0,
+        activeLeads: data.summary.totalProjects || 0,
+        
+        // Pipeline Stages - Map from statusCounts
+        stages: data.statusCounts.map(status => {
+          // Get total sell value for this status
+          // This is a simplified mapping - you might want to calculate actual values per status
+          const statusValue = data.summary.totalSell * (status.count / data.summary.totalProjects);
+          return {
+            name: status.status.charAt(0).toUpperCase() + status.status.slice(1),
+            count: status.count,
+            value: statusValue,
+          };
+        }),
+
+        // Recent Activity - Map from recentActivity
+        recentActivity: data.recentActivity.map(activity => {
+          // Find project in topProjectsByCost to get value
+          const projectData = data.topProjectsByCost.find(p => p.projectId === activity.id);
+          const projectValue = projectData ? projectData.totalSell : 0;
+          
+          // Format time ago
+          const updatedAt = new Date(activity.updatedAt);
+          const now = new Date();
+          const diffMs = now - updatedAt;
+          const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+          const diffDays = Math.floor(diffHours / 24);
+          
+          let timeAgo = "";
+          if (diffHours < 1) {
+            timeAgo = "Just now";
+          } else if (diffHours < 24) {
+            timeAgo = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+          } else {
+            timeAgo = `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+          }
+
+          // Map status to action
+          const statusActions = {
+            draft: "Draft Created",
+            pending: "Quote Sent",
+            approved: "Quote Approved",
+            rejected: "Quote Rejected",
+            revised: "Quote Revised",
+            completed: "Project Completed",
+            cancelled: "Project Cancelled",
+          };
+
+          return {
+            client: activity.clientName,
+            action: statusActions[activity.status] || activity.status,
+            value: `$${projectValue.toLocaleString()}`,
+            time: timeAgo,
+          };
+        }),
+
+        // Increase rates from API
+        increasingRate: {
+          projects: data.increasingRate?.projects || 0,
+          cost: data.increasingRate?.cost || 0,
+        },
+      };
+
+      setPipelineData(mappedData);
+    } catch (error) {
+      console.error("Error fetching pipeline data:", error);
+      setPipelineData(null);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchPipelineData();
+  }, [period, project]);
+
+  if (loading) return <Loader />;
+
+  if (!pipelineData) {
+    return (
+      <Box sx={{ p: 3, textAlign: "center" }}>
+        <Typography variant="h6" color="error">
+          Failed to load pipeline data
+        </Typography>
+        <Button onClick={fetchPipelineData} variant="contained" sx={{ mt: 2 }}>
+          Retry
+        </Button>
+      </Box>
+    );
+  }
+
+  // Helper to format percentage change
+  const formatChange = (value) => {
+    const sign = value >= 0 ? "+" : "";
+    const color = value >= 0 ? "success.main" : "error.main";
+    const IconComponent = value >= 0 ? TrendingUpIcon : TrendingDownIcon;
+    return { sign, value: Math.abs(value).toFixed(1), color, IconComponent };
+  };
+
+  const projectsChange = formatChange(pipelineData.increasingRate.projects);
+  const costChange = formatChange(pipelineData.increasingRate.cost);
+  const ProjectsIcon = projectsChange.IconComponent;
+  const CostIcon = costChange.IconComponent;
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -46,7 +151,9 @@ export const SalesPipelineReport = ({ period, project }) => {
             Track quotes, conversions, and pipeline value
           </Typography>
         </Box>
-        <Button variant="contained">Generate Report</Button>
+        <Button variant="contained" onClick={fetchPipelineData}>
+          Refresh Data
+        </Button>
       </Box>
 
       {/* Key Metrics */}
@@ -59,11 +166,15 @@ export const SalesPipelineReport = ({ period, project }) => {
             />
             <CardContent>
               <Typography variant="h6" color="primary">
-                ${pipelineData.totalPipelineValue.toLocaleString()}
+                ${pipelineData.totalPipelineValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </Typography>
-              <Typography variant="caption" color="success.main" sx={{ display: "flex", alignItems: "center" }}>
-                <TrendingUpIcon fontSize="small" sx={{ mr: 0.5 }} />
-                +12.5% from last month
+              <Typography 
+                variant="caption" 
+                color={costChange.color} 
+                sx={{ display: "flex", alignItems: "center" }}
+              >
+                <CostIcon fontSize="small" sx={{ mr: 0.5 }} />
+                {costChange.sign}{costChange.value}% from last month
               </Typography>
             </CardContent>
           </Card>
@@ -77,11 +188,10 @@ export const SalesPipelineReport = ({ period, project }) => {
             />
             <CardContent>
               <Typography variant="h6" color="primary">
-                {pipelineData.conversionRate}%
+                {pipelineData.conversionRate.toFixed(2)}%
               </Typography>
-              <Typography variant="caption" color="success.main" sx={{ display: "flex", alignItems: "center" }}>
-                <TrendingUpIcon fontSize="small" sx={{ mr: 0.5 }} />
-                +2.1% from last month
+              <Typography variant="caption" color="text.secondary">
+                Draft to Approved rate
               </Typography>
             </CardContent>
           </Card>
@@ -97,9 +207,8 @@ export const SalesPipelineReport = ({ period, project }) => {
               <Typography variant="h6" color="primary">
                 {pipelineData.quotesToJobs}
               </Typography>
-              <Typography variant="caption" color="success.main" sx={{ display: "flex", alignItems: "center" }}>
-                <TrendingUpIcon fontSize="small" sx={{ mr: 0.5 }} />
-                +8 from last month
+              <Typography variant="caption" color="text.secondary">
+                Projects with jobs assigned
               </Typography>
             </CardContent>
           </Card>
@@ -115,9 +224,13 @@ export const SalesPipelineReport = ({ period, project }) => {
               <Typography variant="h6" color="primary">
                 {pipelineData.activeLeads}
               </Typography>
-              <Typography variant="caption" color="success.main" sx={{ display: "flex", alignItems: "center" }}>
-                <TrendingUpIcon fontSize="small" sx={{ mr: 0.5 }} />
-                +15 from last month
+              <Typography 
+                variant="caption" 
+                color={projectsChange.color} 
+                sx={{ display: "flex", alignItems: "center" }}
+              >
+                <ProjectsIcon fontSize="small" sx={{ mr: 0.5 }} />
+                {projectsChange.sign}{projectsChange.value}% from last month
               </Typography>
             </CardContent>
           </Card>
@@ -128,27 +241,38 @@ export const SalesPipelineReport = ({ period, project }) => {
       <Card>
         <CardHeader
           title={<Typography variant="h6" color="primary">Pipeline Stages</Typography>}
-          subheader="Current opportunities by stage"
+          subheader="Current opportunities by status"
         />
         <CardContent>
-          {pipelineData.stages.map((stage) => (
-            <Box key={stage.name} sx={{ mb: 3 }}>
-              <Box sx={{ display: "flex", justifyContent: "space-between" }}>
-                <Typography fontWeight="medium">{stage.name}</Typography>
-                <Box textAlign="right">
-                  <Typography fontWeight="bold">{stage.count} opportunities</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    ${stage.value.toLocaleString()}
-                  </Typography>
+          {pipelineData.stages.length > 0 ? (
+            pipelineData.stages.map((stage) => {
+              const percentage = pipelineData.activeLeads > 0 
+                ? (stage.count / pipelineData.activeLeads) * 100 
+                : 0;
+              return (
+                <Box key={stage.name} sx={{ mb: 3 }}>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                    <Typography fontWeight="medium">{stage.name}</Typography>
+                    <Box textAlign="right">
+                      <Typography fontWeight="bold">{stage.count} {stage.count === 1 ? 'project' : 'projects'}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        ${stage.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <LinearProgress
+                    variant="determinate"
+                    value={percentage}
+                    sx={{ height: 8, borderRadius: 5 }}
+                  />
                 </Box>
-              </Box>
-              <LinearProgress
-                variant="determinate"
-                value={(stage.count / pipelineData.activeLeads) * 100}
-                sx={{ height: 8, borderRadius: 5 }}
-              />
-            </Box>
-          ))}
+              );
+            })
+          ) : (
+            <Typography color="text.secondary" align="center" py={3}>
+              No pipeline data available
+            </Typography>
+          )}
         </CardContent>
       </Card>
 
@@ -159,40 +283,41 @@ export const SalesPipelineReport = ({ period, project }) => {
           subheader="Latest updates and conversions"
         />
         <CardContent>
-          {[
-            { client: "Acme Construction", action: "Moved to Negotiations", value: "$45,000", time: "2 hours ago" },
-            { client: "BuildCorp Ltd", action: "Quote Submitted", value: "$78,500", time: "4 hours ago" },
-            { client: "Metro Developers", action: "Won Project", value: "$125,000", time: "1 day ago" },
-            { client: "Urban Planners Inc", action: "Qualified Lead", value: "$92,000", time: "1 day ago" },
-          ].map((activity, index) => (
-            <Box
-              key={index}
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                p: 2,
-                mb: 2,
-                bgcolor: "action.hover",
-                borderRadius: 2,
-              }}
-            >
-              <Box>
-                <Typography fontWeight="medium">{activity.client}</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {activity.action}
-                </Typography>
+          {pipelineData.recentActivity.length > 0 ? (
+            pipelineData.recentActivity.map((activity, index) => (
+              <Box
+                key={index}
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  p: 2,
+                  mb: 2,
+                  bgcolor: "action.hover",
+                  borderRadius: 2,
+                }}
+              >
+                <Box>
+                  <Typography fontWeight="medium">{activity.client}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {activity.action}
+                  </Typography>
+                </Box>
+                <Box textAlign="right">
+                  <Typography fontWeight="bold" color="primary">
+                    {activity.value}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {activity.time}
+                  </Typography>
+                </Box>
               </Box>
-              <Box textAlign="right">
-                <Typography fontWeight="bold" color="primary">
-                  {activity.value}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {activity.time}
-                </Typography>
-              </Box>
-            </Box>
-          ))}
+            ))
+          ) : (
+            <Typography color="text.secondary" align="center" py={3}>
+              No recent activity
+            </Typography>
+          )}
         </CardContent>
       </Card>
     </Box>

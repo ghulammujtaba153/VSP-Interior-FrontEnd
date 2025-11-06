@@ -46,6 +46,12 @@ const getStatusColor = status => {
       return 'error'
     case 'pending':
       return 'warning'
+    case 'completed':
+      return 'info'
+    case 'cancelled':
+      return 'error'
+    case 'revised':
+      return 'warning'
     case 'draft':
     default:
       return 'default'
@@ -60,6 +66,12 @@ const getStatusIcon = status => {
       return <CheckCircleIcon fontSize='small' />
     case 'rejected':
       return <CancelIcon fontSize='small' />
+    case 'completed':
+      return <CheckCircleIcon fontSize='small' />
+    case 'cancelled':
+      return <CancelIcon fontSize='small' />
+    case 'revised':
+      return <DescriptionIcon fontSize='small' />
     case 'draft':
     default:
       return <DescriptionIcon fontSize='small' />
@@ -234,7 +246,7 @@ export const QuoteTracking = () => {
       </Grid>
 
       {/* Filters Section */}
-      {/* <Card sx={{ mb: 3 }}>
+      <Card sx={{ mb: 3 }}>
         <CardHeader title="Filters" />
         <CardContent>
           <Grid container spacing={2} alignItems="center">
@@ -267,6 +279,9 @@ export const QuoteTracking = () => {
                   <MenuItem value="pending">Pending</MenuItem>
                   <MenuItem value="approved">Approved</MenuItem>
                   <MenuItem value="rejected">Rejected</MenuItem>
+                  <MenuItem value="revised">Revised</MenuItem>
+                  <MenuItem value="completed">Completed</MenuItem>
+                  <MenuItem value="cancelled">Cancelled</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -299,7 +314,7 @@ export const QuoteTracking = () => {
             </Grid>
           </Grid>
         </CardContent>
-      </Card> */}
+      </Card>
 
       {/* Project Quotes Table */}
       <Card>

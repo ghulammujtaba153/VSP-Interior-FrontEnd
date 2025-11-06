@@ -35,6 +35,7 @@ import MailIcon from "@mui/icons-material/Mail";
 import { BASE_URL } from "@/configs/url";
 import axios from "axios";
 import Loader from "../loader/Loader";
+import Link from "next/link";
 
 // Mock data - in real app this would come from API
 const mockQuotes = [
@@ -343,12 +344,14 @@ export const QuoteDashboard = () => {
                       </TableCell>
                       <TableCell>
                         <Box display="flex" gap={1} flexDirection="column">
+                          
                           <Button
                             size="small"
                             variant="outlined"
                             startIcon={<MailIcon />}
-                            // onClick={() => handleStatusUpdate(project.id, "pending")}
-                            // disabled={project.status === "pending" || project.status === "approved"}
+                            component= {Link}
+                            href={`/project/form?id=${project.id}&mode=edit`}
+                            passHref
                           >
                             View
                           </Button>

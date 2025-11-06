@@ -146,7 +146,7 @@ const CreateProjectStep1 = ({ formData, setFormData }) => {
               label="QS Phone"
               value={formData.qsPhone || ""}
               onChange={(value) => setFormData({ ...formData, qsPhone: value })}
-              defaultCountry="PK" // You can set default country (PK = Pakistan, US = United States, etc.)
+              defaultCountry="NZ" // You can set default country (PK = Pakistan, US = United States, etc.)
               placeholder="Enter QS phone"
               variant="outlined"
             />

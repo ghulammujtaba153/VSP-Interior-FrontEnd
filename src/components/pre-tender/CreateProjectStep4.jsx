@@ -163,7 +163,7 @@
 
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -178,10 +178,33 @@ import {
   Paper,
   Divider,
   Grid,
+  TextField,
 } from "@mui/material";
 
-const CreateProjectStep4 = ({ allData }) => {
+const CreateProjectStep4 = ({ allData, formData, setFormData }) => {
   const { step1, step2, step3 } = allData || {};
+  
+  // Initialize labour cost from step1 or use local state
+  const [labourCost, setLabourCost] = useState(step1?.labourCost || "");
+
+  // Sync labour cost with step1 when it changes from parent
+  useEffect(() => {
+    if (step1?.labourCost !== undefined) {
+      const step1LabourCost = step1.labourCost || "";
+      if (step1LabourCost !== labourCost) {
+        setLabourCost(step1LabourCost);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step1?.labourCost]);
+
+  // Update parent when labour cost changes
+  const handleLabourCostChange = (value) => {
+    setLabourCost(value);
+    if (setFormData && formData) {
+      setFormData({ ...formData, labourCost: value || null });
+    }
+  };
 
   console.log("step2 data:", step2);
   console.log("step3 data:", step3);
@@ -196,48 +219,55 @@ const CreateProjectStep4 = ({ allData }) => {
     return rate ? (rate[field] !== null && rate[field] !== undefined ? parseFloat(rate[field]) : 0) : 0;
   };
 
-  // Calculate material total cost from step3
+  // Calculate material total cost from step3 (actual cost)
   const materialTotalCost = materialsArray.reduce((total, material) => {
     return total + (parseFloat(material.materialCost) || 0);
   }, 0);
 
-  // Get rate values
+  // Calculate edging cost from step3 (actual cost)
+  const edgingTotalCost = materialsArray.reduce((total, material) => {
+    return total + (parseFloat(material.edgingCost) || 0);
+  }, 0);
+
+  // Get rate values - COST (actual cost from step2)
+  const materialCost = getRateValue("Material", "cost");
+  const hardwareCost = getRateValue("Hardware", "cost");
+  const buyInCost = getRateValue("BuyIn", "cost");
+  const freightCost = getRateValue("Freight", "cost");
+  const shopDrawingCost = getRateValue("ShopDrawing", "cost");
+  const machiningCost = getRateValue("Machining", "cost");
+  const assemblyCost = getRateValue("Assembly", "cost");
+  const installationCost = getRateValue("Installation", "cost");
+
+  // Get rate values - SELL PRICE (sell price from step2)
   const materialMarkup = getRateValue("Material", "markup");
   const materialSellPrice = getRateValue("Material", "sell");
-  
-  const hardwareMarkup = getRateValue("Hardware", "markup");
   const hardwareSellPrice = getRateValue("Hardware", "sell");
-  
-  const buyInMarkup = getRateValue("BuyIn", "markup");
   const buyInSellPrice = getRateValue("BuyIn", "sell");
-  
-  const freightHourlyRate = getRateValue("Freight", "hourlyRate");
   const freightSellPrice = getRateValue("Freight", "sell");
-  
-  const shopDrawingHourlyRate = getRateValue("ShopDrawing", "hourlyRate");
   const shopDrawingSellPrice = getRateValue("ShopDrawing", "sell");
-  
-  const machiningHourlyRate = getRateValue("Machining", "hourlyRate");
   const machiningSellPrice = getRateValue("Machining", "sell");
-  
-  const assemblyHourlyRate = getRateValue("Assembly", "hourlyRate");
   const assemblySellPrice = getRateValue("Assembly", "sell");
-  
-  const installationHourlyRate = getRateValue("Installation", "hourlyRate");
   const installationSellPrice = getRateValue("Installation", "sell");
 
-  // Calculate actual sell prices based on cost + markup
-  const calculatedMaterialSell = materialTotalCost * (1 + materialMarkup / 100);
-  const actualMaterialSell = materialSellPrice > 0 ? materialSellPrice : calculatedMaterialSell;
+  // Calculate material sell price (always calculate from material cost + markup from step2)
+  // The material sell price should be based on actual material costs from step3, not a fixed rate from step2
+  const actualMaterialSell = materialTotalCost * (1 + materialMarkup / 100);
 
-  // Calculate labor costs (hourly rate based services)
-  const laborCost = shopDrawingSellPrice + machiningSellPrice + assemblySellPrice + installationSellPrice;
+  // Calculate labor costs (sell prices from step2)
+  const laborSellPrice = shopDrawingSellPrice + machiningSellPrice + assemblySellPrice + installationSellPrice;
+  
+  // Calculate labor costs (actual costs from step2)
+  const laborCost = shopDrawingCost + machiningCost + assemblyCost + installationCost;
 
-  // Calculate total cost (material cost + labor costs + freight + buy-in items)
-  const totalCost = materialTotalCost + laborCost + freightSellPrice + buyInSellPrice;
+  // Parse labour cost from Step 4 input
+  const labourTotalCost = parseFloat(labourCost) || 0;
 
-  // Calculate total sell (material sell + labor costs + freight + buy-in items)
-  const totalSell = actualMaterialSell + laborCost + freightSellPrice + buyInSellPrice + hardwareSellPrice;
+  // Calculate total COST (all actual costs: material cost + labour cost + edging cost + hardware cost + buy-in cost + freight cost + shop drawing cost + machining cost + assembly cost + installation cost)
+  const totalCost = materialTotalCost + labourTotalCost + edgingTotalCost + hardwareCost + buyInCost + freightCost + shopDrawingCost + machiningCost + assemblyCost + installationCost;
+
+  // Calculate total SELL (all sell prices: material sell + labour cost + hardware sell + buy-in sell + freight sell + shop drawing sell + machining sell + assembly sell + installation sell)
+  const totalSell = actualMaterialSell + labourTotalCost + hardwareSellPrice + buyInSellPrice + freightSellPrice + shopDrawingSellPrice + machiningSellPrice + assemblySellPrice + installationSellPrice;
 
   // Calculate margin
   const marginAmount = totalSell - totalCost;
@@ -245,20 +275,31 @@ const CreateProjectStep4 = ({ allData }) => {
 
   // Calculate GST
   const gst = totalSell * 0.15;
-  const totalWithGST = totalSell + gst;
+  const totalWithGST = totalSell + gst; // This is the totalCost field (SELL + GST)
+
+  // Calculate values and update parent when they change
+  useEffect(() => {
+    if (setFormData && formData) {
+      setFormData({
+        ...formData,
+        totalCost: totalWithGST, // Total Cost = SELL + GST
+        totalSell: totalSell,
+        totalProfit: marginAmount, // Profit = MARGIN amount
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalWithGST, totalSell, marginAmount]);
 
   const rows = [
-    { label: "MATERIAL COST", value: `$${materialSellPrice.toFixed(2)}` },
-    // { label: "MATERIAL MARKUP", value: `${materialMarkup.toFixed(2)}%` },
-    // { label: "MATERIAL SELL PRICE", value: `$${actualMaterialSell.toFixed(2)}` },
+    { label: "MATERIAL SELL PRICE", value: `$${actualMaterialSell.toFixed(2)}` },
+    { label: "LABOUR COST", value: `$${labourTotalCost.toFixed(2)}` },
     { label: "HARDWARE SELL PRICE", value: `$${hardwareSellPrice.toFixed(2)}` },
-    { label: "BUY IN ITEMS", value: `$${buyInSellPrice.toFixed(2)}` },
-    { label: "FREIGHT", value: `$${freightSellPrice.toFixed(2)}` },
-    { label: "SHOP DRAWINGS", value: `$${shopDrawingSellPrice.toFixed(2)}` },
-    { label: "MACHINING", value: `$${machiningSellPrice.toFixed(2)}` },
-    { label: "ASSEMBLY", value: `$${assemblySellPrice.toFixed(2)}` },
-    { label: "INSTALLATION", value: `$${installationSellPrice.toFixed(2)}` },
-    { label: "TOTAL LABOR COST", value: `$${laborCost.toFixed(2)}` },
+    { label: "BUY IN ITEMS SELL PRICE", value: `$${buyInSellPrice.toFixed(2)}` },
+    { label: "FREIGHT SELL PRICE", value: `$${freightSellPrice.toFixed(2)}` },
+    { label: "SHOP DRAWINGS SELL PRICE", value: `$${shopDrawingSellPrice.toFixed(2)}` },
+    { label: "MACHINING SELL PRICE", value: `$${machiningSellPrice.toFixed(2)}` },
+    { label: "ASSEMBLY SELL PRICE", value: `$${assemblySellPrice.toFixed(2)}` },
+    { label: "INSTALLATION SELL PRICE", value: `$${installationSellPrice.toFixed(2)}` },
     { label: "TOTAL COST", value: `$${totalCost.toFixed(2)}` },
     { label: "TOTAL SELL", value: `$${totalSell.toFixed(2)}` },
     { 
@@ -274,6 +315,30 @@ const CreateProjectStep4 = ({ allData }) => {
       <Typography variant="h6" gutterBottom fontWeight="bold">
         Project Overview
       </Typography>
+
+      {/* Labour Cost Input */}
+      <Card variant="outlined" sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="subtitle1" fontWeight="600" gutterBottom>
+            Labour Cost
+          </Typography>
+          <TextField
+            fullWidth
+            type="number"
+            label="Labour Cost ($)"
+            placeholder="Enter labour cost"
+            value={labourCost}
+            onChange={(e) => handleLabourCostChange(e.target.value)}
+            inputProps={{
+              min: 0,
+              step: "0.01",
+            }}
+            size="medium"
+            variant="outlined"
+            sx={{ maxWidth: 400 }}
+          />
+        </CardContent>
+      </Card>
 
       {/* Cost Summary Table */}
       <Card variant="outlined" sx={{ mb: 3 }}>
@@ -298,26 +363,30 @@ const CreateProjectStep4 = ({ allData }) => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {rows.map((row, idx) => (
-                  <TableRow 
-                    key={idx}
-                    sx={{ 
-                      backgroundColor: idx >= rows.length - 4 ? '#f0f8ff' : 'inherit',
-                      '&:last-child td, &:last-child th': { border: 0 } 
-                    }}
-                  >
-                    <TableCell>
-                      <Typography fontWeight={idx >= rows.length - 4 ? "600" : "500"}>
-                        {row.label}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography fontWeight={idx >= rows.length - 4 ? "600" : "500"}>
-                        {row.value}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {rows.map((row, idx) => {
+                  // Highlight last 5 rows (TOTAL COST, TOTAL SELL, MARGIN, GST 15%, TOTAL (SELL + GST))
+                  const isSummaryRow = idx >= rows.length - 5;
+                  return (
+                    <TableRow 
+                      key={idx}
+                      sx={{ 
+                        backgroundColor: isSummaryRow ? '#f0f8ff' : 'inherit',
+                        '&:last-child td, &:last-child th': { border: 0 } 
+                      }}
+                    >
+                      <TableCell>
+                        <Typography fontWeight={isSummaryRow ? "600" : "500"}>
+                          {row.label}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography fontWeight={isSummaryRow ? "600" : "500"}>
+                          {row.value}
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </TableContainer>
@@ -371,7 +440,8 @@ const CreateProjectStep4 = ({ allData }) => {
                     <TableCell><strong>Material</strong></TableCell>
                     <TableCell><strong>Type</strong></TableCell>
                     <TableCell><strong>Measure</strong></TableCell>
-                    <TableCell><strong>Cost</strong></TableCell>
+                    <TableCell><strong>Material Cost</strong></TableCell>
+                    <TableCell><strong>Edging Cost</strong></TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -381,6 +451,7 @@ const CreateProjectStep4 = ({ allData }) => {
                       <TableCell>{material.materialType || "N/A"}</TableCell>
                       <TableCell>{material.measure || "N/A"}</TableCell>
                       <TableCell>${(parseFloat(material.materialCost) || 0).toFixed(2)}</TableCell>
+                      <TableCell>${(parseFloat(material.edgingCost) || 0).toFixed(2)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

@@ -76,6 +76,10 @@ const CreateProject = () => {
             qsPhone: project.qsPhone || '',
             accessNotes: project.accessNotes || '',
             siteLocation: project.siteLocation || '',
+            labourCost: project.labourCost || '',
+            totalCost: project.totalCost || 0,
+            totalSell: project.totalSell || 0,
+            totalProfit: project.totalProfit || 0,
           })
 
           setStep2Data(project.rates || [])
@@ -138,10 +142,11 @@ const CreateProject = () => {
 
   const handleConfirmLeave = () => {
     setOpenDialog(false)
+    router.back()
     if (pendingNavigation) {
       router.push(pendingNavigation) // Sidebar click
     } else {
-      router.push('/project') // Default back route
+      router.back()
     }
   }
 
@@ -233,8 +238,8 @@ const CreateProject = () => {
         }}
       >
         <StepComponent
-          formData={activeStep === 0 ? step1Data : activeStep === 4 ? step5Data : {}}
-          setFormData={activeStep === 0 ? setStep1Data : activeStep === 4 ? setStep5Data : () => {}}
+          formData={activeStep === 0 ? step1Data : activeStep === 4 ? step5Data : activeStep === 3 ? step1Data : {}}
+          setFormData={activeStep === 0 ? setStep1Data : activeStep === 4 ? setStep5Data : activeStep === 3 ? setStep1Data : () => {}}
           records={
             activeStep === 1 ? step2Data : activeStep === 2 ? step3Data : []
           }

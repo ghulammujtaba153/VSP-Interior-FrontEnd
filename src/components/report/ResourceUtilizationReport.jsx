@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -18,23 +18,56 @@ import PeopleIcon from "@mui/icons-material/People";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import axios from "axios";
+import { BASE_URL } from "@/configs/url";
+import Loader from "../loader/Loader";
 
 export default function ResourceUtilizationReport({ period, project }) {
-  const resourceData = {
-    totalWorkers: 45,
-    activeWorkers: 38,
-    utilizationRate: 84.4,
-    overtimeHours: 127,
-    availableHours: 1800,
-    allocatedHours: 1520,
-    workers: [
-      { name: "John Smith", role: "Project Manager", utilization: 95, hours: 168, overtime: 8 },
-      { name: "Sarah Johnson", role: "Senior Developer", utilization: 88, hours: 154, overtime: 14 },
-      { name: "Mike Wilson", role: "Designer", utilization: 72, hours: 126, overtime: 0 },
-      { name: "Lisa Brown", role: "QA Engineer", utilization: 91, hours: 159, overtime: 9 },
-      { name: "David Chen", role: "Developer", utilization: 76, hours: 133, overtime: 3 },
-    ]
+  const [loading, setLoading] = useState(true);
+  const [resourceData, setResourceData] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const fetchWorkerStats = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (period?.startDate) params.append('startDate', period.startDate);
+      if (period?.endDate) params.append('endDate', period.endDate);
+      
+      const url = `${BASE_URL}/api/workers/get/stats${params.toString() ? `?${params.toString()}` : ''}`;
+      const res = await axios.get(url);
+      
+      if (res.data.success) {
+        setResourceData(res.data.data);
+      } else {
+        setResourceData(null);
+      }
+    } catch (error) {
+      console.error("Error fetching worker stats:", error);
+      setResourceData(null);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchWorkerStats();
+  }, [period, project, refreshKey]);
+
+  if (loading) return <Loader />;
+
+  if (!resourceData) {
+    return (
+      <Box sx={{ p: 3, textAlign: "center" }}>
+        <Typography variant="h6" color="error">
+          Failed to load resource utilization data
+        </Typography>
+        <Button onClick={() => setRefreshKey(prev => prev + 1)} variant="contained" sx={{ mt: 2 }}>
+          Retry
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 3 }}>
@@ -48,8 +81,8 @@ export default function ResourceUtilizationReport({ period, project }) {
             Worker allocation, available hours, and overtime tracking
           </Typography>
         </Box>
-        <Button variant="contained" color="primary">
-          Generate Report
+        <Button variant="contained" color="primary" onClick={() => setRefreshKey(prev => prev + 1)}>
+          Refresh Data
         </Button>
       </Box>
 
@@ -82,8 +115,8 @@ export default function ResourceUtilizationReport({ period, project }) {
               <Typography variant="h5" color="primary">
                 {resourceData.utilizationRate}%
               </Typography>
-              <Typography variant="caption" color="success.main">
-                +3.2% from last month
+              <Typography variant="caption" color="text.secondary">
+                {resourceData.allocatedHours.toLocaleString()} / {resourceData.availableHours.toLocaleString()} hours
               </Typography>
             </CardContent>
           </Card>
@@ -116,8 +149,8 @@ export default function ResourceUtilizationReport({ period, project }) {
               <Typography variant="h5" color="error">
                 {resourceData.overtimeHours}
               </Typography>
-              <Typography variant="caption" color="error">
-                -12 from last month
+              <Typography variant="caption" color="text.secondary">
+                Total overtime across all workers
               </Typography>
             </CardContent>
           </Card>
@@ -131,11 +164,22 @@ export default function ResourceUtilizationReport({ period, project }) {
           subheader="Utilization rates and hours by team member"
         />
         <CardContent>
-          {resourceData.workers.map((worker, i) => (
+          {resourceData.workers && resourceData.workers.length > 0 ? (
+            resourceData.workers.map((worker, i) => (
             <Box key={i} mb={3}>
               <Box display="flex" justifyContent="space-between" alignItems="center">
                 <Box>
-                  <Typography fontWeight="bold">{worker.name}</Typography>
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Typography fontWeight="bold">{worker.name}</Typography>
+                    {worker.isOnLeave && (
+                      <Chip 
+                        label={`On Leave (${worker.leaveDays}d)`} 
+                        color="warning" 
+                        size="small"
+                        sx={{ height: 20, fontSize: '0.7rem' }}
+                      />
+                    )}
+                  </Box>
                   <Typography variant="body2" color="text.secondary">
                     {worker.role}
                   </Typography>
@@ -154,7 +198,12 @@ export default function ResourceUtilizationReport({ period, project }) {
               </Box>
               <LinearProgress variant="determinate" value={worker.utilization} sx={{ mt: 1 }} />
             </Box>
-          ))}
+          ))
+          ) : (
+            <Typography color="text.secondary" align="center" py={3}>
+              No worker utilization data available
+            </Typography>
+          )}
         </CardContent>
       </Card>
 
@@ -165,11 +214,8 @@ export default function ResourceUtilizationReport({ period, project }) {
           subheader="How resources are distributed across active projects"
         />
         <CardContent>
-          {[
-            { project: "Project Alpha", workers: 15, hours: 600, utilization: 88 },
-            { project: "Project Beta", workers: 12, hours: 480, utilization: 92 },
-            { project: "Project Gamma", workers: 11, hours: 440, utilization: 79 },
-          ].map((allocation, index) => (
+          {resourceData.resourceAllocationByProject && resourceData.resourceAllocationByProject.length > 0 ? (
+            resourceData.resourceAllocationByProject.map((allocation, index) => (
             <Box key={index} mb={3} p={2} bgcolor="grey.100" borderRadius={2}>
               <Box display="flex" justifyContent="space-between" mb={1}>
                 <Typography fontWeight="bold">{allocation.project}</Typography>
@@ -191,51 +237,15 @@ export default function ResourceUtilizationReport({ period, project }) {
               </Grid>
               <LinearProgress variant="determinate" value={allocation.utilization} />
             </Box>
-          ))}
+          ))
+          ) : (
+            <Typography color="text.secondary" align="center" py={3}>
+              No project allocation data available
+            </Typography>
+          )}
         </CardContent>
       </Card>
 
-      {/* Capacity Planning */}
-      <Card sx={{ mt: 4 }}>
-        <CardHeader
-          title={<Typography color="primary">Capacity Planning</Typography>}
-          subheader="Forecasted resource needs for upcoming projects"
-        />
-        <CardContent>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
-              <Box textAlign="center" p={2} bgcolor="green.50" borderRadius={2}>
-                <Typography variant="h6" color="success.main">
-                  Available
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  280 hours next month
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Box textAlign="center" p={2} bgcolor="blue.50" borderRadius={2}>
-                <Typography variant="h6" color="primary">
-                  Forecasted
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  1,650 hours needed
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Box textAlign="center" p={2} bgcolor="red.50" borderRadius={2}>
-                <Typography variant="h6" color="error">
-                  Shortage
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  1,370 hours deficit
-                </Typography>
-              </Box>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
     </Box>
   );
 }

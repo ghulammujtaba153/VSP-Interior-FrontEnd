@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -11,56 +11,67 @@ import {
   LinearProgress,
   Box,
   Chip,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Paper,
 } from "@mui/material";
 import InventoryIcon from "@mui/icons-material/Inventory";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-
-
+import axios from "axios";
+import { BASE_URL } from "@/configs/url";
+import Loader from "../loader/Loader";
 
 export const InventoryTurnoverReport = ({ period, project }) => {
-  const inventoryData = {
-    totalItems: 1247,
-    turnoverRate: 6.8,
-    stockValue: 485000,
-    agingItems: 89,
-    reorderAlerts: 23,
-    categories: [
-      {
-        name: "Construction Materials",
-        items: 450,
-        value: 285000,
-        turnover: 8.2,
-        aging: 25,
-        reorderNeeded: 8,
-      },
-      {
-        name: "Tools & Equipment",
-        items: 180,
-        value: 125000,
-        turnover: 4.5,
-        aging: 12,
-        reorderNeeded: 5,
-      },
-      {
-        name: "Safety Equipment",
-        items: 320,
-        value: 45000,
-        turnover: 12.1,
-        aging: 8,
-        reorderNeeded: 7,
-      },
-      {
-        name: "Office Supplies",
-        items: 297,
-        value: 30000,
-        turnover: 9.8,
-        aging: 44,
-        reorderNeeded: 3,
-      },
-    ],
+  const [loading, setLoading] = useState(true);
+  const [inventoryData, setInventoryData] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const fetchInventoryData = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (period?.startDate) params.append('startDate', period.startDate);
+      if (period?.endDate) params.append('endDate', period.endDate);
+      
+      const url = `${BASE_URL}/api/inventory/get/performance/stats${params.toString() ? `?${params.toString()}` : ''}`;
+      const res = await axios.get(url);
+      
+      if (res.data.success) {
+        setInventoryData(res.data.data);
+      } else {
+        setInventoryData(null);
+      }
+    } catch (error) {
+      console.error("Error fetching inventory performance data:", error);
+      setInventoryData(null);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchInventoryData();
+  }, [period, project, refreshKey]);
+
+  if (loading) return <Loader />;
+
+  if (!inventoryData) {
+    return (
+      <Box sx={{ p: 3, textAlign: "center" }}>
+        <Typography variant="h6" color="error">
+          Failed to load inventory performance data
+        </Typography>
+        <Button onClick={() => setRefreshKey(prev => prev + 1)} variant="contained" sx={{ mt: 2 }}>
+          Retry
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 2 }}>
@@ -74,7 +85,7 @@ export const InventoryTurnoverReport = ({ period, project }) => {
             Stock movement, aging inventory, and reorder suggestions
           </Typography>
         </div>
-        <Button variant="contained">Generate Report</Button>
+        <Button variant="contained" onClick={() => setRefreshKey(prev => prev + 1)}>Refresh Data</Button>
       </Box>
 
       {/* Key Metrics */}
@@ -89,8 +100,8 @@ export const InventoryTurnoverReport = ({ period, project }) => {
               <Typography variant="h6" color="primary">
                 {inventoryData.totalItems.toLocaleString()}
               </Typography>
-              <Typography variant="caption" color="success.main" display="flex" alignItems="center">
-                <TrendingUpIcon fontSize="small" sx={{ mr: 0.5 }} /> +3.4% from last month
+              <Typography variant="caption" color="text.secondary">
+                Total inventory items
               </Typography>
             </CardContent>
           </Card>
@@ -99,15 +110,15 @@ export const InventoryTurnoverReport = ({ period, project }) => {
         <Grid item xs={12} md={3}>
           <Card>
             <CardHeader
-              title="Turnover Rate"
+              title="Average Price"
               action={<AutorenewIcon color="action" />}
             />
             <CardContent>
               <Typography variant="h6" color="primary">
-                {inventoryData.turnoverRate}x
+                ${inventoryData.averagePrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </Typography>
-              <Typography variant="caption" color="success.main" display="flex" alignItems="center">
-                <TrendingUpIcon fontSize="small" sx={{ mr: 0.5 }} /> +0.8x from last month
+              <Typography variant="caption" color="text.secondary">
+                Per unit average
               </Typography>
             </CardContent>
           </Card>
@@ -121,10 +132,10 @@ export const InventoryTurnoverReport = ({ period, project }) => {
             />
             <CardContent>
               <Typography variant="h6" color="primary">
-                ${inventoryData.stockValue.toLocaleString()}
+                ${inventoryData.totalPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                Current inventory value
+                Total inventory value
               </Typography>
             </CardContent>
           </Card>
@@ -138,168 +149,143 @@ export const InventoryTurnoverReport = ({ period, project }) => {
             />
             <CardContent>
               <Typography variant="h6" color="error">
-                {inventoryData.reorderAlerts}
+                {inventoryData.statusBreakdown?.counts?.['Low Stock'] || 0}
               </Typography>
               <Typography variant="caption" color="error">
-                Items need restocking
+                Items in low stock
               </Typography>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
-      {/* Inventory by Category */}
+      {/* Summary Cards */}
+      <Grid container spacing={2} mb={3}>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardHeader title="Items Used in Projects" />
+            <CardContent>
+              <Typography variant="h4" color="primary">
+                {inventoryData.itemsUsedInProjects}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Out of {inventoryData.totalItems} total items
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardHeader title="Items Not Used" />
+            <CardContent>
+              <Typography variant="h4" color="error">
+                {inventoryData.itemsNotUsed}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Items with no project usage
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Top Items Used */}
       <Card sx={{ mb: 3 }}>
         <CardHeader
-          title="Inventory Analysis by Category"
-          subheader="Stock levels, turnover rates, and aging by category"
+          title="Top Items Used in Projects"
+          subheader="Items with highest usage from purchase orders"
         />
         <CardContent>
-          <Grid container spacing={2}>
-            {inventoryData.categories.map((cat) => (
-              <Grid item xs={12} key={cat.name}>
-                <Box p={2} bgcolor="grey.100" borderRadius={2}>
-                  <Box display="flex" justifyContent="space-between" mb={2}>
-                    <div>
-                      <Typography variant="subtitle1" fontWeight="bold">
-                        {cat.name}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {cat.items} items • ${cat.value.toLocaleString()} value
-                      </Typography>
-                    </div>
-                    <Box textAlign="right">
-                      <Typography variant="h6" color="primary">
-                        {cat.turnover}x
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Turnover rate
-                      </Typography>
-                    </Box>
-                  </Box>
-
-                  <Grid container spacing={2}>
-                    <Grid item xs={4} textAlign="center">
-                      <Typography variant="h6">{cat.items}</Typography>
-                      <Typography variant="caption">Total Items</Typography>
-                    </Grid>
-                    <Grid item xs={4} textAlign="center">
-                      <Typography variant="h6" color="error">
-                        {cat.aging}
-                      </Typography>
-                      <Typography variant="caption">Aging Items</Typography>
-                    </Grid>
-                    <Grid item xs={4} textAlign="center">
-                      <Typography variant="h6" color="primary">
-                        {cat.reorderNeeded}
-                      </Typography>
-                      <Typography variant="caption">Reorder Needed</Typography>
-                    </Grid>
-                  </Grid>
-
-                  <Box mt={2}>
-                    <Box display="flex" justifyContent="space-between" mb={1}>
-                      <Typography variant="caption">Turnover Performance</Typography>
-                      <Typography variant="caption">
-                        {((cat.turnover / 12) * 100).toFixed(1)}%
-                      </Typography>
-                    </Box>
-                    <LinearProgress
-                      variant="determinate"
-                      value={(cat.turnover / 12) * 100}
-                    />
-                  </Box>
-                </Box>
-              </Grid>
-            ))}
-          </Grid>
+          {inventoryData.topItemsUsed && inventoryData.topItemsUsed.length > 0 ? (
+            <Table>
+              <TableHead>
+                <TableRow sx={{ backgroundColor: "primary.light" }}>
+                  <TableCell sx={{ color: "white", fontWeight: "bold" }}>Item Name</TableCell>
+                  <TableCell sx={{ color: "white", fontWeight: "bold" }} align="right">Total Quantity Used</TableCell>
+                  <TableCell sx={{ color: "white", fontWeight: "bold" }} align="right">Total Value Used</TableCell>
+                  <TableCell sx={{ color: "white", fontWeight: "bold" }} align="right">Cost Price</TableCell>
+                  <TableCell sx={{ color: "white", fontWeight: "bold" }} align="right">Estimated Price Generated</TableCell>
+                  <TableCell sx={{ color: "white", fontWeight: "bold" }} align="right">Usage Count</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {inventoryData.topItemsUsed.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>{item.name}</TableCell>
+                    <TableCell align="right">{item.totalQuantityUsed}</TableCell>
+                    <TableCell align="right">${item.totalValueUsed.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                    <TableCell align="right">${item.costPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                    <TableCell align="right">${item.estimatedPriceGenerated.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                    <TableCell align="right">{item.usageCount}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <Typography color="text.secondary" align="center" py={3}>
+              No items used in projects yet
+            </Typography>
+          )}
         </CardContent>
       </Card>
 
-      {/* Aging Inventory */}
-      <Card sx={{ mb: 3 }}>
-        <CardHeader
-          title="Aging Inventory Analysis"
-          subheader="Items by aging period and recommended actions"
-        />
-        <CardContent>
-          <Grid container spacing={2}>
-            {[
-              { period: "0-30 days", count: 1047, percentage: 84, color: "success" },
-              { period: "31-60 days", count: 111, percentage: 9, color: "primary" },
-              { period: "61-90 days", count: 56, percentage: 4, color: "warning" },
-              { period: "90+ days", count: 33, percentage: 3, color: "error" },
-            ].map((aging) => (
-              <Grid item xs={12} md={3} key={aging.period}>
-                <Box p={2} borderRadius={2} bgcolor="grey.100" textAlign="center">
-                  <Typography variant="h6" color={`${aging.color}.main`}>
-                    {aging.count}
-                  </Typography>
-                  <Typography variant="body2">{aging.period}</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {aging.percentage}% of total
-                  </Typography>
-                </Box>
-              </Grid>
-            ))}
-          </Grid>
-        </CardContent>
-      </Card>
-
-      {/* Reorder Recommendations */}
+      {/* Status Breakdown */}
       <Card>
         <CardHeader
-          title="Reorder Recommendations"
-          subheader="Items requiring immediate attention"
+          title="Inventory Status Breakdown"
+          subheader="Items categorized by stock status"
         />
         <CardContent>
-          <Box display="flex" flexDirection="column" gap={2}>
-            {[
-              { item: "Safety Helmets - Type A", currentStock: 15, reorderLevel: 25, suggested: 100, urgency: "High" },
-              { item: "Concrete Mix - Portland", currentStock: 8, reorderLevel: 20, suggested: 50, urgency: "High" },
-              { item: "Steel Beams - 6m", currentStock: 3, reorderLevel: 10, suggested: 25, urgency: "Critical" },
-              { item: "Work Gloves - Large", currentStock: 22, reorderLevel: 30, suggested: 75, urgency: "Medium" },
-              { item: "Electrical Wire - 12AWG", currentStock: 45, reorderLevel: 50, suggested: 200, urgency: "Low" },
-            ].map((row) => (
-              <Box
-                key={row.item}
-                p={2}
-                bgcolor="grey.100"
-                borderRadius={2}
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-              >
-                <Box>
-                  <Typography variant="subtitle2" fontWeight="bold">
-                    {row.item}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Current: {row.currentStock} • Reorder Level: {row.reorderLevel}
-                  </Typography>
-                </Box>
-                <Box textAlign="center">
-                  <Typography color="primary" fontWeight="bold">
-                    {row.suggested}
-                  </Typography>
-                  <Typography variant="caption">Suggested</Typography>
-                </Box>
-                <Chip
-                  label={row.urgency}
-                  color={
-                    row.urgency === "Critical"
-                      ? "error"
-                      : row.urgency === "High"
-                      ? "warning"
-                      : row.urgency === "Medium"
-                      ? "primary"
-                      : "success"
-                  }
-                  size="small"
-                />
-              </Box>
+          <Grid container spacing={2} mb={3}>
+            {Object.entries(inventoryData.statusBreakdown.counts).map(([status, count]) => (
+              <Grid item xs={12} md={4} key={status}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography variant="h5" color="primary">
+                      {count}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {status}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
             ))}
-          </Box>
+          </Grid>
+
+          {Object.entries(inventoryData.statusBreakdown.details).map(([status, items]) => (
+            <Box key={status} mb={3}>
+              <Typography variant="h6" gutterBottom>
+                {status} ({items.length} items)
+              </Typography>
+              {items.length > 0 ? (
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell><strong>Item Name</strong></TableCell>
+                      <TableCell align="right"><strong>Quantity</strong></TableCell>
+                      <TableCell align="right"><strong>Cost Price</strong></TableCell>
+                      <TableCell align="right"><strong>Total Value</strong></TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {items.slice(0, 10).map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>{item.name}</TableCell>
+                        <TableCell align="right">{item.quantity}</TableCell>
+                        <TableCell align="right">${parseFloat(item.costPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
+                        <TableCell align="right">${item.totalValue}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+                  No items in this status
+                </Typography>
+              )}
+            </Box>
+          ))}
         </CardContent>
       </Card>
     </Box>
