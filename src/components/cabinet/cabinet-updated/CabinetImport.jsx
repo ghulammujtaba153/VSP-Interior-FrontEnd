@@ -41,6 +41,7 @@ import { BASE_URL } from "@/configs/url"
 import { useParams } from "next/navigation"
 import Notification from "@/components/Notification"
 import ConfirmationDialog from "@/components/ConfirmationDialog"
+import { useAuth } from "@/context/authContext"
 
 // Utility to normalize header names (lowercase, trimmed)
 function normalizeHeader(header) {
@@ -66,6 +67,7 @@ const CabinetImport = ({ id, setIsInProgress, categoryName }) => {
   const [template, setTemplate] = useState([])
   const [open, setOpen] = useState(false)
   const [message, setMessage] = useState("");
+  const {user, token } = useAuth();
 
 
   // Lock-in states
@@ -82,7 +84,11 @@ const CabinetImport = ({ id, setIsInProgress, categoryName }) => {
   // Fetch template from API
   const fetchTemplate = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/api/cabinet/get/${id}`)
+      const res = await axios.get(`${BASE_URL}/api/cabinet/get/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
       // Extract all labels from dynamicData.arrayList
       const labels = res.data.cabinets[0]?.dynamicData?.arrayList.map(item => item.label) || []
       setTemplate(labels)
@@ -423,7 +429,11 @@ const CabinetImport = ({ id, setIsInProgress, categoryName }) => {
           name,
         }))
       }
-      const res = await axios.post(`${BASE_URL}/api/cabinet-subcategories/import`, payload)
+      const res = await axios.post(`${BASE_URL}/api/cabinet-subcategories/import`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
       if (res.status === 201) {
          setMessage(res.data.message || "Subcategories uploaded successfully")
       setOpen(true)
@@ -516,7 +526,12 @@ const CabinetImport = ({ id, setIsInProgress, categoryName }) => {
       for (let i = 0; i < importRows.length; i += chunkSize) {
         const chunk = importRows.slice(i, i + chunkSize)
 
-        res = await axios.post(`${BASE_URL}/api/cabinet/import`, { data: chunk })
+        res = await axios.post(`${BASE_URL}/api/cabinet/import`, { data: chunk }, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+        )
 
         if (res.status !== 201) {
           toast.dismiss()

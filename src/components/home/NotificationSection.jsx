@@ -5,14 +5,20 @@ import axios from "axios";
 import Loader from "../loader/Loader";
 import { BASE_URL } from "@/configs/url";
 import { Box, Alert, Stack, Typography, Button, IconButton } from "@mui/material";
+import { useAuth } from '@/context/authContext'
 
 const NotificationSection = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { token } = useAuth();
 
   const fetchNotifications = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/api/notification/get`);
+      const res = await axios.get(`${BASE_URL}/api/notification/get`, {
+        headers: {
+          Authorization: `Bearer ${token}`,   
+        }
+      });
       setNotifications(res.data);
     } catch (error) {
       console.error("Error fetching notifications:", error);
@@ -23,7 +29,11 @@ const NotificationSection = () => {
 
   const handleSeen = async (id) => {
     try {
-      await axios.put(`${BASE_URL}/api/notification/seen/${id}`);
+      await axios.put(`${BASE_URL}/api/notification/seen/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,   // or Authentication: "your value"
+        }
+      });
       fetchNotifications(); // refresh after marking
     } catch (error) {
       console.error("Error marking as seen:", error);

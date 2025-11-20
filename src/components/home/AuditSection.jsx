@@ -51,6 +51,7 @@ import {
   Clear as ClearIcon
 } from '@mui/icons-material'
 import Loader from '../loader/Loader'
+import { useAuth } from '@/context/authContext'
 
 const AuditSection = () => {
   const [audits, setAudits] = useState([])
@@ -59,10 +60,15 @@ const AuditSection = () => {
   const [error, setError] = useState('')
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
+  const { token} = useAuth()
 
   const fetchAudits = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/api/audit/get`)
+      const response = await axios.get(`${BASE_URL}/api/audit/get`, {
+        headers: {
+          Authorization: `Bearer ${token}`,  
+        }
+      })
       setAudits(response.data.audits)
       setFilteredAudits(response.data.audits)
       setLoading(false)

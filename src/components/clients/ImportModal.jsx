@@ -226,7 +226,7 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [mapping, setMapping] = useState(false); // <-- Add this
   const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   
   // ✅ Use ref for debounced validation
   const validationTimeoutRef = useRef(null);
@@ -587,6 +587,11 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
             userId: user.id,
             clients: batch,
           }, {
+           headers: {
+              Authorization: `Bearer ${token}`
+           } 
+          }
+          , {
             timeout: 60000 // 60 second timeout for larger batches
           });
           

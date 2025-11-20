@@ -73,29 +73,6 @@ const CreateProjectStep1 = ({ formData, setFormData }) => {
             />
           </Grid>
 
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Site Location"
-              name="siteLocation"
-              value={formData.siteLocation || ""}
-              onChange={handleChange}
-              placeholder="Enter site location"
-              variant="outlined"
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Access Notes"
-              name="accessNotes"
-              value={formData.accessNotes || ""}
-              onChange={handleChange}
-              placeholder="Enter access notes"
-              variant="outlined"
-            />
-          </Grid>
 
           <Grid item xs={12}>
             <FormControl fullWidth>
@@ -127,6 +104,33 @@ const CreateProjectStep1 = ({ formData, setFormData }) => {
               </Select>
             </FormControl>
           </Grid>
+          
+
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Site Location"
+              name="siteLocation"
+              value={formData.siteLocation || ""}
+              onChange={handleChange}
+              placeholder="Enter site location"
+              variant="outlined"
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="Access Notes"
+              name="accessNotes"
+              value={formData.accessNotes || ""}
+              onChange={handleChange}
+              placeholder="Enter access notes"
+              variant="outlined"
+            />
+          </Grid>
+
+          
 
           <Grid item xs={12}>
             <TextField

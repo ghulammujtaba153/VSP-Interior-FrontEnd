@@ -13,6 +13,7 @@ import {
 import DeleteIcon from '@mui/icons-material/Delete'
 import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
+import { useAuth } from '@/context/authContext'
 
 const SubCategories = ({ id }) => {
   const [subCategories, setSubCategories] = useState([])
@@ -21,11 +22,16 @@ const SubCategories = ({ id }) => {
   const [editSubCategory, setEditSubCategory] = useState(null)
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
+  const {user, token} = useAuth()
 
   const fetchData = async () => {
     setLoading(true)
     try {
-      const response = await axios.get(`${BASE_URL}/api/cabinet-subcategories/get/${id}`)
+      const response = await axios.get(`${BASE_URL}/api/cabinet-subcategories/get/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
       setSubCategories(response.data || [])
     } catch (error) {
       toast.error("Failed to fetch subcategories")
@@ -42,7 +48,11 @@ const SubCategories = ({ id }) => {
   const handleDeleteSubCategory = async (subCategoryId) => {
     toast.loading("Please wait...")
     try {
-      await axios.delete(`${BASE_URL}/api/cabinet-subcategories/delete/${subCategoryId}`)
+      await axios.delete(`${BASE_URL}/api/cabinet-subcategories/delete/${subCategoryId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
       toast.success("Subcategory deleted successfully")
       fetchData()
     } catch (error) {

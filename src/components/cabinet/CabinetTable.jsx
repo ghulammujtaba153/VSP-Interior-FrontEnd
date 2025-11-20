@@ -41,7 +41,7 @@ const CabinetTable = () => {
   const [editData, setEditData] = useState(null)
   const [viewOpen, setViewOpen] = useState(false)
   const [viewData, setViewData] = useState(null)
-  const { user } = useAuth()
+  const { user, token } = useAuth()
   const [csvModalOpen, setCsvModalOpen] = useState(false)
   const [page, setPage] = useState(0)
   const [limit, setLimit] = useState(100)
@@ -64,7 +64,11 @@ const CabinetTable = () => {
     setLoading(true)
     try {
       const res = await axios.get(
-        `${BASE_URL}/api/cabinet/get?page=${page + 1}&limit=${limit}&search=${search}`
+        `${BASE_URL}/api/cabinet/get?page=${page + 1}&limit=${limit}&search=${search}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,   // or Authentication: "your value"
+          }
+        }
       )
       setData(res.data.cabinet || res.data.data || [])
       setRowCount(res.data.total || res.data.pagination?.totalItems || 0)
@@ -106,8 +110,12 @@ const CabinetTable = () => {
       await axios.delete(`${BASE_URL}/api/cabinet/delete/${id}`, {
         data: {
           userId: user.id
+        },
+        headers: {
+          Authorization: `Bearer ${token}` // or Authentication: token
         }
-      })
+      });
+
       fetchCabinets()
       toast.dismiss()
       toast.success('Cabinet deleted successfully')

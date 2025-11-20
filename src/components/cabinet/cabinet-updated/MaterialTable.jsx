@@ -45,7 +45,7 @@ const MaterialTable = ({id}) => {
   const [editData, setEditData] = useState(null)
   const [viewOpen, setViewOpen] = useState(false)
   const [viewData, setViewData] = useState(null)
-  const { user } = useAuth()
+  const { user, token } = useAuth()
   const [csvModalOpen, setCsvModalOpen] = useState(false)
   const [page, setPage] = useState(0)
   const [limit, setLimit] = useState(100)
@@ -53,9 +53,6 @@ const MaterialTable = ({id}) => {
   const [order, setOrder] = useState('asc')
   const [dynamicColumns, setDynamicColumns] = useState([])
   const [subCategories, setSubCategories] = useState([])
-  
-
-
   const [searchInput, setSearchInput] = useState('') // typing state
   const [search, setSearch] = useState('') // applied state
 
@@ -84,7 +81,11 @@ const MaterialTable = ({id}) => {
       // Add subCode as a query param if not 'all'
       let subCodeParam = subCode && subCode !== 'all' ? `&subCode=${encodeURIComponent(subCode)}` : '';
       const res = await axios.get(
-        `${BASE_URL}/api/cabinet/get/${id}?page=${page + 1}&limit=${limit}&search=${search}&subCode=${subCodeParam}`
+        `${BASE_URL}/api/cabinet/get/${id}?page=${page + 1}&limit=${limit}&search=${search}&subCode=${subCodeParam}`, {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
       );
       const cabinets = res.data.cabinets || [];
       setData(cabinets);
@@ -106,7 +107,11 @@ const MaterialTable = ({id}) => {
       setDynamicColumns(Array.from(columnsSet))
 
 
-      const response = await axios.get(`${BASE_URL}/api/cabinet-subcategories/get/${id}`);
+      const response = await axios.get(`${BASE_URL}/api/cabinet-subcategories/get/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
 // ✅ Extract only the unique "name" values
 const subCodes = [...new Set(response.data.map(item => item.name))];
@@ -151,6 +156,9 @@ setUniqueSubCodes(subCodes);
       await axios.delete(`${BASE_URL}/api/cabinet/delete/${id}`, {
         data: {
           userId: user.id
+        },
+        headers: {
+          Authorization: `Bearer ${token}` // or Authentication: token
         }
       })
       fetchCabinets()
@@ -167,7 +175,11 @@ setUniqueSubCodes(subCodes);
   const fetchAllCabinets = async () => {
     setExportLoading(true);
     try {
-      const res = await axios.get(`${BASE_URL}/api/cabinet/get/${id}?page=1&limit=500&search=${search}`);
+      const res = await axios.get(`${BASE_URL}/api/cabinet/get/${id}?page=1&limit=500&search=${search}`, {
+        headers: {
+          Authorization: `Bearer ${token}` // or Authentication: token
+        }
+      });
       setExportLoading(false);
       return res.data.cabinets;
     } catch (error) {

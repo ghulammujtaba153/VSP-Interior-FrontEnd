@@ -49,7 +49,7 @@ const initialClientState = {
 const ClientsModal = ({ open, handleClose, editClient, refreshClients }) => {
   const [client, setClient] = useState(initialClientState)
   const [loading, setLoading] = useState(false)
-  const { user } = useAuth()
+  const { user, token } = useAuth()
 
   // Confirmation dialog states
   const [confirmationOpen, setConfirmationOpen] = useState(false)
@@ -113,13 +113,22 @@ const ClientsModal = ({ open, handleClose, editClient, refreshClients }) => {
         await axios.put(`${BASE_URL}/api/client/update/${client.id}`, {
           ...client,
           userId: user.id
+        }, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
         })
         toast.success('Client updated successfully')
       } else {
         await axios.post(`${BASE_URL}/api/client/create`, {
           ...client,
           userId: user.id
-        })
+        }, {
+         headers: {
+            Authorization: `Bearer ${token}` 
+        }
+      }
+        )
         toast.success('Client created successfully')
       }
 

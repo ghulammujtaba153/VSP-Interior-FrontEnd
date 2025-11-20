@@ -193,6 +193,15 @@ const CreateProjectStep2 = ({ records, setRecords }) => {
                     backgroundColor: "action.hover",
                     color: "text.primary",
                   },
+                  // 🔴 Remove arrows in number input (Chrome, Safari, Edge)
+    "& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button": {
+      WebkitAppearance: "none",
+      margin: 0,
+    },
+    // 🔴 Remove arrows in Firefox
+    "& input[type=number]": {
+      MozAppearance: "textfield"
+    }
                 }}
               />
             </Grid>

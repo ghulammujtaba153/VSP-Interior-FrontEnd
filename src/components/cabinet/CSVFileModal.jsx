@@ -52,7 +52,7 @@ const CSVFileModal = ({ open, onClose, onSuccess }) => {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedSubCategory, setSelectedSubCategory] = useState("");
   const [csvColumns, setCsvColumns] = useState([]); // Dynamic columns from CSV
-  const { user } = useAuth();
+  const { user, token } = useAuth();
 
   // Fetch categories when modal opens
   useEffect(() => {
@@ -74,7 +74,12 @@ const CSVFileModal = ({ open, onClose, onSuccess }) => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/api/cabinet-categories/get`);
+      const response = await axios.get(`${BASE_URL}/api/cabinet-categories/get`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+      );
       setCategories(response.data.data || response.data || []);
     } catch (error) {
       toast.error("Failed to fetch categories");
@@ -83,7 +88,11 @@ const CSVFileModal = ({ open, onClose, onSuccess }) => {
 
   const fetchSubCategories = async (categoryId) => {
     try {
-      const response = await axios.get(`${BASE_URL}/api/cabinet-subcategories/get/${categoryId}`);
+      const response = await axios.get(`${BASE_URL}/api/cabinet-subcategories/get/${categoryId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setSubCategories(response.data || []);
     } catch (error) {
       toast.error("Failed to fetch subcategories");
@@ -360,6 +369,10 @@ const CSVFileModal = ({ open, onClose, onSuccess }) => {
       const res=await axios.post(`${BASE_URL}/api/cabinet/csv`, {
         userId: user.id,
         cabinets: cabinetsToUpload,
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       toast.dismiss();

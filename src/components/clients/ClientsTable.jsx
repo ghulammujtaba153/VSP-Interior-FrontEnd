@@ -55,6 +55,7 @@ const ClientsTable = () => {
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState(false);
   const [editClient, setEditClient] = useState(null);
+  const {token} = useAuth();
   
 
   const [openContactModal, setOpenContactModal] = useState(false);
@@ -105,7 +106,12 @@ const ClientsTable = () => {
         limit: currentRowsPerPage.toString(),
         ...(search && { search })
       });
-      const response = await axios.get(`${BASE_URL}/api/client/get?${searchParams}`);
+      const response = await axios.get(`${BASE_URL}/api/client/get?${searchParams}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
+      }
+      );
       setClients(response.data.data);
       setTotalCount(
         response.data.pagination?.totalItems ||
@@ -168,7 +174,10 @@ const ClientsTable = () => {
   const confirmDeleteClient = async (id) => {
     try {
       await axios.delete(`${BASE_URL}/api/client/delete/${id}`, {
-        data: { userId: user.id }
+        data: { userId: user.id },
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
       toast.success("Client deleted successfully");
       fetchClients();
@@ -185,7 +194,11 @@ const ClientsTable = () => {
 
   const handleStatusUpdate = async (id, status) => {
     try {
-      await axios.put(`${BASE_URL}/api/client/status/${id}`, { status, userId: user.id });
+      await axios.put(`${BASE_URL}/api/client/status/${id}`, { status, userId: user.id }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       toast.success("Status updated successfully");
       fetchClients();
     } catch (error) {
@@ -206,7 +219,12 @@ const ClientsTable = () => {
   // Fetch all clients for export (without pagination)
   const fetchAllClients = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/api/client/get?page=1&limit=10000`); // Large limit to get all
+      const response = await axios.get(`${BASE_URL}/api/client/get?page=1&limit=10000`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        } 
+      }
+      ); // Large limit to get all
       return response.data.data;
     } catch (error) {
       toast.error("Failed to fetch clients for export");
@@ -374,7 +392,8 @@ const ClientsTable = () => {
   const confirmDeleteContact = async (contactId) => {
     try {
       await axios.delete(`${BASE_URL}/api/contact/delete/${contactId}`, {
-        data: { userId: user.id }
+        data: { userId: user.id },
+        headers: { Authorization: `Bearer ${token}` }
       });
       toast.success("Contact deleted successfully");
       fetchClients();

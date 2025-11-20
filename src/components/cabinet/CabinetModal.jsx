@@ -51,7 +51,7 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess, existin
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
+  const { user, token } = useAuth();
 
   // Confirmation dialog states
   const [confirmationOpen, setConfirmationOpen] = useState(false);
@@ -65,7 +65,12 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess, existin
   // Fetch categories and subcategories
   const fetchCategories = async () => {
     try {
-      const response = await axios.get(`${BASE_URL}/api/cabinet-categories/get`);
+      const response = await axios.get(`${BASE_URL}/api/cabinet-categories/get`, {
+
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setCategories(response.data.data || response.data || []);
     } catch (error) {
       toast.error("Failed to fetch categories");
@@ -78,7 +83,11 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess, existin
       return;
     }
     try {
-      const response = await axios.get(`${BASE_URL}/api/cabinet-subcategories/get/${id}`);
+      const response = await axios.get(`${BASE_URL}/api/cabinet-subcategories/get/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       setSubCategories(response.data || []);
     } catch (error) {
       toast.error("Failed to fetch subcategories");
