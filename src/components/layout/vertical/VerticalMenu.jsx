@@ -143,6 +143,8 @@ const VerticalMenu = ({ scrollMenu }) => {
           Project Setup
         </MenuItem> */}
 
+        {/*
+
         
 
         <MenuItem href='/quotes' icon={<i className='tabler-report' />}>
@@ -187,7 +189,7 @@ const VerticalMenu = ({ scrollMenu }) => {
             Employee Access
           </MenuItem>
         
-        </SubMenu> 
+        </SubMenu> */}
 
         
 
@@ -199,7 +201,7 @@ const VerticalMenu = ({ scrollMenu }) => {
 
         {/* <SubMenu label='HR & Documentation' icon={<i className='tabler-file-text' />}></SubMenu> */}
 
-        <SubMenu label='Settings' icon={<i className='tabler-settings' />}></SubMenu> 
+        {/* <SubMenu label='Settings' icon={<i className='tabler-settings' />}></SubMenu>  */}
       
       </Menu>
     </ScrollWrapper>
