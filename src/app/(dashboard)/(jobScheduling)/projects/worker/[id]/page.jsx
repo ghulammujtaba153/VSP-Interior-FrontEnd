@@ -6,14 +6,14 @@ import { useParams } from "next/navigation";
 import { Tabs, Tab, Box, Button, Link } from "@mui/material";
 import { toast } from "react-toastify";
 
-import ProjectOverview from "@/components/project-ui/scheduling/project-details/ProjectOverview";
-import CompletedTab from "@/components/project-ui/scheduling/project-details/employee/CompletedTab";
-import TodayTab from "@/components/project-ui/scheduling/project-details/employee/TodayTab";
-import WeekTab from "@/components/project-ui/scheduling/project-details/employee/WeekTab";
+import ProjectOverview from "@/components/tender/project-ui/scheduling/project-details/ProjectOverview";
+import CompletedTab from "@/components/tender/project-ui/scheduling/project-details/employee/CompletedTab";
+import TodayTab from "@/components/tender/project-ui/scheduling/project-details/employee/TodayTab";
+import WeekTab from "@/components/tender/project-ui/scheduling/project-details/employee/WeekTab";
 import Loader from "@/components/loader/Loader";
 import { BASE_URL } from "@/configs/url";
 import { useAuth } from '@/context/authContext';
-import Kanban from "@/components/project-ui/scheduling/project-details/Kanban";
+import Kanban from "@/components/tender/project-ui/scheduling/project-details/Kanban";
 
 const Page = () => {
   const { id } = useParams();
@@ -29,7 +29,7 @@ const Page = () => {
   // helper: normalize status for comparisons
   const normalizeStatus = (s) => (s || "").toString().toLowerCase();
 
-  // 🧠 Fetch project
+  //  Fetch project
   const fetchProject = async () => {
     setLoading(true);
     try {

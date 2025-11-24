@@ -202,6 +202,7 @@ const AddScheduleDialog = ({ open, onOpenChange, editData, refreshList }) => {
                 <Select
                   labelId="project-label"
                   value={form.projectSetupId}
+                  sx={{ minWidth: 120 }}
                   onChange={(e) =>
                     setForm((prev) => ({ ...prev, projectSetupId: e.target.value }))
                   }
@@ -255,6 +256,7 @@ const AddScheduleDialog = ({ open, onOpenChange, editData, refreshList }) => {
                 <Select
                   labelId="workers-label"
                   multiple
+                  sx={{ minWidth: 150}}
                   value={selectedWorkerIds}
                   onChange={handleWorkerSelection}
                   input={<OutlinedInput label="Assign Workers" />}

@@ -3,7 +3,7 @@
 import { BASE_URL } from '@/configs/url'
 import axios from 'axios'
 import { useEffect, useState } from 'react'
-import Loader from '../loader/Loader'
+import Loader from '@/components/loader/Loader'
 import {
   Box,
   Button,
@@ -101,14 +101,14 @@ const ProjectSetupTable = () => {
     return new Date(dateString).toLocaleDateString()
   }
 
-  // ✅ Export to Excel
+  // ✅ Export to Excel — replaced QS fields with Estimator and Project Date
   const handleExportExcel = () => {
     const exportData = data.map(p => ({
       ID: p.id,
       'Project Name': p.projectName,
       'Site Location': p.siteLocation,
-      'QS Name': p.qsName,
-      'QS Phone': p.qsPhone,
+      Estimator: p.estimator || 'N/A',
+      'Project Date': formatDate(p.projectDate),
       Revision:
         p.revision === 0
           ? 'Awaiting Super Admin Approval'
@@ -226,8 +226,8 @@ const ProjectSetupTable = () => {
               </TableCell>
               <TableCell sx={{minWidth: 250}}>Project Name</TableCell>
               <TableCell sx={{minWidth: 250}}>Site Location</TableCell>
-              <TableCell sx={{minWidth: 250}}>QS Name</TableCell>
-              <TableCell sx={{minWidth: 250}}>QS Phone</TableCell>
+              <TableCell sx={{minWidth: 200}}>Estimator</TableCell>
+              <TableCell sx={{minWidth: 180}}>Project Date</TableCell>
               <TableCell>Client</TableCell>
               <TableCell>Revision</TableCell>
               <TableCell>Created At</TableCell>
@@ -251,8 +251,8 @@ const ProjectSetupTable = () => {
                   </Typography>
                 </TableCell>
                 <TableCell>{project.siteLocation}</TableCell>
-                <TableCell>{project.qsName}</TableCell>
-                <TableCell>{project.qsPhone}</TableCell>
+                <TableCell>{project.estimator || 'N/A'}</TableCell>
+                <TableCell>{formatDate(project.projectDate)}</TableCell>
                 <TableCell>
                   {project.client ? (
                     <Chip
@@ -341,7 +341,7 @@ const ProjectSetupTable = () => {
             ))}
             {data.length === 0 && (
               <TableRow>
-                <TableCell colSpan={10} align='center'>
+                <TableCell colSpan={11} align='center'>
                   No records found
                 </TableCell>
               </TableRow>
