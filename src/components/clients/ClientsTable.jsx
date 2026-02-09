@@ -21,6 +21,7 @@ import {
   TablePagination,
   TextField,
   InputAdornment,
+  Slider,
   Chip,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -35,6 +36,8 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
+import ZoomInIcon from '@mui/icons-material/ZoomIn';
+import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import Loader from '../loader/Loader';
 import { BASE_URL } from '@/configs/url';
 import { useAuth } from '@/context/authContext';
@@ -98,6 +101,27 @@ const ClientsTable = () => {
     console.log("==================");
   }, [theme]);
 
+  // Zoom / font scale state (persisted in localStorage)
+  const [zoom, setZoom] = useState(() => {
+    try {
+      if (typeof window === 'undefined') return 1;
+      const saved = localStorage.getItem('clients_table_zoom');
+      return saved ? parseFloat(saved) : 1;
+    } catch (e) {
+      return 1;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') localStorage.setItem('clients_table_zoom', String(zoom));
+    } catch (e) {}
+  }, [zoom]);
+
+  const handleZoomChange = (event, value) => {
+    setZoom(typeof value === 'number' ? value : parseFloat(value));
+  };
+
   const fetchClients = async (currentPage = page, currentRowsPerPage = rowsPerPage, search = searchTerm) => {
     try {
       setLoading(true);
@@ -135,6 +159,15 @@ const ClientsTable = () => {
   const handleConfirmationClose = () => {
     setConfirmationOpen(false);
     setConfirmationConfig({ title: '', message: '', action: null, severity: 'warning' });
+  };
+
+  // Capitalize name: "acme corp" → "Acme Corp"
+  const capitalizeName = (name) => {
+    if (!name) return 'N/A';
+    return String(name)
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
   };
 
   const handleImportModalOpen = () => {
@@ -650,10 +683,10 @@ const ClientsTable = () => {
   
 
   return (
-    <Paper p={2} sx={{ padding: 2 }} className="zoom-67">
+    <Paper p={2} sx={{ padding: 2, fontSize: `${Math.round(zoom * 100)}%` }} className="zoom-67">
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h5">Clients</Typography>
-        <Box display="flex" gap={1}>
+        <Box display="flex" gap={1} alignItems="center">
           <Button variant="outlined" color="primary" onClick={handleImportModalOpen}>
             Import Clients
           </Button>
@@ -664,8 +697,24 @@ const ClientsTable = () => {
           <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={handleAdd}>
             Add Client
           </Button>
+          <Box display="flex" alignItems="center" sx={{ ml: 1 }}>
+            <ZoomOutIcon fontSize="small" />
+            <Slider
+              value={zoom}
+              onChange={handleZoomChange}
+              step={0.05}
+              min={0.8}
+              max={1.6}
+              aria-label="Zoom"
+              sx={{ width: 140, mx: 1 }}
+            />
+            <ZoomInIcon fontSize="small" />
+            <Typography variant="body2" sx={{ ml: 1, width: 48 }}>{Math.round(zoom * 100)}%</Typography>
+          </Box>
         </Box>
       </Box>
+
+      <Box sx={{ transform: `scale(${zoom})`, transformOrigin: 'top left', width: `${100/zoom}%` }}>
 
       {/* Search Section */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
@@ -768,7 +817,7 @@ const ClientsTable = () => {
               <TableRow>
                 <TableCell width="50px"></TableCell>
                 <TableCell sx={{ minWidth: 90 }}><strong>Client ID</strong></TableCell>
-                <TableCell sx={{ minWidth: 260 }}><strong>Name</strong></TableCell>
+                <TableCell sx={{ minWidth: 260, maxWidth: 290 }}><strong>Name</strong></TableCell>
                 <TableCell sx={{ minWidth: 220 }}><strong>Email</strong></TableCell>
                 <TableCell sx={{ minWidth: 160 }}><strong>Phone</strong></TableCell>
                 <TableCell sx={{ minWidth: 300 }}><strong>Address</strong></TableCell>
@@ -810,7 +859,7 @@ const ClientsTable = () => {
                     <TableCell>{client.id}</TableCell>
                     <TableCell>
                       <Typography variant="body2" fontWeight="medium" noWrap sx={{ maxWidth: 260 }}>
-                        {client.companyName}
+                        {capitalizeName(client.companyName)}
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -916,6 +965,8 @@ const ClientsTable = () => {
           labelDisplayedRows={({ from, to, count }) => `${from}-${to} of ${count !== -1 ? count : `more than ${to}`}`}
         />
       </Paper>
+
+      </Box>
 
       <ConfirmationDialog
         open={confirmationOpen}

@@ -15,14 +15,14 @@ import {
   Paper
 } from '@mui/material';
 import Link from 'next/link';
-import ProjectOverview from '@/components/project-ui/scheduling/project-details/ProjectOverview';
-import Kanban from '@/components/project-ui/scheduling/project-details/Kanban';
-import GanttChart from '@/components/project-ui/scheduling/project-details/GanttChart';
-import CalenderView from '@/components/project-ui/scheduling/project-details/CalenderView';
-import Notes from  "@/components/project-ui/scheduling/project-details/Notes"
-import InventoryView from '@/components/project-ui/scheduling/project-details/InventoryView';
-import Calender from '@/components/project-ui/scheduling/project-details/Calender';
-import WorkerView from '@/components/project-ui/scheduling/project-details/WorkerView';
+import ProjectOverview from '@/components/tender/project-ui/scheduling/project-details/ProjectOverview';
+import Kanban from '@/components/tender/project-ui/scheduling/project-details/Kanban';
+import GanttChart from '@/components/tender/project-ui/scheduling/project-details/GanttChart';
+import CalenderView from '@/components/tender/project-ui/scheduling/project-details/CalenderView';
+import Notes from  "@/components/tender/project-ui/scheduling/project-details/Notes"
+import InventoryView from '@/components/tender/project-ui/scheduling/project-details/InventoryView';
+import Calender from '@/components/tender/project-ui/scheduling/project-details/Calender';
+import WorkerView from '@/components/tender/project-ui/scheduling/project-details/WorkerView';
 
 const Page = () => {
   const { id } = useParams();

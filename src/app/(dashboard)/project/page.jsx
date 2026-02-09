@@ -1,8 +1,7 @@
 "use client"
 
 import React from 'react'
-import CreateProject from '../../../components/pre-tender/CreateProject'
-import ProjectSetupTable from '@/components/pre-tender/ProjectSetupTable'
+import ProjectSetupTable from '@/components/tender/pre-tender/ProjectSetupTable'
 
 const page = () => {
   return (

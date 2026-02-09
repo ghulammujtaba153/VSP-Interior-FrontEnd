@@ -54,6 +54,12 @@ const EditContact = ({ open, onClose, contact, onContactUpdated }) => {
     setData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handlePhoneChange = (value) => {
+    const phoneValue = String(value || "").trim();
+    console.log("Phone value changed:", phoneValue);
+    setData((prev) => ({ ...prev, phoneNumber: phoneValue }));
+  };
+
   const showConfirmation = (config) => {
     setConfirmationConfig(config);
     setConfirmationOpen(true);
@@ -76,10 +82,11 @@ const EditContact = ({ open, onClose, contact, onContactUpdated }) => {
   const submitContactUpdate = async () => {
     try {
       toast.loading("Updating contact...");
+      console.log("Submitting contact data:", data);
 
       await axios.put(`${BASE_URL}/api/supplier-contacts/update/${contact.id}`, {
         ...data,
-        phoneNumber: parseInt(data.phoneNumber),
+        phoneNumber: data.phoneNumber, // Keep as string to preserve full phone number
         userId: user.id,
       });
 
@@ -132,12 +139,11 @@ const EditContact = ({ open, onClose, contact, onContactUpdated }) => {
           <MuiTelInput
             name="phoneNumber"
             label="Phone Number"
-            value={data.phoneNumber}
-            onChange={(value) => setData({ ...data, phoneNumber: value })}
+            value={data.phoneNumber || ""}
+            onChange={handlePhoneChange}
             fullWidth
             type="tel"
             defaultCountry="NZ"
-            limit={11}
           />
         </Stack>
       </DialogContent>

@@ -100,7 +100,11 @@ const CreateProjectStep2 = ({ records, setRecords }) => {
   // Convert inputs to proper values
   const normalizeValue = (val) => {
     if (val === "" || val === null || val === undefined) return null;
-    return isNaN(val) ? val : parseFloat(val);
+    // accept strings like "1,234.56" or with spaces, plus signs, etc.
+    const cleaned = String(val).replace(/[, ]+/g, "").trim();
+    if (cleaned === "") return null;
+    const num = parseFloat(cleaned);
+    return Number.isFinite(num) ? num : null;
   };
 
   // Calculate sell price based on cost and markup
@@ -176,14 +180,18 @@ const CreateProjectStep2 = ({ records, setRecords }) => {
             <Grid item xs={12} sm={3} key={`${rateType.type}-${field.name}-${fieldIndex}`}>
               <TextField
                 fullWidth
-                type="number"
+                // use text input (no native spinner), but hint that it's numeric
+                type="text"
                 label={field.label}
                 placeholder={field.placeholder}
                 value={getRecordValue(rateType.type, field.name)}
                 onChange={(e) => handleChange(rateType.type, field.name, e.target.value)}
                 inputProps={{
-                  min: 0,
-                  step: "0.01",
+                  // mobile numeric keyboard
+                  inputMode: "decimal",
+                  pattern: "[0-9]*[.,]?[0-9]*",
+                  // keep step metadata for semantics if needed
+                  "aria-label": field.label,
                 }}
                 size="small"
                 variant="outlined"
@@ -193,15 +201,6 @@ const CreateProjectStep2 = ({ records, setRecords }) => {
                     backgroundColor: "action.hover",
                     color: "text.primary",
                   },
-                  // 🔴 Remove arrows in number input (Chrome, Safari, Edge)
-    "& input[type=number]::-webkit-outer-spin-button, & input[type=number]::-webkit-inner-spin-button": {
-      WebkitAppearance: "none",
-      margin: 0,
-    },
-    // 🔴 Remove arrows in Firefox
-    "& input[type=number]": {
-      MozAppearance: "textfield"
-    }
                 }}
               />
             </Grid>

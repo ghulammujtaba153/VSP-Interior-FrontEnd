@@ -83,7 +83,7 @@ const MaterialTable = ({id}) => {
       const res = await axios.get(
         `${BASE_URL}/api/cabinet/get/${id}?page=${page + 1}&limit=${limit}&search=${search}&subCode=${subCodeParam}`, {
           headers: {
-            Authorization: `Bearer ${user.token}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );

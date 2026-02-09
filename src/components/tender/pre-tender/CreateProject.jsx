@@ -1,5 +1,3 @@
-
-
 'use client'
 
 import React, { useEffect, useState } from 'react'
@@ -29,7 +27,8 @@ import CreateProjectStep2 from './CreateProjectStep2'
 import CreateProjectStep3 from './CreateProjectStep3'
 import CreateProjectStep4 from './CreateProjectStep4'
 import CreateProjectStep5 from './CreateProjectStep5'
-import Loader from '../loader/Loader'
+import Loader from '@/components/loader/Loader'
+
 
 const steps = [
   { label: 'Project Details', component: CreateProjectStep1 },
@@ -102,8 +101,13 @@ const CreateProject = () => {
 
   // Handle submit
   const handleSubmit = async () => {
+    // clone project data and remove clientPhone/clientEmail before sending
+    const sanitizedProject = { ...step1Data };
+    delete sanitizedProject.clientPhone;
+    delete sanitizedProject.clientEmail;
+
     const payload = {
-      project: step1Data,
+      project: sanitizedProject,
       rates: step2Data,
       materials: step3Data,
       costingSheet: step5Data,

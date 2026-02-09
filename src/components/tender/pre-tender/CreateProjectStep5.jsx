@@ -76,7 +76,7 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
     drawingNo: "",
     Revision: "",
     Measure: "",
-    qunatity: "",
+    quantity: "",
     unitType: "",
     unitLength: "",
     wasteOverRide: "",
@@ -85,7 +85,7 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
       code: "",
       description: "",
       measure: "",
-      qunatity: "",
+      quantity: "",
       carcaseFinish: "",
       externalFinish: "",
       mateialRate: "",
@@ -97,7 +97,7 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
       code: "",
       description: "",
       measure: "",
-      qunatity: "",
+      quantity: "",
       carcaseFinish: "",
       externalFinish: "",
       mateialRate: "",
@@ -109,7 +109,7 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
       code: "",
       description: "",
       measure: "",
-      qunatity: "",
+      quantity: "",
       mateialRate: "",
       materialTotal: "",
       grain: "",
@@ -119,7 +119,7 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
       code: "",
       description: "",
       measure: "",
-      qunatity: "",
+      quantity: "",
       mateialRate: "",
       materialTotal: "",
       grain: "",
@@ -129,7 +129,7 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
       code: "",
       description: "",
       measure: "",
-      qunatity: "",
+      quantity: "",
       mateialRate: "",
       materialTotal: "",
       grain: "",
@@ -139,7 +139,7 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
       code: "",
       description: "",
       measure: "",
-      qunatity: "",
+      quantity: "",
       mateialRate: "",
       materialTotal: "",
       grain: "",
@@ -149,7 +149,7 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
       code: "",
       description: "",
       measure: "",
-      qunatity: "",
+      quantity: "",
       mateialRate: "",
       materialTotal: "",
       grain: "",
@@ -158,7 +158,7 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
     miscItems: [{
       description: "",
       measure: "",
-      qunatity: "",
+      quantity: "",
       mateialRate: "",
       materialTotal: "",
       grain: "",
@@ -167,7 +167,7 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
     buyInItems: [{
       description: "",
       measure: "",
-      qunatity: "",
+      quantity: "",
       mateialRate: "",
       materialTotal: "",
       grain: "",
@@ -176,19 +176,19 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
     other: {
       extraFreight: {
         description: "",
-        extraQunatity: "",
+        extraQuantity: "",
         height: "",
         length: "",
         depth: "",
         measures: "",
-        qunatity: "",
+        quantity: "",
         rate: "",
         subTotal: "",
         notes: ""
       }, 
       draftingHours: {
         measures: "",
-        qunatity: "",
+        quantity: "",
         rate: "",
         subTotal: "",
         notes: ""
@@ -197,21 +197,21 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
     extraLabourHours: {
       extraHourMachining: {
         measures: "",
-        qunatity: "",
+        quantity: "",
         rate: "",
         subTotal: "",
         notes: ""
       },
       extraHourAssembly: {
         measures: "",
-        qunatity: "",
+        quantity: "",
         rate: "",
         subTotal: "",
         notes: ""
       },
       extraHourSite: {
         measures: "",
-        qunatity: "",
+        quantity: "",
         rate: "",
         subTotal: "",
         notes: ""
@@ -342,39 +342,39 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
   const getArrayTemplate = (section) => {
     const templates = {
       cabinetLookUp: {
-        code: "", description: "", measure: "", qunatity: "", carcaseFinish: "",
+        code: "", description: "", measure: "", quantity: "", carcaseFinish: "",
         externalFinish: "", mateialRate: "", materialTotal: "", grain: "", notes: ""
       },
       wallPanelling: {
-        code: "", description: "", measure: "", qunatity: "", carcaseFinish: "",
+        code: "", description: "", measure: "", quantity: "", carcaseFinish: "",
         externalFinish: "", mateialRate: "", materialTotal: "", grain: "", notes: ""
       },
       hardwareLookUp: {
-        code: "", description: "", measure: "", qunatity: "", mateialRate: "",
+        code: "", description: "", measure: "", quantity: "", mateialRate: "",
         materialTotal: "", grain: "", notes: ""
       },
       trims: {
-        code: "", description: "", measure: "", qunatity: "", mateialRate: "",
+        code: "", description: "", measure: "", quantity: "", mateialRate: "",
         materialTotal: "", grain: "", notes: ""
       },
       splitBattens: {
-        code: "", description: "", measure: "", qunatity: "", mateialRate: "",
+        code: "", description: "", measure: "", quantity: "", mateialRate: "",
         materialTotal: "", grain: "", notes: ""
       },
       drawers: {
-        code: "", description: "", measure: "", qunatity: "", mateialRate: "",
+        code: "", description: "", measure: "", quantity: "", mateialRate: "",
         materialTotal: "", grain: "", notes: ""
       },
       hinges: {
-        code: "", description: "", measure: "", qunatity: "", mateialRate: "",
+        code: "", description: "", measure: "", quantity: "", mateialRate: "",
         materialTotal: "", grain: "", notes: ""
       },
       miscItems: {
-        description: "", measure: "", qunatity: "", mateialRate: "", materialTotal: "",
+        description: "", measure: "", quantity: "", mateialRate: "", materialTotal: "",
         grain: "", notes: ""
       },
       buyInItems: {
-        description: "", measure: "", qunatity: "", mateialRate: "", materialTotal: "",
+        description: "", measure: "", quantity: "", mateialRate: "", materialTotal: "",
         grain: "", notes: ""
       }
     };
@@ -609,7 +609,7 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
             </Typography>
           </Box>
         <Grid container spacing={2}>
-          {['unitName', 'drawingNo', 'Revision', 'Measure', 'qunatity', 'unitType', 'unitLength', 'wasteOverRide', 'location'].map(field => (
+          {['unitName', 'drawingNo', 'Revision', 'Measure', 'quantity', 'unitType', 'unitLength', 'wasteOverRide', 'location'].map(field => (
             <Grid item xs={12} sm={6} md={4} key={field}>
                 <MemoizedTextField
                 fullWidth
@@ -650,27 +650,27 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
           {/* Tab Panel 0: Materials & Cabinets */}
           <TabPanel value={activeTab} index={0}>
             <Box sx={{ p: 2 }}>
-      {renderArraySection('Cabinet Lookup', 'cabinetLookUp', ['code', 'description', 'measure', 'qunatity', 'carcaseFinish', 'externalFinish', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
-      {renderArraySection('Wall Panelling', 'wallPanelling', ['code', 'description', 'measure', 'qunatity', 'carcaseFinish', 'externalFinish', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
+      {renderArraySection('Cabinet Lookup', 'cabinetLookUp', ['code', 'description', 'measure', 'quantity', 'carcaseFinish', 'externalFinish', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
+      {renderArraySection('Wall Panelling', 'wallPanelling', ['code', 'description', 'measure', 'quantity', 'carcaseFinish', 'externalFinish', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
             </Box>
           </TabPanel>
 
           {/* Tab Panel 1: Hardware & Trims */}
           <TabPanel value={activeTab} index={1}>
             <Box sx={{ p: 2 }}>
-      {renderArraySection('Hardware Lookup', 'hardwareLookUp', ['code', 'description', 'measure', 'qunatity', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
-      {renderArraySection('Trims', 'trims', ['code', 'description', 'measure', 'qunatity', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
-              {renderArraySection('Hinges', 'hinges', ['code', 'description', 'measure', 'qunatity', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
+      {renderArraySection('Hardware Lookup', 'hardwareLookUp', ['code', 'description', 'measure', 'quantity', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
+      {renderArraySection('Trims', 'trims', ['code', 'description', 'measure', 'quantity', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
+              {renderArraySection('Hinges', 'hinges', ['code', 'description', 'measure', 'quantity', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
             </Box>
           </TabPanel>
 
           {/* Tab Panel 2: Additional Items */}
           <TabPanel value={activeTab} index={2}>
             <Box sx={{ p: 2 }}>
-      {renderArraySection('Split Battens', 'splitBattens', ['code', 'description', 'measure', 'qunatity', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
-      {renderArraySection('Drawers', 'drawers', ['code', 'description', 'measure', 'qunatity', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
-      {renderArraySection('Misc Items', 'miscItems', ['description', 'measure', 'qunatity', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
-      {renderArraySection('Buy In Items', 'buyInItems', ['description', 'measure', 'qunatity', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
+      {renderArraySection('Split Battens', 'splitBattens', ['code', 'description', 'measure', 'quantity', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
+      {renderArraySection('Drawers', 'drawers', ['code', 'description', 'measure', 'quantity', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
+      {renderArraySection('Misc Items', 'miscItems', ['description', 'measure', 'quantity', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
+      {renderArraySection('Buy In Items', 'buyInItems', ['description', 'measure', 'quantity', 'mateialRate', 'materialTotal', 'grain', 'notes'])}
             </Box>
           </TabPanel>
 
@@ -680,15 +680,15 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
               <Typography variant="h6" sx={{ mb: 3, fontWeight: 600, color: 'primary.main' }}>
                 Additional Costs
               </Typography>
-              {renderNestedSection('Extra Freight', 'extraFreight', ['description', 'extraQunatity', 'height', 'length', 'depth', 'measures', 'qunatity', 'rate', 'subTotal', 'notes'], <LibraryIcon color="primary" />)}
-              {renderNestedSection('Drafting Hours', 'draftingHours', ['measures', 'qunatity', 'rate', 'subTotal', 'notes'], <BuildIcon color="primary" />)}
+              {renderNestedSection('Extra Freight', 'extraFreight', ['description', 'extraQuantity', 'height', 'length', 'depth', 'measures', 'quantity', 'rate', 'subTotal', 'notes'], <LibraryIcon color="primary" />)}
+              {renderNestedSection('Drafting Hours', 'draftingHours', ['measures', 'quantity', 'rate', 'subTotal', 'notes'], <BuildIcon color="primary" />)}
 
               <Typography variant="h6" sx={{ mt: 4, mb: 3, fontWeight: 600, color: 'primary.main' }}>
                 Extra Labour Hours
               </Typography>
-          {renderLabourSection('Extra Hour Machining', 'extraHourMachining', ['measures', 'qunatity', 'rate', 'subTotal', 'notes'])}
-          {renderLabourSection('Extra Hour Assembly', 'extraHourAssembly', ['measures', 'qunatity', 'rate', 'subTotal', 'notes'])}
-          {renderLabourSection('Extra Hour Site', 'extraHourSite', ['measures', 'qunatity', 'rate', 'subTotal', 'notes'])}
+          {renderLabourSection('Extra Hour Machining', 'extraHourMachining', ['measures', 'quantity', 'rate', 'subTotal', 'notes'])}
+          {renderLabourSection('Extra Hour Assembly', 'extraHourAssembly', ['measures', 'quantity', 'rate', 'subTotal', 'notes'])}
+          {renderLabourSection('Extra Hour Site', 'extraHourSite', ['measures', 'quantity', 'rate', 'subTotal', 'notes'])}
             </Box>
           </TabPanel>
 

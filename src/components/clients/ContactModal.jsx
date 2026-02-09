@@ -63,7 +63,7 @@ const ContactModal = ({ open, onClose, clientId, editContact, refreshContacts })
           lastName: editContact.lastName,
           role: editContact.role,
           emailAddress: editContact.emailAddress,
-          phoneNumber: editContact.phoneNumber,
+          phoneNumber: editContact.phoneNumber || "",
         });
       } else {
         // Adding new contact
@@ -81,6 +81,15 @@ const ContactModal = ({ open, onClose, clientId, editContact, refreshContacts })
 
   const handleChange = (e) => {
     setContact({ ...contact, [e.target.name]: e.target.value });
+  };
+
+  const handlePhoneChange = (value) => {
+    // MuiTelInput returns the full E.164 format or user input
+    // Ensure we capture the complete phone number string
+    console.log("Raw phone input:", value);
+    const phoneValue = String(value || "").trim();
+    console.log("Phone value changed:", phoneValue);
+    setContact({ ...contact, phoneNumber: phoneValue });
   };
 
   const showConfirmation = (config) => {
@@ -117,6 +126,7 @@ const ContactModal = ({ open, onClose, clientId, editContact, refreshContacts })
 
   const submitContact = async () => {
     setLoading(true);
+    console.log("Submitting contact:", contact);
 
     try {
       const isEditMode = !!editContact;
@@ -151,7 +161,7 @@ const ContactModal = ({ open, onClose, clientId, editContact, refreshContacts })
     <Modal open={open} onClose={onClose}>
       <Box sx={modalStyle}>
         <Typography variant="h6" mb={2}>
-          {editContact ? "Edit Contact" : "Add Contact"}
+          {editContact ? "Edit Contact1" : "Add Contact"}
         </Typography>
         <form onSubmit={handleSubmit}>
           <TextField
@@ -195,8 +205,8 @@ const ContactModal = ({ open, onClose, clientId, editContact, refreshContacts })
             fullWidth
             defaultCountry="NZ"
             label="Phone Number"
-            value={contact.phoneNumber}
-            onChange={(value) => setContact({ ...contact, phoneNumber: value })}
+            value={contact.phoneNumber || ""}
+            onChange={handlePhoneChange}
             margin="normal"
             required
           />

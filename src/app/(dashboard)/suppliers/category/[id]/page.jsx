@@ -224,9 +224,10 @@ const SupplierCategoryPage = () => {
   const handleVersionConfirm = async () => {
     toast.loading('Please wait...')
     try {
-      // For creation only: calculate version based on selection
       let version = selectedVersion
+      
       if (versionAction === 'new') {
+        // For new versions, auto-increment version number
         if (availableVersions.length === 0) {
           version = 'v1'
         } else {
@@ -234,29 +235,55 @@ const SupplierCategoryPage = () => {
           version = `v${maxVersion + 1}`
         }
       }
-
-      // Check for duplicates (same name and version in this category)
-      const duplicate = data.find(
-        item => item.name.toLowerCase() === formData.name.toLowerCase() && item.version === version
-      )
-
-      if (duplicate) {
+      
+      // If updating existing version, find and UPDATE that item
+      if (versionAction === 'existing') {
+        const existingItem = data.find(
+          item => item.name.toLowerCase() === formData.name.toLowerCase() && item.version === selectedVersion
+        )
+        
+        if (!existingItem) {
+          toast.dismiss()
+          toast.error(`Item "${formData.name}" with version ${selectedVersion} not found`)
+          return
+        }
+        
+        // Update existing item
+        await axios.put(`${BASE_URL}/api/pricebook/update/${existingItem.id}`, {
+          ...formData,
+          supplierId: formData.supplierId,
+          priceBookCategoryId: id,
+          version: selectedVersion,
+          status: 'Active'
+        })
+        
         toast.dismiss()
-        toast.error(`Item "${formData.name}" already exists in version ${version}`)
-        return
+        toast.success('Item updated successfully')
+      } else {
+        // Creating new version - check for duplicates
+        const duplicate = data.find(
+          item => item.name.toLowerCase() === formData.name.toLowerCase() && item.version === version
+        )
+
+        if (duplicate) {
+          toast.dismiss()
+          toast.error(`Item "${formData.name}" already exists in version ${version}`)
+          return
+        }
+
+        // Create new pricebook item
+        await axios.post(`${BASE_URL}/api/pricebook/create`, {
+          ...formData,
+          supplierId: formData.supplierId,
+          priceBookCategoryId: id,
+          version: version,
+          status: 'Active'
+        })
+
+        toast.dismiss()
+        toast.success('Item added successfully')
       }
-
-      // Create new pricebook item (status default Active) - supplierId is required
-      await axios.post(`${BASE_URL}/api/pricebook/create`, {
-        ...formData,
-        supplierId: formData.supplierId,
-        priceBookCategoryId: id,
-        version: version,
-        status: 'Active'
-      })
-
-      toast.dismiss()
-      toast.success('Item added successfully')
+      
       setOpenVersionDialog(false)
       setFormData({ name: '', description: '', unit: '', price: '', supplierId: '', status: 'Active' })
       fetchCategory()

@@ -49,8 +49,13 @@ const AddContact = ({ open, onClose, supplierId, onContactAdded }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     setData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handlePhoneChange = (value) => {
+    const phoneValue = String(value || "").trim();
+    console.log("Phone value changed:", phoneValue);
+    setData((prev) => ({ ...prev, phoneNumber: phoneValue }));
   };
 
   const showConfirmation = (config) => {
@@ -75,10 +80,11 @@ const AddContact = ({ open, onClose, supplierId, onContactAdded }) => {
   const submitContact = async () => {
     try {
       toast.loading("Adding contact...");
+      console.log("Submitting contact data:", data);
 
       const res = await axios.post(`${BASE_URL}/api/supplier-contacts/create`, {
         ...data,
-        phoneNumber: parseInt(data.phoneNumber),
+        phoneNumber: data.phoneNumber, // Keep as string to preserve full phone number
         supplierId: parseInt(data.supplierId),
         userId: user.id,
       });
@@ -132,12 +138,11 @@ const AddContact = ({ open, onClose, supplierId, onContactAdded }) => {
           <MuiTelInput
             name="phoneNumber"
             label="Phone Number"
-            value={data.phoneNumber}
-            onChange={(value) => setData({ ...data, phoneNumber: value })}
+            value={data.phoneNumber || ""}
+            onChange={handlePhoneChange}
             fullWidth
             type="tel"
             defaultCountry="NZ"
-            limit={11}
           />
         </Stack>
       </DialogContent>

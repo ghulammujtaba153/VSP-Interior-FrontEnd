@@ -93,6 +93,15 @@ const SupplierTable = () => {
         setConfirmationConfig({ title: '', message: '', action: null, severity: 'warning' });
     };
 
+    // Capitalize name: "apple inc" → "Apple Inc"
+    const capitalizeName = (name) => {
+        if (!name) return 'N/A';
+        return String(name)
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
+    };
+
     const handleImportCSV = () => {
         showConfirmation({
             title: 'Import Suppliers',
@@ -750,7 +759,7 @@ const SupplierTable = () => {
                                         <TableCell>{supplier.id}</TableCell>
                                         <TableCell>
                                             <Typography variant="body2" fontWeight="medium">
-                                                {supplier.name}
+                                                {capitalizeName(supplier.name)}
                                             </Typography>
                                         </TableCell>
                                         

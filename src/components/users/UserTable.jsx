@@ -186,8 +186,26 @@ const UserTable = () => {
     XLSX.writeFile(workbook, "users.xlsx");
   };
 
+  // Capitalize name: "john more" → "John More"
+  const capitalizeName = (name) => {
+    if (!name) return 'N/A';
+    return String(name)
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   const columns = [
-    { field: 'name', headerName: 'Name', flex: 1 },
+    {
+      field: 'name',
+      headerName: 'Name',
+      flex: 1,
+      renderCell: (params) => {
+        const row = params?.row;
+        if (!row || !row.name) return 'N/A';
+        return capitalizeName(row.name);
+      }
+    },
     { field: 'email', headerName: 'Email', flex: 1.5 },
     {
       field: 'Role',
