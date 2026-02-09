@@ -8,6 +8,7 @@ import { useParams } from 'next/navigation'
 import { Tabs, Tab, Box, Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Paper } from '@mui/material'
 import axios from 'axios'
 import { BASE_URL } from '@/configs/url'
+import { useAuth } from '@/context/authContext'
 
 
 const SubCategoriesPage = () => {
@@ -17,12 +18,17 @@ const SubCategoriesPage = () => {
   const [pendingTab, setPendingTab] = useState(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [data, setData] = useState([]);
+  const { token } = useAuth()
+
 
 
 
   const fetchData = async () => {
+    console.log("fetching category data for id", id, localStorage.getItem('token'))
     try {
-      const res = await axios.get(`${BASE_URL}/api/cabinet-categories/get/${id}`);
+      const res = await axios.get(`${BASE_URL}/api/cabinet-categories/get/${id}`, {
+        headers: {Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
       setData(res.data);
     } catch (error) {
       console.error('Error fetching data:', error);
