@@ -23,14 +23,24 @@ jobs:
         run: |
           echo "Deploying branch: ${{ github.ref_name }}"
 
-          # Pass branch name to SSH session
           ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << EOF
             set -e
 
             # Receive branch name from GitHub Actions
             BRANCH_NAME="${{ github.ref_name }}"
-
             echo "Deploying branch: \$BRANCH_NAME"
+
+            # ==============================
+            # Node.js check and install (>=20.9.0)
+            # ==============================
+            if ! command -v node >/dev/null || [ \$(node -v | cut -d "v" -f2 | cut -d"." -f1) -lt 20 ]; then
+              echo "Installing Node.js 20..."
+              curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
+              sudo dnf install -y nodejs
+            fi
+
+            echo "Node version: \$(node -v)"
+            echo "NPM version: \$(npm -v)"
 
             # ==============================
             # Branch Configuration
@@ -57,7 +67,7 @@ jobs:
             echo "Port: \$PORT"
 
             # ==============================
-            # Create directory if not exists
+            # Create directory if missing
             # ==============================
             if [ ! -d "\$PROJECT_DIR" ]; then
               mkdir -p "\$PROJECT_DIR"
@@ -88,19 +98,19 @@ jobs:
             rm -rf .next
 
             # ==============================
-            # Install dependencies (ignore peer conflicts)
+            # Install dependencies
             # ==============================
             echo "Installing dependencies..."
             npm ci --legacy-peer-deps --prefer-offline --no-audit
 
             # ==============================
-            # Build Next.js application
+            # Build Next.js
             # ==============================
             echo "Building Next.js application..."
             npm run build
 
             # ==============================
-            # Kill existing process gracefully
+            # Stop existing app
             # ==============================
             if lsof -Pi :\$PORT -sTCP:LISTEN -t >/dev/null 2>&1; then
               echo "Stopping existing process on port \$PORT..."
@@ -109,16 +119,15 @@ jobs:
             fi
 
             # ==============================
-            # Start Next.js application
+            # Start Next.js with nohup
             # ==============================
             echo "Starting Next.js application on port \$PORT..."
             PORT=\$PORT nohup npm run start > "/tmp/\$APP_NAME.log" 2>&1 &
 
-            sleep 5
-
             # ==============================
             # Verify deployment
             # ==============================
+            sleep 5
             if lsof -Pi :\$PORT -sTCP:LISTEN -t >/dev/null 2>&1 ; then
               echo "✓ Deployment successful!"
               echo "Application \$APP_NAME is running on port \$PORT"
