@@ -70,19 +70,17 @@ jobs:
           
           echo "Creating .env file on EC2..."
           if [ "${GITHUB_REF#refs/heads/}" = "main" ]; then
-            ENV_CONTENT="${{ secrets.ENV_PROD }}"
+            echo "${{ secrets.ENV_PROD }}" | ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} "cat > /home/ec2-user/${{ env.PROJECT_DIR }}/.env"
           else
-            ENV_CONTENT="${{ secrets.ENV_DEV }}"
+            echo "${{ secrets.ENV_DEV }}" | ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} "cat > /home/ec2-user/${{ env.PROJECT_DIR }}/.env"
           fi
-          
-          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} "echo \"${ENV_CONTENT}\" > /home/ec2-user/${{ env.PROJECT_DIR }}/.env"
 
       # -----------------------------
       # Start the app on EC2
       # -----------------------------
       - name: Start App on EC2
         run: |
-          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -o ConnectTimeout=10 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
             set -e
             cd /home/ec2-user/${{ env.PROJECT_DIR }}
 
