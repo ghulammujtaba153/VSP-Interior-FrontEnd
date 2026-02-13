@@ -128,6 +128,7 @@ const PermissionWrapper = ({
   if (!userHasPermission) {
     if (showDeniedMessage && React.isValidElement(children)) {
       return React.cloneElement(children, {
+        disabled: true,
         onClick: (e) => {
           e.preventDefault();
           e.stopPropagation();

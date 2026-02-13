@@ -42,6 +42,7 @@ import { useParams } from "next/navigation"
 import Notification from "@/components/Notification"
 import ConfirmationDialog from "@/components/ConfirmationDialog"
 import { useAuth } from "@/context/authContext"
+import PermissionWrapper from "@/components/PermissionWrapper"
 
 // Utility to normalize header names (lowercase, trimmed)
 function normalizeHeader(header) {
@@ -661,21 +662,23 @@ const CabinetImport = ({ id, setIsInProgress, categoryName }) => {
               <Chip label="+ dynamic columns" color="secondary" size="small" variant="outlined" />
             </Box>
             
-            <Button
-              variant="outlined"
-              component="label"
-              startIcon={<CloudUpload />}
-              sx={{ mb: 2 }}
-            >
-              Upload Excel File
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={handleFileUpload}
-                hidden
-              />
-            </Button>
+            <PermissionWrapper resource="Cabinet" action="canCreate">
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<CloudUpload />}
+                sx={{ mb: 2 }}
+              >
+                Upload Excel File
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleFileUpload}
+                  hidden
+                />
+              </Button>
+            </PermissionWrapper>
           </Paper>
           
           {columns.length > 0 && (
@@ -718,24 +721,28 @@ const CabinetImport = ({ id, setIsInProgress, categoryName }) => {
               </List>
               
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
-                <Button
-                  variant="contained"
-                  color="success"
-                  disabled={uniqueSubcategories.length === 0 || loading || subcategoriesUploaded}
-                  onClick={handleUploadSubcategories}
-                >
-                  {subcategoriesUploaded ? "Subcategories Uploaded ✓" : "Upload Subcategories"}
-                </Button>
+                <PermissionWrapper resource="Cabinet" action="canCreate">
+                  <Button
+                    variant="contained"
+                    color="success"
+                    disabled={uniqueSubcategories.length === 0 || loading || subcategoriesUploaded}
+                    onClick={handleUploadSubcategories}
+                  >
+                    {subcategoriesUploaded ? "Subcategories Uploaded ✓" : "Upload Subcategories"}
+                  </Button>
+                </PermissionWrapper>
                 
                 {/* Only show Next button after subcategories are uploaded */}
                 {subcategoriesUploaded && (
-                  <Button
-                    variant="contained"
-                    onClick={handleNext}
-                    disabled={uniqueSubcategories.length === 0 || loading}
-                  >
-                    Next
-                  </Button>
+                  <PermissionWrapper resource="Cabinet" action="canCreate">
+                    <Button
+                      variant="contained"
+                      onClick={handleNext}
+                      disabled={uniqueSubcategories.length === 0 || loading}
+                    >
+                      Next
+                    </Button>
+                  </PermissionWrapper>
                 )}
               </Box>
             </Paper>

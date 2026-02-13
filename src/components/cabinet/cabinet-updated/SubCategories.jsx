@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
+import PermissionWrapper from '@/components/PermissionWrapper'
 import SubCategoryModal from '../categories/SubCategoryModal'
 import { BASE_URL } from '@/configs/url'
 import { toast } from 'react-toastify'
@@ -98,13 +99,15 @@ const SubCategories = ({ id }) => {
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
         <Typography variant="h6">Subcategories</Typography>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAdd}
-        >
-          Add Subcategory
-        </Button>
+        <PermissionWrapper resource="Cabinet" action="canCreate">
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleAdd}
+          >
+            Add Subcategory
+          </Button>
+        </PermissionWrapper>
       </Box>
       {loading ? (
         <Loader />
@@ -131,12 +134,7 @@ const SubCategories = ({ id }) => {
                   <TableRow
                     key={sub.id}
                     hover
-                    sx={{
-                      backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
-                      '&:hover': {
-                        backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
-                      }
-                    }}
+                    
                   >
                     {/* <TableCell>{page * rowsPerPage + idx + 1}</TableCell> */}
                     <TableCell>{sub.name}</TableCell>
@@ -144,15 +142,19 @@ const SubCategories = ({ id }) => {
                       {sub.createdAt ? new Date(sub.createdAt).toLocaleString() : "-"}
                     </TableCell>
                     <TableCell align="right">
-                      <IconButton onClick={() => handleEdit(sub)} color="primary">
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        onClick={() => handleDeleteSubCategory(sub.id)}
-                        color="error"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
+                      <PermissionWrapper resource="Cabinet" action="canEdit">
+                        <IconButton onClick={() => handleEdit(sub)} color="primary">
+                          <EditIcon />
+                        </IconButton>
+                      </PermissionWrapper>
+                      <PermissionWrapper resource="Cabinet" action="canDelete">
+                        <IconButton
+                          onClick={() => handleDeleteSubCategory(sub.id)}
+                          color="error"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </PermissionWrapper>
                     </TableCell>
                   </TableRow>
                 ))
