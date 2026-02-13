@@ -1,0 +1,130 @@
+name: Deploy VSP Interior Frontend (Next.js)
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up SSH Agent
+        uses: webfactory/ssh-agent@v0.7.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Deploy to EC2 via SSH
+        run: |
+          echo "Deploying branch: ${{ github.ref_name }}"
+
+          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
+            set -e
+
+            # Detect branch name
+            BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+
+            # ==============================
+            # Branch Configuration
+            # ==============================
+            if [ "$BRANCH_NAME" = "main" ]; then
+              PROJECT_DIR="/home/ec2-user/vsp-frontend-prod"
+              APP_NAME="vsp-frontend-prod"
+              PORT="3000"
+              ENV_FILE=".env.prod"
+              REPO_BRANCH="main"
+            elif [ "$BRANCH_NAME" = "dev" ]; then
+              PROJECT_DIR="/home/ec2-user/vsp-frontend-dev"
+              APP_NAME="vsp-frontend-dev"
+              PORT="3001"
+              ENV_FILE=".env.dev"
+              REPO_BRANCH="dev"
+            else
+              echo "Branch not configured for deployment"
+              exit 1
+            fi
+
+            echo "Using directory: $PROJECT_DIR"
+            echo "App Name: $APP_NAME"
+            echo "Port: $PORT"
+
+            # ==============================
+            # Create directory if not exists
+            # ==============================
+            if [ ! -d "$PROJECT_DIR" ]; then
+              mkdir -p "$PROJECT_DIR"
+              git clone -b "$REPO_BRANCH" https://github.com/ghulammujtaba153/VSP-Interior-FrontEnd "$PROJECT_DIR"
+            fi
+
+            cd "$PROJECT_DIR"
+
+            # ==============================
+            # Pull latest code
+            # ==============================
+            git fetch origin
+            git checkout "$REPO_BRANCH"
+            git reset --hard "origin/$REPO_BRANCH"
+
+            # ==============================
+            # Ensure env file exists
+            # ==============================
+            if [ ! -f "$ENV_FILE" ]; then
+              echo "Missing env file: $ENV_FILE"
+              exit 1
+            fi
+            cp "$ENV_FILE" .env
+
+            # ==============================
+            # Clean previous build
+            # ==============================
+            rm -rf .next
+
+            # ==============================
+            # Install dependencies
+            # ==============================
+            echo "Installing dependencies..."
+            npm ci --prefer-offline --no-audit
+
+            # ==============================
+            # Build Next.js application
+            # ==============================
+            echo "Building Next.js application..."
+            npm run build
+
+            # ==============================
+            # Kill existing process gracefully
+            # ==============================
+            if lsof -Pi :$PORT -sTCP:LISTEN -t >/dev/null 2>&1; then
+              echo "Stopping existing process on port $PORT..."
+              lsof -ti:$PORT | xargs kill -15 || true
+              sleep 3
+            fi
+
+            # ==============================
+            # Start Next.js application
+            # ==============================
+            echo "Starting Next.js application on port $PORT..."
+            PORT=$PORT nohup npm run start > "/tmp/$APP_NAME.log" 2>&1 &
+
+            sleep 5
+
+            # ==============================
+            # Verify deployment
+            # ==============================
+            if lsof -Pi :$PORT -sTCP:LISTEN -t >/dev/null 2>&1 ; then
+              echo "✓ Deployment successful!"
+              echo "Application $APP_NAME is running on port $PORT"
+              netstat -tlnp | grep $PORT || true
+            else
+              echo "✗ Deployment failed!"
+              echo "Check logs:"
+              cat "/tmp/$APP_NAME.log"
+              exit 1
+            fi
+
+          EOF
