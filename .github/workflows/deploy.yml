@@ -42,11 +42,9 @@ jobs:
           if [ "${GITHUB_REF#refs/heads/}" = "main" ]; then
             echo "PROJECT_DIR=vsp-frontend-prod" >> $GITHUB_ENV
             echo "PORT=3000" >> $GITHUB_ENV
-            echo "ENV_CONTENT=${{ secrets.ENV_PROD }}" >> $GITHUB_ENV
           elif [ "${GITHUB_REF#refs/heads/}" = "dev" ]; then
             echo "PROJECT_DIR=vsp-frontend-dev" >> $GITHUB_ENV
             echo "PORT=3001" >> $GITHUB_ENV
-            echo "ENV_CONTENT=${{ secrets.ENV_DEV }}" >> $GITHUB_ENV
           else
             echo "Branch not configured for deployment"
             exit 1
@@ -70,20 +68,23 @@ jobs:
             --exclude=node_modules --exclude=.git --exclude=.env* \
             ./ ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/${{ env.PROJECT_DIR }}/
           
-          echo "Creating .env file from secrets..."
-          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} \
-            "cat > /home/ec2-user/${{ env.PROJECT_DIR }}/.env << 'ENVEOF'
-${{ env.ENV_CONTENT }}
-ENVEOF"
+          echo "Creating .env file on EC2..."
+          if [ "${GITHUB_REF#refs/heads/}" = "main" ]; then
+            ENV_CONTENT="${{ secrets.ENV_PROD }}"
+          else
+            ENV_CONTENT="${{ secrets.ENV_DEV }}"
+          fi
+          
+          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} "echo \"${ENV_CONTENT}\" > /home/ec2-user/${{ env.PROJECT_DIR }}/.env"
 
       # -----------------------------
       # Start the app on EC2
       # -----------------------------
       - name: Start App on EC2
         run: |
-          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} <<- 'EOF'
+          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
             set -e
-            cd /home/ec2-user/${PROJECT_DIR}
+            cd /home/ec2-user/${{ env.PROJECT_DIR }}
 
             # Install dependencies
             npm ci --legacy-peer-deps
@@ -92,24 +93,24 @@ ENVEOF"
             npm run build
 
             # Stop existing process if running
-            if lsof -Pi :${PORT} -sTCP:LISTEN -t >/dev/null 2>&1; then
-              echo "Stopping existing process on port ${PORT}..."
-              lsof -ti:${PORT} | xargs kill -15 || true
+            if lsof -Pi :${{ env.PORT }} -sTCP:LISTEN -t >/dev/null 2>&1; then
+              echo "Stopping existing process on port ${{ env.PORT }}..."
+              lsof -ti:${{ env.PORT }} | xargs kill -15 || true
               sleep 3
             fi
-            echo "Starting Next.js application on port ${PORT}..."
-            PORT=${PORT} nohup npm run start > /tmp/${PROJECT_DIR}.log 2>&1 &
+            
+            echo "Starting Next.js application on port ${{ env.PORT }}..."
+            PORT=${{ env.PORT }} nohup npm run start > /tmp/${{ env.PROJECT_DIR }}.log 2>&1 &
 
             sleep 5
 
             # Verify deployment
-            if lsof -Pi :${PORT} -sTCP:LISTEN -t >/dev/null 2>&1 ; then
+            if lsof -Pi :${{ env.PORT }} -sTCP:LISTEN -t >/dev/null 2>&1 ; then
               echo "✓ Deployment successful!"
-              echo "Application is running on port ${PORT}"
+              echo "Application is running on port ${{ env.PORT }}"
             else
               echo "✗ Deployment failed!"
-              cat /tmp/${PROJECT_DIR}.log
+              cat /tmp/${{ env.PROJECT_DIR }}.log
               exit 1
             fi
-            EOF
-
+          EOF
