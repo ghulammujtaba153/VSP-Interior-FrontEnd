@@ -61,14 +61,18 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       # -----------------------------
-      # Deploy built files to EC2
+      # Deploy source and build to EC2
       # -----------------------------
       - name: Deploy to EC2
         run: |
-          echo "Deploying built files to EC2..."
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no" \
-            .next package.json package-lock.json ${{ env.ENV_FILE }} \
-            ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/${{ env.PROJECT_DIR }}/
+          echo "Deploying application to EC2..."
+          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" \
+            --exclude=node_modules --exclude=.git --exclude=.env* \
+            ./ ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/${{ env.PROJECT_DIR }}/
+          
+          echo "Uploading environment file..."
+          scp -o StrictHostKeyChecking=no ${{ env.ENV_FILE }} \
+            ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/${{ env.PROJECT_DIR }}/.env
 
       # -----------------------------
       # Start the app on EC2
@@ -79,18 +83,18 @@ jobs:
             set -e
             cd /home/ec2-user/${PROJECT_DIR}
 
-            # Copy env file
-            cp ${ENV_FILE} .env
-
             # Install dependencies
             npm ci --legacy-peer-deps
+
+            # Build the application
+            npm run build
+
+            # Stop existing process if running
             if lsof -Pi :${PORT} -sTCP:LISTEN -t >/dev/null 2>&1; then
               echo "Stopping existing process on port ${PORT}..."
               lsof -ti:${PORT} | xargs kill -15 || true
               sleep 3
             fi
-
-            # Start Next.js app with nohup
             echo "Starting Next.js application on port ${PORT}..."
             PORT=${PORT} nohup npm run start > /tmp/${PROJECT_DIR}.log 2>&1 &
 
