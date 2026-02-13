@@ -88,10 +88,10 @@ jobs:
             rm -rf .next
 
             # ==============================
-            # Install dependencies
+            # Install dependencies (ignore peer conflicts)
             # ==============================
             echo "Installing dependencies..."
-            npm ci --prefer-offline --no-audit
+            npm ci --legacy-peer-deps --prefer-offline --no-audit
 
             # ==============================
             # Build Next.js application
@@ -131,5 +131,3 @@ jobs:
             fi
 
           EOF
-
-
