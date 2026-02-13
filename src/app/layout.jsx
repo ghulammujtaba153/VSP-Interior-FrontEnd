@@ -13,6 +13,7 @@ import { getSystemMode } from '@core/utils/serverHelpers'
 // Style Imports
 import '@/app/globals.css'
 
+
 // Generated Icon CSS Imports
 import '@assets/iconify-icons/generated-icons.css'
 import { AuthProvider, config } from '@/context/authContext'
