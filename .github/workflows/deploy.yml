@@ -75,33 +75,33 @@ jobs:
       # -----------------------------
       - name: Start App on EC2
         run: |
-          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << EOF
+          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
             set -e
-            cd /home/ec2-user/${{ env.PROJECT_DIR }}
+            cd /home/ec2-user/${PROJECT_DIR}
 
             # Copy env file
-            cp ${{ env.ENV_FILE }} .env
+            cp ${ENV_FILE} .env
 
             # Stop existing process if running
-            if lsof -Pi :${{ env.PORT }} -sTCP:LISTEN -t >/dev/null 2>&1; then
-              echo "Stopping existing process on port ${{ env.PORT }}..."
-              lsof -ti:${{ env.PORT }} | xargs kill -15 || true
+            if lsof -Pi :${PORT} -sTCP:LISTEN -t >/dev/null 2>&1; then
+              echo "Stopping existing process on port ${PORT}..."
+              lsof -ti:${PORT} | xargs kill -15 || true
               sleep 3
             fi
 
             # Start Next.js app with nohup
-            echo "Starting Next.js application on port ${{ env.PORT }}..."
-            PORT=${{ env.PORT }} nohup npm run start > /tmp/${{ env.PROJECT_DIR }}.log 2>&1 &
+            echo "Starting Next.js application on port ${PORT}..."
+            PORT=${PORT} nohup npm run start > /tmp/${PROJECT_DIR}.log 2>&1 &
 
             sleep 5
 
             # Verify deployment
-            if lsof -Pi :${{ env.PORT }} -sTCP:LISTEN -t >/dev/null 2>&1 ; then
+            if lsof -Pi :${PORT} -sTCP:LISTEN -t >/dev/null 2>&1 ; then
               echo "✓ Deployment successful!"
-              echo "Application is running on port ${{ env.PORT }}"
+              echo "Application is running on port ${PORT}"
             else
               echo "✗ Deployment failed!"
-              cat /tmp/${{ env.PROJECT_DIR }}.log
+              cat /tmp/${PROJECT_DIR}.log
               exit 1
             fi
 EOF
