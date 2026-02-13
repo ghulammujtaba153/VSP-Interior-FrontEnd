@@ -42,11 +42,11 @@ jobs:
           if [ "${GITHUB_REF#refs/heads/}" = "main" ]; then
             echo "PROJECT_DIR=vsp-frontend-prod" >> $GITHUB_ENV
             echo "PORT=3000" >> $GITHUB_ENV
-            echo "ENV_FILE=.env.prod" >> $GITHUB_ENV
+            echo "ENV_CONTENT=${{ secrets.ENV_PROD }}" >> $GITHUB_ENV
           elif [ "${GITHUB_REF#refs/heads/}" = "dev" ]; then
             echo "PROJECT_DIR=vsp-frontend-dev" >> $GITHUB_ENV
             echo "PORT=3001" >> $GITHUB_ENV
-            echo "ENV_FILE=.env.dev" >> $GITHUB_ENV
+            echo "ENV_CONTENT=${{ secrets.ENV_DEV }}" >> $GITHUB_ENV
           else
             echo "Branch not configured for deployment"
             exit 1
@@ -70,9 +70,11 @@ jobs:
             --exclude=node_modules --exclude=.git --exclude=.env* \
             ./ ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/${{ env.PROJECT_DIR }}/
           
-          echo "Uploading environment file..."
-          scp -o StrictHostKeyChecking=no ${{ env.ENV_FILE }} \
-            ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/${{ env.PROJECT_DIR }}/.env
+          echo "Creating .env file from secrets..."
+          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} \
+            "cat > /home/ec2-user/${{ env.PROJECT_DIR }}/.env << 'ENVEOF'
+${{ env.ENV_CONTENT }}
+ENVEOF"
 
       # -----------------------------
       # Start the app on EC2
