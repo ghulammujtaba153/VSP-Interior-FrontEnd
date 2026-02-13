@@ -67,7 +67,7 @@ jobs:
         run: |
           echo "Deploying built files to EC2..."
           rsync -avz -e "ssh -o StrictHostKeyChecking=no" \
-            .next package.json package-lock.json node_modules ${{ env.ENV_FILE }} \
+            .next package.json package-lock.json ${{ env.ENV_FILE }} \
             ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/${{ env.PROJECT_DIR }}/
 
       # -----------------------------
@@ -82,7 +82,8 @@ jobs:
             # Copy env file
             cp ${ENV_FILE} .env
 
-            # Stop existing process if running
+            # Install dependencies
+            npm ci --legacy-peer-deps
             if lsof -Pi :${PORT} -sTCP:LISTEN -t >/dev/null 2>&1; then
               echo "Stopping existing process on port ${PORT}..."
               lsof -ti:${PORT} | xargs kill -15 || true
