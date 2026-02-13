@@ -28,6 +28,7 @@ import CabinetModal from '@components/cabinet/CabinetModal'
 import ViewCabinet from '@components/cabinet/ViewCabinet'
 import { toast } from 'react-toastify'
 import { useAuth } from '@/context/authContext'
+import PermissionWrapper from '@/components/PermissionWrapper'
 // import CSVFileModal from './CSVFileModal'
 import * as XLSX from 'xlsx'
 import ConfirmationDialog from '@/components/ConfirmationDialog'
@@ -361,24 +362,28 @@ setUniqueSubCodes(subCodes);
           Material Management
         </Typography>
         <Box display='flex' gap={2}>
-          <Button
-            variant='outlined'
-            color='success'
-            onClick={handleExportExcel}
-          >
-            Export Excel
-          </Button>
-          <Button
-            variant='contained'
-            color='primary'
-            startIcon={<Add />}
-            onClick={() => {
-              setEditData(null)
-              setOpen(true)
-            }}
-          >
-            Add Item
-          </Button>
+          <PermissionWrapper resource="Cabinet" action="canView">
+            <Button
+              variant='outlined'
+              color='success'
+              onClick={handleExportExcel}
+            >
+              Export Excel
+            </Button>
+          </PermissionWrapper>
+          <PermissionWrapper resource="Cabinet" action="canCreate">
+            <Button
+              variant='contained'
+              color='primary'
+              startIcon={<Add />}
+              onClick={() => {
+                setEditData(null)
+                setOpen(true)
+              }}
+            >
+              Add Item
+            </Button>
+          </PermissionWrapper>
         </Box>
       </Box>
 
@@ -436,7 +441,7 @@ setUniqueSubCodes(subCodes);
         <TableContainer>
           <Table sx={{ minWidth: 650 }} aria-label="cabinet table">
             <TableHead>
-              <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
+              <TableRow >
                 <TableCell>
                   <TableSortLabel
                     active={orderBy === 'id'}
@@ -542,39 +547,45 @@ setUniqueSubCodes(subCodes);
                   <TableCell>{formatDate(cabinet.createdAt)}</TableCell>
                   <TableCell>
                     <Box display="flex" gap={0.5}>
-                      <Tooltip title="View Cabinet">
-                        <IconButton
-                          color='primary'
-                          size="small"
-                          onClick={() => {
-                            setViewData(cabinet)
-                            setViewOpen(true)
-                          }}
-                        >
-                          <Visibility />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Edit Cabinet">
-                        <IconButton
-                          color='secondary'
-                          size="small"
-                          onClick={() => {
-                            setEditData(cabinet)
-                            setOpen(true)
-                          }}
-                        >
-                          <Edit />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete Cabinet">
-                        <IconButton
-                          color='error'
-                          size="small"
-                          onClick={() => handleDelete(cabinet)}
-                        >
-                          <Delete />
-                        </IconButton>
-                      </Tooltip>
+                      <PermissionWrapper resource="Cabinet" action="canView">
+                        <Tooltip title="View Cabinet">
+                          <IconButton
+                            color='primary'
+                            size="small"
+                            onClick={() => {
+                              setViewData(cabinet)
+                              setViewOpen(true)
+                            }}
+                          >
+                            <Visibility />
+                          </IconButton>
+                        </Tooltip>
+                      </PermissionWrapper>
+                      <PermissionWrapper resource="Cabinet" action="canEdit">
+                        <Tooltip title="Edit Cabinet">
+                          <IconButton
+                            color='secondary'
+                            size="small"
+                            onClick={() => {
+                              setEditData(cabinet)
+                              setOpen(true)
+                            }}
+                          >
+                            <Edit />
+                          </IconButton>
+                        </Tooltip>
+                      </PermissionWrapper>
+                      <PermissionWrapper resource="Cabinet" action="canDelete">
+                        <Tooltip title="Delete Cabinet">
+                          <IconButton
+                            color='error'
+                            size="small"
+                            onClick={() => handleDelete(cabinet)}
+                          >
+                            <Delete />
+                          </IconButton>
+                        </Tooltip>
+                      </PermissionWrapper>
                     </Box>
                   </TableCell>
                 </TableRow>

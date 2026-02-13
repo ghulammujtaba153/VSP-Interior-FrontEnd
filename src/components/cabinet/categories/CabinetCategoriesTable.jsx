@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Loader from "@/components/loader/Loader";
 import { toast } from "react-toastify";
+import PermissionWrapper from "@/components/PermissionWrapper";
 import { 
   Box, 
   Typography, 
@@ -166,14 +167,16 @@ const CabinetCategoriesTable = () => {
     <Paper p={2} sx={{ padding: 2 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h5">Cabinet Categories</Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<Add />}
-          onClick={() => handleOpenModal("add")}
-        >
-          Add Category
-        </Button>
+        <PermissionWrapper resource="Cabinet" action="canCreate">
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<Add />}
+            onClick={() => handleOpenModal("add")}
+          >
+            Add Category
+          </Button>
+        </PermissionWrapper>
       </Box>
 
       {/* Search Section */}
@@ -286,33 +289,39 @@ const CabinetCategoriesTable = () => {
                   </TableCell>
                   <TableCell>
                     <Box display="flex" gap={0.5}>
-                      <Tooltip title="View">
-                        <IconButton
-                          size="small"
-                          color="info"
-                          onClick={() => handleOpenModal("view", category)}
-                        >
-                          <Visibility />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Edit">
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => handleOpenModal("edit", category)}
-                        >
-                          <Edit />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDelete(category.id)}
-                        >
-                          <Delete />
-                        </IconButton>
-                      </Tooltip>
+                      <PermissionWrapper resource="Cabinet" action="canView">
+                        <Tooltip title="View">
+                          <IconButton
+                            size="small"
+                            color="info"
+                            onClick={() => handleOpenModal("view", category)}
+                          >
+                            <Visibility />
+                          </IconButton>
+                        </Tooltip>
+                      </PermissionWrapper>
+                      <PermissionWrapper resource="Cabinet" action="canEdit">
+                        <Tooltip title="Edit">
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={() => handleOpenModal("edit", category)}
+                          >
+                            <Edit />
+                          </IconButton>
+                        </Tooltip>
+                      </PermissionWrapper>
+                      <PermissionWrapper resource="Cabinet" action="canDelete">
+                        <Tooltip title="Delete">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => handleDelete(category.id)}
+                          >
+                            <Delete />
+                          </IconButton>
+                        </Tooltip>
+                      </PermissionWrapper>
                       <Link href={`/cabinet/categories/sub-categories/${category.id}`} passHref>
                         <Button size="small" variant="outlined" color="primary">
                           Manage Sub Categories

@@ -4,6 +4,7 @@ import Loader from '@/components/loader/Loader'
 import { BASE_URL } from '@/configs/url'
 import axios from 'axios'
 import React, { useEffect, useState } from 'react'
+import PermissionWrapper from '@/components/PermissionWrapper'
 import {
   Table,
   TableBody,
@@ -227,24 +228,28 @@ const CabinetMaterialTable = () => {
         </Typography>
         
         <Box display="flex" gap={2}>
-          <Button
-            variant="outlined"
-            color="success"
-            startIcon={<FileDownload />}
-            onClick={handleExportExcel}
-            disabled={cabinetQuotes.length === 0}
-          >
-            Export CSV
-          </Button>
+          <PermissionWrapper resource="Cabinet" action="canView">
+            <Button
+              variant="outlined"
+              color="success"
+              startIcon={<FileDownload />}
+              onClick={handleExportExcel}
+              disabled={cabinetQuotes.length === 0}
+            >
+              Export CSV
+            </Button>
+          </PermissionWrapper>
           
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<Add />}
-            onClick={handleAddNew}
-          >
-            Add Material
-          </Button>
+          <PermissionWrapper resource="Cabinet" action="canCreate">
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<Add />}
+              onClick={handleAddNew}
+            >
+              Add Material
+            </Button>
+          </PermissionWrapper>
         </Box>
       </Box>
 
@@ -354,33 +359,39 @@ const CabinetMaterialTable = () => {
                   </TableCell>
                   <TableCell>
                     <Box display="flex" gap={0.5}>
-                      <Tooltip title="View Material">
-                        <IconButton
-                          color="primary"
-                          size="small"
-                          onClick={() => handleView(quote)}
-                        >
-                          <Visibility />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Edit Material">
-                        <IconButton
-                          color="secondary"
-                          size="small"
-                          onClick={() => handleEdit(quote)}
-                        >
-                          <Edit />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete Material">
-                        <IconButton
-                          color="error"
-                          size="small"
-                          onClick={() => handleDelete(quote)}
-                        >
-                          <Delete />
-                        </IconButton>
-                      </Tooltip>
+                      <PermissionWrapper resource="Cabinet" action="canView">
+                        <Tooltip title="View Material">
+                          <IconButton
+                            color="primary"
+                            size="small"
+                            onClick={() => handleView(quote)}
+                          >
+                            <Visibility />
+                          </IconButton>
+                        </Tooltip>
+                      </PermissionWrapper>
+                      <PermissionWrapper resource="Cabinet" action="canEdit">
+                        <Tooltip title="Edit Material">
+                          <IconButton
+                            color="secondary"
+                            size="small"
+                            onClick={() => handleEdit(quote)}
+                          >
+                            <Edit />
+                          </IconButton>
+                        </Tooltip>
+                      </PermissionWrapper>
+                      <PermissionWrapper resource="Cabinet" action="canDelete">
+                        <Tooltip title="Delete Material">
+                          <IconButton
+                            color="error"
+                            size="small"
+                            onClick={() => handleDelete(quote)}
+                          >
+                            <Delete />
+                          </IconButton>
+                        </Tooltip>
+                      </PermissionWrapper>
                     </Box>
                   </TableCell>
                 </TableRow>
