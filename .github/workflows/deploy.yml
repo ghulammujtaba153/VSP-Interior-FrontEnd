@@ -104,4 +104,4 @@ jobs:
               cat /tmp/${PROJECT_DIR}.log
               exit 1
             fi
-EOF
+            EOF
