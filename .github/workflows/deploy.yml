@@ -12,7 +12,7 @@ jobs:
 
     steps:
       # -----------------------------
-      # Checkout the repo
+      # Checkout
       # -----------------------------
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -20,100 +20,86 @@ jobs:
       # -----------------------------
       # Setup Node 20
       # -----------------------------
-      - name: Setup Node.js 20
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: 20
 
       # -----------------------------
-      # Install dependencies and build
+      # Install & Build (ONLY HERE)
       # -----------------------------
-      - name: Install Dependencies & Build
-        run: |
-          npm ci --legacy-peer-deps
-          npm run build
+      - name: Install Dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build Application
+        run: npm run build
 
       # -----------------------------
-      # Determine branch-specific variables
+      # Set Branch Variables
       # -----------------------------
       - name: Set branch variables
-        id: branch_vars
         run: |
           if [ "${GITHUB_REF#refs/heads/}" = "main" ]; then
             echo "PROJECT_DIR=vsp-frontend-prod" >> $GITHUB_ENV
             echo "PORT=3000" >> $GITHUB_ENV
-          elif [ "${GITHUB_REF#refs/heads/}" = "dev" ]; then
+            echo "ENV_CONTENT=${{ secrets.ENV_PROD }}" >> $GITHUB_ENV
+          else
             echo "PROJECT_DIR=vsp-frontend-dev" >> $GITHUB_ENV
             echo "PORT=3001" >> $GITHUB_ENV
-          else
-            echo "Branch not configured for deployment"
-            exit 1
+            echo "ENV_CONTENT=${{ secrets.ENV_DEV }}" >> $GITHUB_ENV
           fi
 
       # -----------------------------
-      # Set up SSH agent for EC2
+      # Setup SSH
       # -----------------------------
-      - name: Set up SSH Agent
+      - name: Setup SSH
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       # -----------------------------
-      # Deploy source and build to EC2
+      # Deploy Built Files
       # -----------------------------
       - name: Deploy to EC2
         run: |
-          echo "Deploying application to EC2..."
-          rsync -avz --delete -e "ssh -o StrictHostKeyChecking=no" \
-            --exclude=node_modules --exclude=.git --exclude=.env* \
+          echo "Deploying built application..."
+
+          rsync -avz --delete \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            --exclude=.git \
+            --exclude=.env* \
             ./ ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/${{ env.PROJECT_DIR }}/
-          
-          echo "Creating .env file on EC2..."
-          if [ "${GITHUB_REF#refs/heads/}" = "main" ]; then
-            echo "${{ secrets.ENV_PROD }}" | ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} "cat > /home/ec2-user/${{ env.PROJECT_DIR }}/.env"
-          else
-            echo "${{ secrets.ENV_DEV }}" | ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} "cat > /home/ec2-user/${{ env.PROJECT_DIR }}/.env"
-          fi
+
+          echo "${{ env.ENV_CONTENT }}" | \
+            ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} \
+            "cat > /home/ec2-user/${{ env.PROJECT_DIR }}/.env"
 
       # -----------------------------
-      # Start the app on EC2
+      # Restart App (NO BUILD HERE)
       # -----------------------------
-
-      - name: Test SSH Connection
+      - name: Restart App on EC2
         run: |
-          ssh -v -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} "echo Connected"
-
-      - name: Start App on EC2
-        run: |
-          ssh -o ConnectTimeout=10 -o ServerAliveInterval=60 -o ServerAliveCountMax=5 -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << EOF
             set -e
             cd /home/ec2-user/${{ env.PROJECT_DIR }}
 
-            # Install dependencies
-            npm ci --legacy-peer-deps
-
-            # Build the application
-            npm run build
-
-            # Stop existing process if running
+            # Stop old process if running
             if lsof -Pi :${{ env.PORT }} -sTCP:LISTEN -t >/dev/null 2>&1; then
-              echo "Stopping existing process on port ${{ env.PORT }}..."
+              echo "Stopping existing process..."
               lsof -ti:${{ env.PORT }} | xargs kill -15 || true
               sleep 3
             fi
-            
-            echo "Starting Next.js application on port ${{ env.PORT }}..."
-            PORT=${{ env.PORT }} nohup npm run start > /tmp/${{ env.PROJECT_DIR }}.log 2>&1 &
+
+            echo "Starting application on port ${{ env.PORT }}..."
+            PORT=${{ env.PORT }} nohup npm run start > app.log 2>&1 &
 
             sleep 5
 
-            # Verify deployment
-            if lsof -Pi :${{ env.PORT }} -sTCP:LISTEN -t >/dev/null 2>&1 ; then
-              echo "✓ Deployment successful!"
-              echo "Application is running on port ${{ env.PORT }}"
+            if lsof -Pi :${{ env.PORT }} -sTCP:LISTEN -t >/dev/null 2>&1; then
+              echo "Deployment successful!"
             else
-              echo "✗ Deployment failed!"
-              cat /tmp/${{ env.PROJECT_DIR }}.log
+              echo "Deployment failed!"
+              cat app.log
               exit 1
             fi
           EOF
