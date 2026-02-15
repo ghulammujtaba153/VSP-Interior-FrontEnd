@@ -1,107 +1,61 @@
-name: Deploy VSP Interior Frontend (Next.js)
+- name: Deploy and Run on EC2
+  run: |
+    ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << EOF
+      set -e
 
-on:
-  push:
-    branches:
-      - main
-      - dev
+      # Determine project directory and port
+      if [ "${GITHUB_REF#refs/heads/}" = "main" ]; then
+        PROJECT_DIR=~/vsp-frontend-prod
+        APP_PORT=3000
+      else
+        PROJECT_DIR=~/vsp-frontend-dev
+        APP_PORT=3001
+      fi
 
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
+      echo "Preparing $PROJECT_DIR on EC2..."
+      mkdir -p \$PROJECT_DIR
+      rm -rf \$PROJECT_DIR/*
 
-    steps:
-      # -----------------------------
-      # Checkout the repo
-      # -----------------------------
-      - name: Checkout Code
-        uses: actions/checkout@v3
+      echo "Deploying files..."
+      exit
+    EOF
 
-      # -----------------------------
-      # Setup Node.js 20
-      # -----------------------------
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20
+- name: Rsync built files
+  run: |
+    rsync -avz --delete \
+      -e "ssh -o StrictHostKeyChecking=no" \
+      --exclude=.git \
+      --exclude=.env* \
+      ./ ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/${{ env.PROJECT_DIR }}/
 
-      # -----------------------------
-      # Install dependencies & build locally
-      # -----------------------------
-      - name: Install Dependencies
-        run: npm ci --legacy-peer-deps
+- name: Update .env on EC2
+  run: |
+    echo "${{ env.ENV_CONTENT }}" | ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} \
+      "cat > /home/ec2-user/${{ env.PROJECT_DIR }}/.env"
 
-      - name: Build Application
-        run: npm run build
+- name: Restart Next.js app
+  run: |
+    ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << EOF
+      set -e
+      cd /home/ec2-user/${{ env.PROJECT_DIR }}
 
-      # -----------------------------
-      # Set branch-specific variables
-      # -----------------------------
-      - name: Set branch variables
-        run: |
-          if [ "${GITHUB_REF#refs/heads/}" = "main" ]; then
-            echo "PROJECT_DIR=vsp-frontend-prod" >> $GITHUB_ENV
-            echo "APP_PORT=3000" >> $GITHUB_ENV
-            echo "ENV_CONTENT=${{ secrets.ENV_PROD }}" >> $GITHUB_ENV
-          else
-            echo "PROJECT_DIR=vsp-frontend-dev" >> $GITHUB_ENV
-            echo "APP_PORT=3001" >> $GITHUB_ENV
-            echo "ENV_CONTENT=${{ secrets.ENV_DEV }}" >> $GITHUB_ENV
-          fi
+      # Kill old process
+      if lsof -Pi :\$APP_PORT -sTCP:LISTEN -t >/dev/null 2>&1; then
+        echo "Stopping existing process on port \$APP_PORT..."
+        lsof -ti :\$APP_PORT | xargs kill -9 || true
+        sleep 2
+      fi
 
-      # -----------------------------
-      # Setup SSH agent
-      # -----------------------------
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      echo "Starting Next.js on port \$APP_PORT..."
+      export PORT=\$APP_PORT
+      nohup npm run start -- -H 0.0.0.0 > app.log 2>&1 &
 
-      # -----------------------------
-      # Deploy built files to EC2
-      # -----------------------------
-      - name: Deploy to EC2
-        run: |
-          echo "Deploying built application..."
-          rsync -avz --delete \
-            -e "ssh -o StrictHostKeyChecking=no" \
-            --exclude=.git \
-            --exclude=.env* \
-            ./ ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/${{ env.PROJECT_DIR }}/
-
-          echo "${{ env.ENV_CONTENT }}" | \
-            ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} \
-            "cat > /home/ec2-user/${{ env.PROJECT_DIR }}/.env"
-
-      # -----------------------------
-      # Restart Next.js app on EC2
-      # -----------------------------
-      - name: Restart App on EC2
-        run: |
-          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << EOF
-            set -e
-            cd /home/ec2-user/${{ env.PROJECT_DIR }}
-
-            # Kill old process if port is in use
-            if lsof -Pi :\$APP_PORT -sTCP:LISTEN -t >/dev/null 2>&1; then
-              echo "Stopping existing process on port \$APP_PORT..."
-              lsof -ti :\$APP_PORT | xargs kill -9 || true
-              sleep 2
-            fi
-
-            # Start Next.js app
-            echo "Starting Next.js application on port \$APP_PORT..."
-            export PORT=\$APP_PORT
-            nohup npm run start -- -H 0.0.0.0 > app.log 2>&1 &
-
-            sleep 5
-
-            # Verify if app is running
-            if lsof -Pi :\$APP_PORT -sTCP:LISTEN -t >/dev/null 2>&1; then
-              echo "Deployment successful! App running on port \$APP_PORT"
-            else
-              echo "Deployment failed!"
-              cat app.log
-              exit 1
-            fi
-          EOF
+      sleep 5
+      if lsof -Pi :\$APP_PORT -sTCP:LISTEN -t >/dev/null 2>&1; then
+        echo "Deployment successful! App running on \$APP_PORT"
+      else
+        echo "Deployment failed!"
+        cat app.log
+        exit 1
+      fi
+    EOF
