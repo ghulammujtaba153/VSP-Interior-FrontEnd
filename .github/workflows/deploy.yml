@@ -92,21 +92,6 @@ jobs:
             "cat > /home/ec2-user/${{ env.PROJECT_DIR }}/.env"
       
       # -----------------------------
-      # Install dependencies on EC2
-      # -----------------------------
-      - name: Install Dependencies on EC2
-        run: |
-          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
-            set -e
-            cd /home/ec2-user/${{ env.PROJECT_DIR }}
-            
-            # Install all dependencies (including devDependencies for postinstall scripts)
-            npm ci --legacy-peer-deps
-          EOF
-        env:
-          PROJECT_DIR: ${{ env.PROJECT_DIR }}
-      
-      # -----------------------------
       # Restart Next.js app with PM2
       # -----------------------------
       - name: Restart App with PM2
