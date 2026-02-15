@@ -106,10 +106,10 @@ jobs:
             
             cd /home/ec2-user/${PROJECT_DIR}
             
-            # Install PM2 globally if not present
+            # Install PM2 globally if not present (with sudo)
             if ! command -v pm2 &> /dev/null; then
               echo "Installing PM2..."
-              npm install -g pm2
+              sudo npm install -g pm2
             fi
             
             # Stop and delete existing PM2 process
@@ -128,7 +128,7 @@ jobs:
             pm2 save
             
             # Setup PM2 startup script (run once, idempotent)
-            pm2 startup systemd -u ec2-user --hp /home/ec2-user 2>/dev/null || true
+            sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u ec2-user --hp /home/ec2-user 2>/dev/null || true
             
             # Wait and verify
             sleep 3
