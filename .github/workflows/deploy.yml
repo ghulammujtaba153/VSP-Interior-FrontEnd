@@ -81,7 +81,6 @@ jobs:
             -e "ssh -o StrictHostKeyChecking=no" \
             --exclude=.git \
             --exclude=.env* \
-            --exclude=node_modules \
             ./ ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/${{ env.PROJECT_DIR }}/
       
       # -----------------------------
@@ -100,7 +99,9 @@ jobs:
           ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
             set -e
             cd /home/ec2-user/${{ env.PROJECT_DIR }}
-            npm ci --legacy-peer-deps --production
+            
+            # Install all dependencies (including devDependencies for postinstall scripts)
+            npm ci --legacy-peer-deps
           EOF
         env:
           PROJECT_DIR: ${{ env.PROJECT_DIR }}
