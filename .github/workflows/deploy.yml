@@ -20,7 +20,7 @@ jobs:
       # -----------------------------
       # Setup Node 20
       # -----------------------------
-      - name: Setup Node.js
+      - name: Setup Node.js 20
         uses: actions/setup-node@v3
         with:
           node-version: 20
@@ -49,7 +49,6 @@ jobs:
             echo "ENV_CONTENT=${{ secrets.ENV_DEV }}" >> $GITHUB_ENV
           fi
 
-
       # -----------------------------
       # Setup SSH
       # -----------------------------
@@ -64,7 +63,6 @@ jobs:
       - name: Deploy to EC2
         run: |
           echo "Deploying built application..."
-
           rsync -avz --delete \
             -e "ssh -o StrictHostKeyChecking=no" \
             --exclude=.git \
@@ -76,7 +74,7 @@ jobs:
             "cat > /home/ec2-user/${{ env.PROJECT_DIR }}/.env"
 
       # -----------------------------
-      # Restart App (NO BUILD HERE)
+      # Restart App on EC2 (NO BUILD HERE)
       # -----------------------------
       - name: Restart App on EC2
         run: |
@@ -84,19 +82,27 @@ jobs:
             set -e
             cd /home/ec2-user/${{ env.PROJECT_DIR }}
 
-            # Stop old process if running
-            if lsof -Pi :${{ env.PORT }} -sTCP:LISTEN -t >/dev/null 2>&1; then
-              echo "Stopping existing process..."
-              lsof -ti:${{ env.PORT }} | xargs kill -15 || true
-              sleep 3
+            # Determine port manually
+            if [ "${GITHUB_REF#refs/heads/}" = "main" ]; then
+              APP_PORT=3000
+            else
+              APP_PORT=3001
             fi
 
-            echo "Starting application on port ${{ env.PORT }}..."
-            PORT=${{ env.PORT }} nohup npm run start > app.log 2>&1 &
+            # Kill old process if exists
+            if lsof -Pi :\$APP_PORT -sTCP:LISTEN -t >/dev/null 2>&1; then
+              echo "Stopping existing process on port \$APP_PORT..."
+              lsof -ti :\$APP_PORT | xargs kill -9 || true
+              sleep 2
+            fi
+
+            echo "Starting Next.js application on port \$APP_PORT..."
+            export PORT=\$APP_PORT
+            nohup npm run start -H 0.0.0.0 > app.log 2>&1 &
 
             sleep 5
 
-            if lsof -Pi :${{ env.PORT }} -sTCP:LISTEN -t >/dev/null 2>&1; then
+            if lsof -Pi :\$APP_PORT -sTCP:LISTEN -t >/dev/null 2>&1; then
               echo "Deployment successful!"
             else
               echo "Deployment failed!"
@@ -104,4 +110,3 @@ jobs:
               exit 1
             fi
           EOF
-
