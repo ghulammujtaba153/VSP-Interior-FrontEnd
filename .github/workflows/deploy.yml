@@ -12,13 +12,13 @@ jobs:
 
     steps:
       # -----------------------------
-      # Checkout
+      # Checkout the repo
       # -----------------------------
       - name: Checkout Code
         uses: actions/checkout@v3
 
       # -----------------------------
-      # Setup Node 20
+      # Setup Node.js 20
       # -----------------------------
       - name: Setup Node.js 20
         uses: actions/setup-node@v3
@@ -26,7 +26,7 @@ jobs:
           node-version: 20
 
       # -----------------------------
-      # Install & Build (ONLY HERE)
+      # Install dependencies & build locally
       # -----------------------------
       - name: Install Dependencies
         run: npm ci --legacy-peer-deps
@@ -35,22 +35,22 @@ jobs:
         run: npm run build
 
       # -----------------------------
-      # Set Branch Variables
+      # Set branch-specific variables
       # -----------------------------
       - name: Set branch variables
         run: |
           if [ "${GITHUB_REF#refs/heads/}" = "main" ]; then
             echo "PROJECT_DIR=vsp-frontend-prod" >> $GITHUB_ENV
-            echo "PORT=3000" >> $GITHUB_ENV
+            echo "APP_PORT=3000" >> $GITHUB_ENV
             echo "ENV_CONTENT=${{ secrets.ENV_PROD }}" >> $GITHUB_ENV
           else
             echo "PROJECT_DIR=vsp-frontend-dev" >> $GITHUB_ENV
-            echo "PORT=3001" >> $GITHUB_ENV
+            echo "APP_PORT=3001" >> $GITHUB_ENV
             echo "ENV_CONTENT=${{ secrets.ENV_DEV }}" >> $GITHUB_ENV
           fi
 
       # -----------------------------
-      # Setup SSH
+      # Setup SSH agent
       # -----------------------------
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.7.0
@@ -58,7 +58,7 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       # -----------------------------
-      # Deploy Built Files
+      # Deploy built files to EC2
       # -----------------------------
       - name: Deploy to EC2
         run: |
@@ -74,36 +74,31 @@ jobs:
             "cat > /home/ec2-user/${{ env.PROJECT_DIR }}/.env"
 
       # -----------------------------
-      # Restart App on EC2 (NO BUILD HERE)
+      # Restart Next.js app on EC2
       # -----------------------------
       - name: Restart App on EC2
         run: |
-          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << EOF
+          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
             set -e
             cd /home/ec2-user/${{ env.PROJECT_DIR }}
 
-            # Determine port manually
-            if [ "${GITHUB_REF#refs/heads/}" = "main" ]; then
-              APP_PORT=3000
-            else
-              APP_PORT=3001
-            fi
-
-            # Kill old process if exists
-            if lsof -Pi :\$APP_PORT -sTCP:LISTEN -t >/dev/null 2>&1; then
-              echo "Stopping existing process on port \$APP_PORT..."
-              lsof -ti :\$APP_PORT | xargs kill -9 || true
+            # Kill old process if port is in use
+            if lsof -Pi :${APP_PORT} -sTCP:LISTEN -t >/dev/null 2>&1; then
+              echo "Stopping existing process on port ${APP_PORT}..."
+              lsof -ti :${APP_PORT} | xargs kill -9 || true
               sleep 2
             fi
 
-            echo "Starting Next.js application on port \$APP_PORT..."
-            export PORT=\$APP_PORT
+            # Start Next.js app
+            echo "Starting Next.js application on port ${APP_PORT}..."
+            export PORT=${APP_PORT}
             nohup npm run start -H 0.0.0.0 > app.log 2>&1 &
 
             sleep 5
 
-            if lsof -Pi :\$APP_PORT -sTCP:LISTEN -t >/dev/null 2>&1; then
-              echo "Deployment successful!"
+            # Verify if app is running
+            if lsof -Pi :${APP_PORT} -sTCP:LISTEN -t >/dev/null 2>&1; then
+              echo "Deployment successful! App running on port ${APP_PORT}"
             else
               echo "Deployment failed!"
               cat app.log
