@@ -47,6 +47,7 @@ jobs:
             echo "PROJECT_DIR=vsp-frontend-dev" >> $GITHUB_ENV
             echo "APP_PORT=3001" >> $GITHUB_ENV
             echo "ENV_CONTENT=${{ secrets.ENV_DEV }}" >> $GITHUB_ENV
+          fi   # <--- important!
 
       # -----------------------------
       # Setup SSH
@@ -102,7 +103,7 @@ jobs:
               sleep 2
             fi
 
-            # Start Next.js app with correct PORT
+            # Start Next.js app
             echo "Starting Next.js application on port ${APP_PORT}..."
             export PORT=${APP_PORT}
             nohup npm run start > app.log 2>&1 &
