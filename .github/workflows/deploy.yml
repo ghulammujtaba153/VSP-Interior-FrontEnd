@@ -9,14 +9,14 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
       # -----------------------------
       # Checkout the repo
       # -----------------------------
       - name: Checkout Code
         uses: actions/checkout@v3
-
+      
       # -----------------------------
       # Setup Node.js 20
       # -----------------------------
@@ -24,16 +24,16 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 20
-
+      
       # -----------------------------
       # Install dependencies & build
       # -----------------------------
       - name: Install Dependencies
         run: npm ci --legacy-peer-deps
-
+      
       - name: Build Application
         run: npm run build
-
+      
       # -----------------------------
       # Set branch-specific variables
       # -----------------------------
@@ -42,13 +42,15 @@ jobs:
           if [ "${GITHUB_REF#refs/heads/}" = "main" ]; then
             echo "PROJECT_DIR=vsp-frontend-prod" >> $GITHUB_ENV
             echo "APP_PORT=3000" >> $GITHUB_ENV
+            echo "PM2_APP_NAME=vsp-prod" >> $GITHUB_ENV
             echo "ENV_CONTENT=${{ secrets.ENV_PROD }}" >> $GITHUB_ENV
           else
             echo "PROJECT_DIR=vsp-frontend-dev" >> $GITHUB_ENV
             echo "APP_PORT=3001" >> $GITHUB_ENV
+            echo "PM2_APP_NAME=vsp-dev" >> $GITHUB_ENV
             echo "ENV_CONTENT=${{ secrets.ENV_DEV }}" >> $GITHUB_ENV
-          fi   # <--- important!
-
+          fi
+      
       # -----------------------------
       # Setup SSH
       # -----------------------------
@@ -56,18 +58,20 @@ jobs:
         uses: webfactory/ssh-agent@v0.7.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
+      
       # -----------------------------
       # Prepare EC2 directory (clean & create)
       # -----------------------------
       - name: Prepare EC2 Directory
         run: |
-          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << EOF
+          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
             set -e
             mkdir -p /home/ec2-user/${{ env.PROJECT_DIR }}
             rm -rf /home/ec2-user/${{ env.PROJECT_DIR }}/*
           EOF
-
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+      
       # -----------------------------
       # Deploy built files
       # -----------------------------
@@ -77,8 +81,9 @@ jobs:
             -e "ssh -o StrictHostKeyChecking=no" \
             --exclude=.git \
             --exclude=.env* \
+            --exclude=node_modules \
             ./ ec2-user@${{ secrets.EC2_HOST }}:/home/ec2-user/${{ env.PROJECT_DIR }}/
-
+      
       # -----------------------------
       # Push .env file
       # -----------------------------
@@ -86,34 +91,68 @@ jobs:
         run: |
           echo "${{ env.ENV_CONTENT }}" | ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} \
             "cat > /home/ec2-user/${{ env.PROJECT_DIR }}/.env"
-
+      
       # -----------------------------
-      # Restart Next.js app
+      # Install dependencies on EC2
       # -----------------------------
-      - name: Restart App on EC2
+      - name: Install Dependencies on EC2
         run: |
-          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << EOF
+          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
             set -e
             cd /home/ec2-user/${{ env.PROJECT_DIR }}
-
-            # Kill old process if port in use
-            if lsof -Pi :${APP_PORT} -sTCP:LISTEN -t >/dev/null 2>&1; then
-              echo "Stopping existing process on port ${APP_PORT}..."
-              lsof -ti :${APP_PORT} | xargs kill -9 || true
-              sleep 2
+            npm ci --legacy-peer-deps --production
+          EOF
+        env:
+          PROJECT_DIR: ${{ env.PROJECT_DIR }}
+      
+      # -----------------------------
+      # Restart Next.js app with PM2
+      # -----------------------------
+      - name: Restart App with PM2
+        run: |
+          ssh -o StrictHostKeyChecking=no ec2-user@${{ secrets.EC2_HOST }} << 'EOF'
+            set -e
+            
+            # Set variables
+            PROJECT_DIR="${{ env.PROJECT_DIR }}"
+            APP_PORT="${{ env.APP_PORT }}"
+            PM2_APP_NAME="${{ env.PM2_APP_NAME }}"
+            
+            cd /home/ec2-user/${PROJECT_DIR}
+            
+            # Install PM2 globally if not present
+            if ! command -v pm2 &> /dev/null; then
+              echo "Installing PM2..."
+              npm install -g pm2
             fi
-
-            # Start Next.js app
-            echo "Starting Next.js application on port ${APP_PORT}..."
-            export PORT=${APP_PORT}
-            nohup npm run start > app.log 2>&1 &
-
-            sleep 5
-            if lsof -Pi :${APP_PORT} -sTCP:LISTEN -t >/dev/null 2>&1; then
-              echo "Deployment successful! App running on ${APP_PORT}"
+            
+            # Stop and delete existing PM2 process
+            echo "Stopping existing PM2 process: ${PM2_APP_NAME}..."
+            pm2 stop ${PM2_APP_NAME} 2>/dev/null || true
+            pm2 delete ${PM2_APP_NAME} 2>/dev/null || true
+            
+            # Wait a moment for port to be released
+            sleep 2
+            
+            # Start app with PM2
+            echo "Starting ${PM2_APP_NAME} on port ${APP_PORT}..."
+            PORT=${APP_PORT} pm2 start npm --name ${PM2_APP_NAME} -- start
+            
+            # Save PM2 process list
+            pm2 save
+            
+            # Setup PM2 startup script (run once, idempotent)
+            pm2 startup systemd -u ec2-user --hp /home/ec2-user 2>/dev/null || true
+            
+            # Wait and verify
+            sleep 3
+            
+            if pm2 list | grep -q ${PM2_APP_NAME}; then
+              echo "✅ Deployment successful! ${PM2_APP_NAME} is running on port ${APP_PORT}"
+              pm2 info ${PM2_APP_NAME}
             else
-              echo "Deployment failed!"
-              cat app.log
+              echo "❌ Deployment failed!"
+              pm2 logs ${PM2_APP_NAME} --lines 50
               exit 1
             fi
           EOF
