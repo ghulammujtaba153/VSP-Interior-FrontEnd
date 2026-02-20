@@ -173,7 +173,7 @@ const NotesTab = () => {
                   )}
                 </Box>
 
-                <Typography variant="body2" sx={{ mb: 1.5 }}>
+                <Typography variant="body3" sx={{ mb: 1.5 }}>
                   {note.content}
                 </Typography>
 

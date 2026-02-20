@@ -46,6 +46,8 @@ import ImportCSV from "./ImportCSV";
 import ConfirmationDialog from '../ConfirmationDialog';
 import ContactsImportModal from "./ContactsImportModal";
 import { table, layout, button } from '@/styles/globalStyles';
+import useTableZoom from '@/hooks/useTableZoom';
+import TableZoom from '../TableZoom';
 
 // ✅ Import XLSX for exporting
 import * as XLSX from "xlsx";
@@ -64,6 +66,9 @@ const SupplierTable = () => {
     const [expandedRows, setExpandedRows] = useState(new Set());
     const { user } = useAuth();
     const [importCSV, setImportCSV] = useState(false);
+
+    // Zoom / font scale state
+    const { zoom, handleZoomChange, zoomStyle } = useTableZoom('suppliers_table_zoom');
 
     // Pagination states
     const [page, setPage] = useState(0);
@@ -543,7 +548,7 @@ const SupplierTable = () => {
                                 >
                                     <TableCell>{contact.id}</TableCell>
                                     <TableCell>
-                                        <Typography variant="body2">
+                                        <Typography variant="body3">
                                             {contact.firstName} {contact.lastName}
                                         </Typography>
                                     </TableCell>
@@ -607,7 +612,7 @@ const SupplierTable = () => {
     if (loading) return <Loader />;
 
     return (
-        <Paper sx={layout.container} className="zoom-67">
+        <Paper sx={{ ...layout.container }} className="zoom-67">
             <Box sx={layout.header}>
                 <Typography variant="h5">Supplier List</Typography>
                 <Box sx={layout.buttonGroup}>
@@ -620,9 +625,10 @@ const SupplierTable = () => {
                     <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={handleAdd}>
                         Add Supplier
                     </Button>
+                    <TableZoom zoom={zoom} onZoomChange={handleZoomChange} />
                 </Box>
             </Box>
-
+            <Box sx={{ width: '100%' }}>
             {/* Search Section */}
             <Box sx={layout.searchSection}>
                 <Box display="flex" alignItems="center" gap={1}>
@@ -672,7 +678,7 @@ const SupplierTable = () => {
                         Reset
                     </Button>
                 </Box>
-                <Typography variant="body2" color="textSecondary">
+                <Typography variant="body3" color="textSecondary">
                     {totalCount > 0 ? `${totalCount} supplier${totalCount !== 1 ? 's' : ''} found` : 'No suppliers found'}
                     {searchTerm && ` for "${searchTerm}"`}
                 </Typography>
@@ -716,6 +722,8 @@ const SupplierTable = () => {
                     fetchSuppliers();
                 }}
             />
+            
+            <Box sx={zoomStyle}>
 
             <Paper elevation={3}>
                 <TableContainer>
@@ -758,7 +766,7 @@ const SupplierTable = () => {
                                         </TableCell>
                                         <TableCell>{supplier.id}</TableCell>
                                         <TableCell>
-                                            <Typography variant="body2" fontWeight="medium">
+                                            <Typography variant="body3" fontWeight="medium">
                                                 {capitalizeName(supplier.name)}
                                             </Typography>
                                         </TableCell>
@@ -846,6 +854,8 @@ const SupplierTable = () => {
             </Paper>
 
 
+            </Box>
+
             <ConfirmationDialog
                 open={confirmationOpen}
                 onClose={handleConfirmationClose}
@@ -856,6 +866,7 @@ const SupplierTable = () => {
                 confirmText={confirmationConfig.severity === 'error' ? 'Delete' : 'Confirm'}
                 cancelText="Cancel"
             />
+            </Box>
         </Paper>
     );
 };

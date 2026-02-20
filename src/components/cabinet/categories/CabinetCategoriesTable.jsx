@@ -269,7 +269,7 @@ const CabinetCategoriesTable = () => {
                 >
                   <TableCell>{category.id}</TableCell>
                   <TableCell>
-                    <Typography variant="body2" fontWeight="medium">
+                    <Typography variant="body3">
                       {category.name}
                     </Typography>
                   </TableCell>

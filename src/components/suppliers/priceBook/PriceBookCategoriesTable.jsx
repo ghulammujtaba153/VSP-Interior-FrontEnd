@@ -28,10 +28,13 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import Link from "next/link";
 import Loader from "@/components/loader/Loader";
+import useTableZoom from "@/hooks/useTableZoom";
+import TableZoom from "@/components/TableZoom";
 
 const PriceBookCategoriesTable = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { zoom, handleZoomChange, zoomStyle } = useTableZoom('pricebook_categories_zoom');
 
   // Pagination
   const [page, setPage] = useState(0);
@@ -188,17 +191,20 @@ const PriceBookCategoriesTable = () => {
         <Button
         variant="contained"
         color="primary"
-
         onClick={handleAdd}
         sx={{ mb: 2, ml: "auto" }}
       >
         Add Category
       </Button>
+      <Box sx={{ mb: 2 }}>
+        <TableZoom zoom={zoom} onZoomChange={handleZoomChange} />
+      </Box>
 
       </Box>
-      
 
-      <TableContainer component={Paper}>
+      <Box sx={{ overflowX: 'auto', width: '100%' }}>
+      <Box sx={zoomStyle}>
+       <TableContainer component={Paper}>
         {loading ? (
           <Box display="flex" justifyContent="center" p={3}>
             <Loader />
@@ -259,6 +265,7 @@ const PriceBookCategoriesTable = () => {
           </>
         )}
       </TableContainer>
+      </Box>
 
       {/* Add/Edit Modal */}
       <Dialog open={open} onClose={handleClose}>
@@ -285,6 +292,7 @@ const PriceBookCategoriesTable = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      </Box>
     </Box>
   );
 };

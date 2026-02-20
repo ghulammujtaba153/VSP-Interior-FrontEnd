@@ -431,7 +431,7 @@ const ImportCSV = ({ open, onClose, fetchData }) => {
             severity={Object.keys(errors).length === 0 ? "success" : "warning"} 
             sx={{ mb: 2 }}
           >
-            <Typography variant="body2">
+            <Typography variant="body3">
               {Object.keys(errors).length === 0 
                 ? `✅ All ${rows.length} inventory items are valid and ready for import`
                 : `⚠️ ${Object.keys(errors).length} items have errors out of ${rows.length} total items`

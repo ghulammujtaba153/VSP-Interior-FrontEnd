@@ -11,6 +11,8 @@ import {
   Chip,
   Switch,
   FormControlLabel,
+  Checkbox,
+  FormGroup,
 } from "@mui/material";
 import { BASE_URL } from "@/configs/url";
 import Loader from "@/components/loader/Loader";
@@ -18,76 +20,56 @@ import { toast } from "react-toastify";
 
 // Individual Permission Card Component with its own isolated state
 const PermissionCard = ({ permission, roleId, onSaved }) => {
-  // Determine if module is enabled (has any permissions)
-  const isModuleEnabled = Boolean(
-    permission.canCreate || permission.canView || permission.canEdit || permission.canDelete
-  );
+  const [permissions, setPermissions] = useState({
+    canCreate: permission.canCreate || false,
+    canView: permission.canView || false,
+    canEdit: permission.canEdit || false,
+    canDelete: permission.canDelete || false,
+  });
   
-  const [localState, setLocalState] = useState(isModuleEnabled);
-  const [originalState, setOriginalState] = useState(isModuleEnabled);
   const [isSaving, setIsSaving] = useState(false);
 
   // Update states when permission prop changes (after save refresh)
   useEffect(() => {
-    const newEnabled = Boolean(
-      permission.canCreate || permission.canView || permission.canEdit || permission.canDelete
-    );
-    setLocalState(newEnabled);
-    setOriginalState(newEnabled);
+    setPermissions({
+      canCreate: permission.canCreate || false,
+      canView: permission.canView || false,
+      canEdit: permission.canEdit || false,
+      canDelete: permission.canDelete || false,
+    });
   }, [permission.canCreate, permission.canView, permission.canEdit, permission.canDelete]);
 
-
-
-  const handleToggle = async (value) => {
-    console.log(`Toggling ${permission.resource} module to:`, value);
-    setLocalState(value);
+  const handlePermissionChange = async (key, value) => {
+    const updatedPermissions = { ...permissions, [key]: value };
+    setPermissions(updatedPermissions);
     setIsSaving(true);
     
     try {
-      // When enabled, give all permissions; when disabled, remove all permissions
-      const permissions = value ? {
-        canCreate: true,
-        canView: true,
-        canEdit: true,
-        canDelete: true,
-      } : {
-        canCreate: false,
-        canView: false,
-        canEdit: false,
-        canDelete: false,
-      };
-
       if (permission.id) {
         // Update existing permission
-        await axios.put(`${BASE_URL}/api/permission/update/${permission.id}`, permissions);
-        toast.success(`${permission.resource} module ${value ? 'enabled' : 'disabled'} successfully!`);
+        await axios.put(`${BASE_URL}/api/permission/update/${permission.id}`, updatedPermissions);
       } else {
         // Create new permission
         await axios.post(`${BASE_URL}/api/permission/create-or-update`, {
           roleId: parseInt(roleId),
           resourceId: permission.resourceId,
-          ...permissions,
+          ...updatedPermissions,
         });
-        toast.success(`${permission.resource} module ${value ? 'enabled' : 'disabled'} successfully!`);
       }
       
-      // Update original state to reflect the change
-      setOriginalState(value);
-      
+      toast.success(`${permission.resource} permissions updated!`);
       // Call parent refresh function
       onSaved();
       
     } catch (error) {
       console.error("Error saving permission", error);
       toast.error(`Failed to save ${permission.resource} permissions`);
-      // Revert the local state if save failed
-      setLocalState(!value);
+      // Revert if save failed
+      setPermissions(permissions); 
     } finally {
       setIsSaving(false);
     }
   };
-
-
 
   return (
     <Paper elevation={3} sx={{ p: 2 }}>
@@ -96,7 +78,7 @@ const PermissionCard = ({ permission, roleId, onSaved }) => {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          mb: 1,
+          mb: 2,
         }}
       >
         <Typography variant="h6">
@@ -120,32 +102,62 @@ const PermissionCard = ({ permission, roleId, onSaved }) => {
         </Box>
       </Box>
       
-      {/* Debug info */}
-      <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mb: 2 }}>
-        ID: {permission.resourceId} | Status: {localState ? 'Enabled' : 'Disabled'}
-      </Typography>
-      
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <FormControlLabel
-          control={
-            <Switch
-              checked={localState}
-              onChange={(e) => handleToggle(e.target.checked)}
-              disabled={isSaving}
-              color="primary"
-            />
-          }
-          label={
-            <Typography variant="body1" sx={{ fontWeight: 500 }}>
-              {/* {localState ? 'Module Enabled' : 'Module Disabled'} */}
-            </Typography>
-          }
-        />
-      </Box>
-      
-      <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mb: 1 }}>
-        {localState ? 'Full access: Create, Read, Edit, Delete' : 'No access to this module'}
-      </Typography>
+      <FormGroup>
+        <Grid container>
+            <Grid item xs={6}>
+                 <FormControlLabel
+                    control={
+                        <Checkbox 
+                            checked={permissions.canCreate} 
+                            onChange={(e) => handlePermissionChange('canCreate', e.target.checked)} 
+                            name="canCreate" 
+                            size="small"
+                        />
+                    }
+                    label={<Typography variant="body2">Create</Typography>}
+                />
+            </Grid>
+            <Grid item xs={6}>
+                <FormControlLabel
+                    control={
+                        <Checkbox 
+                            checked={permissions.canView} 
+                            onChange={(e) => handlePermissionChange('canView', e.target.checked)} 
+                            name="canView" 
+                            size="small"
+                        />
+                    }
+                    label={<Typography variant="body2">View</Typography>}
+                />
+            </Grid>
+            <Grid item xs={6}>
+                <FormControlLabel
+                    control={
+                        <Checkbox 
+                            checked={permissions.canEdit} 
+                            onChange={(e) => handlePermissionChange('canEdit', e.target.checked)} 
+                            name="canEdit" 
+                            size="small"
+                        />
+                    }
+                    label={<Typography variant="body2">Edit</Typography>}
+                />
+            </Grid>
+            <Grid item xs={6}>
+                 <FormControlLabel
+                    control={
+                        <Checkbox 
+                            checked={permissions.canDelete} 
+                            onChange={(e) => handlePermissionChange('canDelete', e.target.checked)} 
+                            name="canDelete" 
+                            size="small"
+                        />
+                    }
+                    label={<Typography variant="body2">Delete</Typography>}
+                />
+            </Grid>
+        </Grid>
+      </FormGroup>
     </Paper>
   );
 };
