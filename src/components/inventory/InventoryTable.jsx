@@ -31,10 +31,13 @@ import ImportCSV from "./ImportCSV";
 import ConfirmationDialog from "../ConfirmationDialog";
 import * as XLSX from "xlsx";
 import Loader from "../loader/Loader";
+import useTableZoom from "@/hooks/useTableZoom";
+import TableZoom from "@/components/TableZoom";
 
 const InventoryTable = () => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState([]);
+  const { zoom, handleZoomChange, zoomStyle } = useTableZoom('inventory_table_zoom');
   const [rowCount, setRowCount] = useState(0);
   const [open, setOpen] = useState(false);
   const [editData, setEditData] = useState(null);
@@ -268,7 +271,7 @@ const InventoryTable = () => {
   }
 
   return (
-    <Paper p={3} sx={{ p: 4 }} className="zoom-67">
+    <Paper sx={{ p: 4, fontSize: `${Math.round(zoom * 100)}%` }} className="zoom-67">
       {/* Header with Add + Export + Search */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h5" fontWeight="bold">
@@ -310,6 +313,7 @@ const InventoryTable = () => {
           >
             Add Item
           </Button>
+          <TableZoom zoom={zoom} onZoomChange={handleZoomChange} />
         </Box>
       </Box>
 
@@ -338,6 +342,8 @@ const InventoryTable = () => {
         
       </Box>
 
+      <Box sx={{ overflowX: 'auto', width: '100%' }}>
+      <Box sx={zoomStyle}>
       {/* Inventory Table */}
       <TableContainer component={Paper}>
         <Table>
@@ -435,7 +441,9 @@ const InventoryTable = () => {
           setPage(0);
         }}
       />
+      </Box>
 
+      </Box>
       <ImportCSV open={importCSV} onClose={() => setImportCSV(false)} fetchData={fetchData} />
 
       <InventoryModal

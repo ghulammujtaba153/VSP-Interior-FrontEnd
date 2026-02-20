@@ -310,7 +310,7 @@ const ViewClient = ({ open, onClose, client }) => {
                                                         {contact.lastName || '—'}
                                                     </Typography>
                                                     <Typography
-                                                        variant="body2"
+                                                        variant="body3"
                                                         color="text.secondary"
                                                         noWrap
                                                     >
@@ -339,7 +339,7 @@ const ViewClient = ({ open, onClose, client }) => {
                                                             Email
                                                         </Typography>
                                                         <Typography
-                                                            variant="body2"
+                                                            variant="body3"
                                                             fontWeight={500}
                                                             noWrap
                                                         >
@@ -365,7 +365,7 @@ const ViewClient = ({ open, onClose, client }) => {
                                                             Phone
                                                         </Typography>
                                                         <Typography
-                                                            variant="body2"
+                                                            variant="body3"
                                                             fontWeight={500}
                                                             noWrap
                                                         >

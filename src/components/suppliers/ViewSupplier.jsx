@@ -290,7 +290,7 @@ const ViewSupplier = ({ open, onClose, selectedSupplier }) => {
                             {contact.lastName || ""}
                           </Typography>
                           <Typography
-                            variant="body2"
+                            variant="body3"
                             color="text.secondary"
                             noWrap
                           >
@@ -302,14 +302,14 @@ const ViewSupplier = ({ open, onClose, selectedSupplier }) => {
                       <Stack spacing={1.2}>
                         <Stack direction="row" spacing={1.2} alignItems="center">
                           <EmailIcon fontSize="small" color="action" />
-                          <Typography variant="body2" fontWeight={500}>
+                          <Typography variant="body3" fontWeight={500}>
                             {contact.emailAddress || "—"}
                           </Typography>
                         </Stack>
 
                         <Stack direction="row" spacing={1.2} alignItems="center">
                           <ContactPhoneIcon fontSize="small" color="action" />
-                          <Typography variant="body2" fontWeight={500}>
+                          <Typography variant="body3" fontWeight={500}>
                             {contact.phoneNumber || "—"}
                           </Typography>
                         </Stack>

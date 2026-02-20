@@ -21,7 +21,6 @@ import {
   TablePagination,
   TextField,
   InputAdornment,
-  Slider,
   Chip,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -36,8 +35,6 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
-import ZoomInIcon from '@mui/icons-material/ZoomIn';
-import ZoomOutIcon from '@mui/icons-material/ZoomOut';
 import Loader from '../loader/Loader';
 import { BASE_URL } from '@/configs/url';
 import { useAuth } from '@/context/authContext';
@@ -49,6 +46,8 @@ import ConfirmationDialog from '../ConfirmationDialog';
 import ImportModal from './ImportModal';
 
   import ContactsImportModal from './ContactsImportModal';
+import useTableZoom from '@/hooks/useTableZoom';
+import TableZoom from '../TableZoom';
 
 // ✅ Import XLSX for export
 import * as XLSX from "xlsx";
@@ -101,26 +100,10 @@ const ClientsTable = () => {
     console.log("==================");
   }, [theme]);
 
-  // Zoom / font scale state (persisted in localStorage)
-  const [zoom, setZoom] = useState(() => {
-    try {
-      if (typeof window === 'undefined') return 1;
-      const saved = localStorage.getItem('clients_table_zoom');
-      return saved ? parseFloat(saved) : 1;
-    } catch (e) {
-      return 1;
-    }
-  });
+  // Zoom / font scale state
+  const { zoom, handleZoomChange, zoomStyle } = useTableZoom('clients_table_zoom');
 
-  useEffect(() => {
-    try {
-      if (typeof window !== 'undefined') localStorage.setItem('clients_table_zoom', String(zoom));
-    } catch (e) {}
-  }, [zoom]);
 
-  const handleZoomChange = (event, value) => {
-    setZoom(typeof value === 'number' ? value : parseFloat(value));
-  };
 
   const fetchClients = async (currentPage = page, currentRowsPerPage = rowsPerPage, search = searchTerm) => {
     try {
@@ -616,7 +599,7 @@ const ClientsTable = () => {
                 >
                   <TableCell>{contact.id}</TableCell>
                   <TableCell>
-                    <Typography variant="body2">
+                    <Typography variant="body3">
                       {contact.firstName} {contact.lastName}
                     </Typography>
                   </TableCell>
@@ -697,24 +680,11 @@ const ClientsTable = () => {
           <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={handleAdd}>
             Add Client
           </Button>
-          <Box display="flex" alignItems="center" sx={{ ml: 1 }}>
-            <ZoomOutIcon fontSize="small" />
-            <Slider
-              value={zoom}
-              onChange={handleZoomChange}
-              step={0.05}
-              min={0.8}
-              max={1.6}
-              aria-label="Zoom"
-              sx={{ width: 140, mx: 1 }}
-            />
-            <ZoomInIcon fontSize="small" />
-            <Typography variant="body2" sx={{ ml: 1, width: 48 }}>{Math.round(zoom * 100)}%</Typography>
-          </Box>
+          <TableZoom zoom={zoom} onZoomChange={handleZoomChange} />
         </Box>
       </Box>
-
-      <Box sx={{ transform: `scale(${zoom})`, transformOrigin: 'top left', width: `${100/zoom}%` }}>
+    <Box sx={{ overflowX: 'auto', width: '100%' }}>
+      <Box sx={zoomStyle}>
 
       {/* Search Section */}
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
@@ -764,7 +734,7 @@ const ClientsTable = () => {
             Reset
           </Button>
         </Box>
-        <Typography variant="body2" color="textSecondary">
+        <Typography variant="body3" color="textSecondary">
           {totalCount > 0 ? `${totalCount} client${totalCount !== 1 ? 's' : ''} found` : 'No clients found'}
           {searchTerm && ` for "${searchTerm}"`}
         </Typography>
@@ -858,27 +828,27 @@ const ClientsTable = () => {
                     </TableCell>
                     <TableCell>{client.id}</TableCell>
                     <TableCell>
-                      <Typography variant="body2" fontWeight="medium" noWrap sx={{ maxWidth: 260 }}>
+                      <Typography variant="body3" fontWeight="medium" noWrap sx={{ maxWidth: 260 }}>
                         {capitalizeName(client.companyName)}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" noWrap sx={{ maxWidth: 220 }}>
+                      <Typography variant="body3" noWrap sx={{ maxWidth: 220 }}>
                         {client.emailAddress}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" noWrap sx={{ maxWidth: 160 }}>
+                      <Typography variant="body3" noWrap sx={{ maxWidth: 160 }}>
                         {client.phoneNumber}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" noWrap sx={{ maxWidth: 300 }}>
+                      <Typography variant="body3" noWrap sx={{ maxWidth: 300 }}>
                         {client.address}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" noWrap sx={{ maxWidth: 140 }}>
+                      <Typography variant="body3" noWrap sx={{ maxWidth: 140 }}>
                         {client.postCode}
                       </Typography>
                     </TableCell>
@@ -966,6 +936,8 @@ const ClientsTable = () => {
         />
       </Paper>
 
+
+      </Box>
       </Box>
 
       <ConfirmationDialog
