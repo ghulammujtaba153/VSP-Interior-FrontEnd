@@ -278,7 +278,7 @@ const AuditSection = () => {
             >
               Clear Filters
             </Button>
-            <Typography variant='body2' color='text.secondary'>
+            <Typography variant='body3' color='text.secondary'>
               {filteredAudits.length !== audits.length &&
                 `Showing ${filteredAudits.length} of ${audits.length} records`}
             </Typography>
@@ -334,7 +334,7 @@ const AuditSection = () => {
                               color={getActionColor(audit.action)}
                               size='small'
                             />
-                            <Typography component='span' variant='body2' color='text.secondary'>
+                            <Typography component='span' variant='body1' color='text.secondary'>
                               in {audit.tableName}
                             </Typography>
                           </Box>

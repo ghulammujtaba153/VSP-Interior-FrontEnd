@@ -27,6 +27,8 @@ import Loader from '@/components/loader/Loader';
 import Link from '@/components/Link';
 import PermissionWrapper from '@/components/PermissionWrapper';
 import { useAuth } from '@/context/authContext';
+import useTableZoom from '@/hooks/useTableZoom';
+import TableZoom from '../../TableZoom';
 
 
 const RolesTable = () => {
@@ -42,6 +44,9 @@ const RolesTable = () => {
   const [roleToDelete, setRoleToDelete] = useState(null);
   
   const {user} = useAuth();
+
+  // Zoom / font scale state
+  const { zoom, handleZoomChange, zoomStyle } = useTableZoom('roles_table_zoom');
 
 
 
@@ -192,23 +197,28 @@ const RolesTable = () => {
   return (
     <Box sx={{ width: '100%', borderRadius: 2, boxShadow: 1, p: 2 }} component={Paper}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-        <Typography variant="h6">Roles Table</Typography>
-        <Button
-          variant="contained"
-          onClick={() => handleOpen('create')}
-        >
-          Add Role
-        </Button>
-      </Box>
+            <Typography variant="h6">Roles Table</Typography>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+              <TableZoom zoom={zoom} onZoomChange={handleZoomChange} />
+              <Button
+                variant="contained"
+                onClick={() => handleOpen('create')}
+              >
+                Add Role
+              </Button>
+            </Box>
+          </Box>
 
-      <DataGrid
-        rows={roles}
-        columns={columns}
-        getRowId={(row) => row.id}
-        pageSize={5}
-        rowsPerPageOptions={[5, 10, 20]}
-        disableRowSelectionOnClick
-      />
+      <Box sx={zoomStyle}>
+        <DataGrid
+          rows={roles}
+          columns={columns}
+          getRowId={(row) => row.id}
+          pageSize={5}
+          rowsPerPageOptions={[5, 10, 20]}
+          disableRowSelectionOnClick
+        />
+      </Box>
 
       <RoleModal
         open={modalOpen}

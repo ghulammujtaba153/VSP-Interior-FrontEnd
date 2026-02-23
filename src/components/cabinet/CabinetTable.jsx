@@ -32,6 +32,8 @@ import ConfirmationDialog from '../ConfirmationDialog'
 
 // ✅ Import XLSX
 import * as XLSX from 'xlsx'
+import useTableZoom from '@/hooks/useTableZoom';
+import TableZoom from '../TableZoom';
 
 const CabinetTable = () => {
   const [loading, setLoading] = useState(true)
@@ -180,6 +182,9 @@ const CabinetTable = () => {
     setPage(0)
   }
 
+  // Zoom / font scale state
+  const { zoom, handleZoomChange, zoomStyle } = useTableZoom('cabinet_table_zoom');
+
   const handleSort = (property) => {
     const isAsc = orderBy === property && order === 'asc'
     setOrder(isAsc ? 'desc' : 'asc')
@@ -195,10 +200,9 @@ const CabinetTable = () => {
         <Typography variant='h5' fontWeight='bold'>
           Material Management
         </Typography>
-        
-        
 
-        <Box display='flex' gap={2}>
+        <Box display='flex' gap={2} alignItems='center'>
+          <TableZoom zoom={zoom} onZoomChange={handleZoomChange} />
           <Button
             variant='outlined'
             color='success'
@@ -268,8 +272,9 @@ const CabinetTable = () => {
 
       {/* Custom Table */}
       <Paper elevation={1}>
-        <TableContainer>
-          <Table sx={{ minWidth: 650 }} aria-label="cabinet table">
+        <Box sx={zoomStyle}>
+          <TableContainer>
+            <Table sx={{ minWidth: 650 }} aria-label="cabinet table">
             <TableHead>
               <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
                 <TableCell>
@@ -419,8 +424,9 @@ const CabinetTable = () => {
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
-        </TableContainer>
+            </Table>
+          </TableContainer>
+        </Box>
         
         {/* Pagination */}
         <TablePagination

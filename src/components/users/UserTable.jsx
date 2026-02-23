@@ -22,6 +22,8 @@ import { BASE_URL } from '@/configs/url';
 import PermissionWrapper from '@/components/PermissionWrapper';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAuth } from '@/context/authContext';
+import useTableZoom from '@/hooks/useTableZoom';
+import TableZoom from '../TableZoom';
 
 import * as XLSX from "xlsx";   // ✅ Import XLSX
 import Loader from '../loader/Loader';
@@ -41,6 +43,9 @@ const UserTable = () => {
   const { canView, canCreate, canEdit, canDelete } = usePermissions();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+
+  // Zoom / font scale state
+  const { zoom, handleZoomChange, zoomStyle } = useTableZoom('users_table_zoom');
 
 
   const fetchUsers = async () => {
@@ -302,18 +307,21 @@ const UserTable = () => {
           <Button variant="outlined" color="primary" onClick={handleExportExcel}>
             Export Excel
           </Button>
+          <TableZoom zoom={zoom} onZoomChange={handleZoomChange} />
         </Box>
       </Box>
 
-      <DataGrid
-        rows={users}
-        columns={columns}
-        getRowId={(row) => row.id}
-        pageSize={10}
-        rowsPerPageOptions={[25, 50, 75, 100, 150]}
-        disableRowSelectionOnClick
-        loading={loading}
-      />
+      <Box sx={zoomStyle}>
+        <DataGrid
+          rows={users}
+          columns={columns}
+          getRowId={(row) => row.id}
+          pageSize={10}
+          rowsPerPageOptions={[25, 50, 75, 100, 150]}
+          disableRowSelectionOnClick
+          loading={loading}
+        />
+      </Box>
 
       <UserModal
         open={modalOpen}

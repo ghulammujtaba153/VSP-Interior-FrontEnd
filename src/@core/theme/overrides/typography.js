@@ -2,6 +2,7 @@ const typography = {
   MuiTypography: {
     styleOverrides: {
       root: {
+        color: '#000',
         variants: [
           {
             props: { variant: 'h1' },

@@ -61,6 +61,13 @@ const CustomThemeProvider = props => {
               light: lighten(settings.primaryColor, 0.2),
               dark: darken(settings.primaryColor, 0.1)
             }
+            ,
+            // Force body text colors for light mode to true black (can adjust opacity as needed)
+            text: {
+              primary: '#000000',
+              secondary: 'rgba(0,0,0,0.7)',
+              disabled: 'rgba(0,0,0,0.4)'
+            }
           }
         },
         dark: {
