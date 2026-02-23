@@ -36,6 +36,8 @@ import {
 } from "@mui/icons-material";
 import CabinetCategoriesModal from "./CabinetCategoriesModal";
 import Link from "next/link";
+import useTableZoom from '@/hooks/useTableZoom';
+import TableZoom from '../../TableZoom';
 
 const CabinetCategoriesTable = () => {
   const [data, setData] = useState([]);
@@ -159,6 +161,9 @@ const CabinetCategoriesTable = () => {
     }
   };
 
+  // Zoom / font scale state
+  const { zoom, handleZoomChange, zoomStyle } = useTableZoom('cabinet_categories_table_zoom');
+
   if (loading) {
     return <Loader />;
   }
@@ -167,16 +172,19 @@ const CabinetCategoriesTable = () => {
     <Paper p={2} sx={{ padding: 2 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h5">Cabinet Categories</Typography>
-        <PermissionWrapper resource="Cabinet" action="canCreate">
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<Add />}
-            onClick={() => handleOpenModal("add")}
-          >
-            Add Category
-          </Button>
-        </PermissionWrapper>
+        <Box display="flex" gap={1} alignItems="center">
+          <TableZoom zoom={zoom} onZoomChange={handleZoomChange} />
+          <PermissionWrapper resource="Cabinet" action="canCreate">
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<Add />}
+              onClick={() => handleOpenModal("add")}
+            >
+              Add Category
+            </Button>
+          </PermissionWrapper>
+        </Box>
       </Box>
 
       {/* Search Section */}
@@ -243,8 +251,9 @@ const CabinetCategoriesTable = () => {
       />
 
       <Paper elevation={3}>
-        <TableContainer>
-          <Table>
+        <Box sx={zoomStyle}>
+          <TableContainer>
+            <Table>
             <TableHead>
               <TableRow >
                 <TableCell><strong>Category ID</strong></TableCell>
@@ -332,8 +341,9 @@ const CabinetCategoriesTable = () => {
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
-        </TableContainer>
+            </Table>
+          </TableContainer>
+        </Box>
 
         <TablePagination
           rowsPerPageOptions={[25, 50, 75, 100, 150]}

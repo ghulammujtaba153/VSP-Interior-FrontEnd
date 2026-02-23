@@ -20,6 +20,8 @@ import { BASE_URL } from '@/configs/url';
 import Loader from '@/components/loader/Loader';
 import PermissionWrapper from '@/components/PermissionWrapper';
 import { useAuth } from '@/context/authContext';
+import useTableZoom from '@/hooks/useTableZoom';
+import TableZoom from '../../TableZoom';
 
 
 
@@ -36,6 +38,9 @@ const ResourceTable = () => {
   const [resourceToDelete, setResourceToDelete] = useState(null);
   
   const { user } = useAuth();
+
+  // Zoom / font scale state
+  const { zoom, handleZoomChange, zoomStyle } = useTableZoom('resources_table_zoom');
 
   const handleAdd = () => {
     setSelectedResource(null);
@@ -140,14 +145,18 @@ const ResourceTable = () => {
   return (
     <Paper p={2} sx={{ p:4}}>
       <Box display="flex" justifyContent="space-between" mb={2}>
-        <Typography variant="h5" mb={2}>
-          Resources
-        </Typography>
-        <Button variant="contained" color="primary" onClick={handleAdd}>Add Resource</Button>
-      </Box>
+            <Typography variant="h5" mb={2}>
+              Resources
+            </Typography>
+            <Box display="flex" gap={1} alignItems="center">
+              <TableZoom zoom={zoom} onZoomChange={handleZoomChange} />
+              <Button variant="contained" color="primary" onClick={handleAdd}>Add Resource</Button>
+            </Box>
+          </Box>
 
       <Paper>
-        <DataGrid
+        <Box sx={zoomStyle}>
+          <DataGrid
           rows={resources.map((resource) => ({
             ...resource,
             id: resource.id, // DataGrid expects a unique 'id' field
@@ -157,7 +166,8 @@ const ResourceTable = () => {
           pageSize={10}
           rowsPerPageOptions={[5, 10, 20]}
           disableRowSelectionOnClick
-        />
+          />
+        </Box>
       </Paper>
 
       <ResourceModal
