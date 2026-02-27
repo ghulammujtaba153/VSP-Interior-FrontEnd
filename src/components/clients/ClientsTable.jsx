@@ -599,7 +599,7 @@ const ClientsTable = () => {
                 >
                   <TableCell>{contact.id}</TableCell>
                   <TableCell>
-                    <Typography variant="body2">
+                    <Typography variant="body2" color="inherit">
                       {contact.firstName} {contact.lastName}
                     </Typography>
                   </TableCell>
@@ -828,27 +828,27 @@ const ClientsTable = () => {
                     </TableCell>
                     <TableCell>{client.id}</TableCell>
                     <TableCell>
-                      <Typography variant="body2" fontWeight="medium" noWrap sx={{ maxWidth: 260 }}>
+                      <Typography variant="body2" fontWeight="medium" noWrap color="inherit" sx={{ maxWidth: 260 }}>
                         {capitalizeName(client.companyName)}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" noWrap sx={{ maxWidth: 220 }}>
+                      <Typography variant="body2" noWrap color="inherit" sx={{ maxWidth: 220 }}>
                         {client.emailAddress}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" noWrap sx={{ maxWidth: 160 }}>
+                      <Typography variant="body2" noWrap color="inherit" sx={{ maxWidth: 160 }}>
                         {client.phoneNumber}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" noWrap sx={{ maxWidth: 300 }}>
+                      <Typography variant="body2" noWrap color="inherit" sx={{ maxWidth: 300 }}>
                         {client.address}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body2" noWrap sx={{ maxWidth: 140 }}>
+                      <Typography variant="body2" noWrap color="inherit" sx={{ maxWidth: 140 }}>
                         {client.postCode}
                       </Typography>
                     </TableCell>

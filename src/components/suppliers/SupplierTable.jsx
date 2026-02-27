@@ -548,7 +548,7 @@ const SupplierTable = () => {
                                 >
                                     <TableCell>{contact.id}</TableCell>
                                     <TableCell>
-                                        <Typography variant="body2">
+                                        <Typography variant="body2" color="inherit">
                                             {contact.firstName} {contact.lastName}
                                         </Typography>
                                     </TableCell>
@@ -766,7 +766,7 @@ const SupplierTable = () => {
                                         </TableCell>
                                         <TableCell>{supplier.id}</TableCell>
                                         <TableCell>
-                                            <Typography variant="body2" fontWeight="medium">
+                                            <Typography variant="body2" fontWeight="medium" color="inherit">
                                                 {capitalizeName(supplier.name)}
                                             </Typography>
                                         </TableCell>
