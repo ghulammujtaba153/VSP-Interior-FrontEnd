@@ -280,7 +280,7 @@ const CreateProjectStep3 = ({ records, setRecords }) => {
             </Typography>
             <Grid container spacing={2} sx={{ mt: 1 }}>
               <Grid item xs={6} sm={3}>
-                <Typography variant="body3" color="text.secondary">
+                <Typography variant="body2" color="text.secondary">
                   Total Materials:
                 </Typography>
                 <Typography variant="body2" fontWeight="bold">
@@ -288,7 +288,7 @@ const CreateProjectStep3 = ({ records, setRecords }) => {
                 </Typography>
               </Grid>
               <Grid item xs={6} sm={3}>
-                <Typography variant="body3" color="text.secondary">
+                <Typography variant="body2" color="text.secondary">
                   Total Material Cost:
                 </Typography>
                 <Typography variant="body2" fontWeight="bold">
@@ -296,7 +296,7 @@ const CreateProjectStep3 = ({ records, setRecords }) => {
                 </Typography>
               </Grid>
               <Grid item xs={6} sm={3}>
-                <Typography variant="body3" color="text.secondary">
+                <Typography variant="body2" color="text.secondary">
                   Total Edging Cost:
                 </Typography>
                 <Typography variant="body2" fontWeight="bold">
@@ -304,7 +304,7 @@ const CreateProjectStep3 = ({ records, setRecords }) => {
                 </Typography>
               </Grid>
               <Grid item xs={6} sm={3}>
-                <Typography variant="body3" color="text.secondary">
+                <Typography variant="body2" color="text.secondary">
                   Grand Total:
                 </Typography>
                 <Typography variant="body2" fontWeight="bold" color="primary">

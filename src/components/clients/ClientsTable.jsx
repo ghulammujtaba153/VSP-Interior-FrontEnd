@@ -599,7 +599,7 @@ const ClientsTable = () => {
                 >
                   <TableCell>{contact.id}</TableCell>
                   <TableCell>
-                    <Typography variant="body3">
+                    <Typography variant="body2">
                       {contact.firstName} {contact.lastName}
                     </Typography>
                   </TableCell>
@@ -734,7 +734,7 @@ const ClientsTable = () => {
             Reset
           </Button>
         </Box>
-        <Typography variant="body3" color="textSecondary">
+        <Typography variant="body2" color="textSecondary">
           {totalCount > 0 ? `${totalCount} client${totalCount !== 1 ? 's' : ''} found` : 'No clients found'}
           {searchTerm && ` for "${searchTerm}"`}
         </Typography>
@@ -828,27 +828,27 @@ const ClientsTable = () => {
                     </TableCell>
                     <TableCell>{client.id}</TableCell>
                     <TableCell>
-                      <Typography variant="body3" fontWeight="medium" noWrap sx={{ maxWidth: 260 }}>
+                      <Typography variant="body2" fontWeight="medium" noWrap sx={{ maxWidth: 260 }}>
                         {capitalizeName(client.companyName)}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body3" noWrap sx={{ maxWidth: 220 }}>
+                      <Typography variant="body2" noWrap sx={{ maxWidth: 220 }}>
                         {client.emailAddress}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body3" noWrap sx={{ maxWidth: 160 }}>
+                      <Typography variant="body2" noWrap sx={{ maxWidth: 160 }}>
                         {client.phoneNumber}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body3" noWrap sx={{ maxWidth: 300 }}>
+                      <Typography variant="body2" noWrap sx={{ maxWidth: 300 }}>
                         {client.address}
                       </Typography>
                     </TableCell>
                     <TableCell>
-                      <Typography variant="body3" noWrap sx={{ maxWidth: 140 }}>
+                      <Typography variant="body2" noWrap sx={{ maxWidth: 140 }}>
                         {client.postCode}
                       </Typography>
                     </TableCell>
