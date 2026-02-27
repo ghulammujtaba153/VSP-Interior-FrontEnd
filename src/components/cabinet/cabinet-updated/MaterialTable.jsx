@@ -507,7 +507,7 @@ const MaterialTable = ({ id }) => {
                         {cabinet.cabinetSubCategory ? (
                           <Chip
                             label={cabinet.cabinetSubCategory.name}
-                            color='secondary'
+                            color='inherit'
                             variant='outlined'
                             size='small'
                           />
@@ -519,14 +519,14 @@ const MaterialTable = ({ id }) => {
                       </TableCell>
 
                       <TableCell>
-                        <Typography variant='body2' fontWeight='medium' noWrap sx={{ maxWidth: 300 }}>
+                        <Typography variant='body2' fontWeight='medium' noWrap color='inherit' sx={{ maxWidth: 300 }}>
                           {cabinet.code || 'N/A'}
                         </Typography>
                       </TableCell>
 
                       <TableCell>
                         <Tooltip title={cabinet.description || 'No description'}>
-                          <Typography variant='body2' noWrap sx={{ maxWidth: 200 }}>
+                          <Typography variant='body2' color='inherit' noWrap sx={{ maxWidth: 200 }}>
                             {cabinet.description || 'No description'}
                           </Typography>
                         </Tooltip>
@@ -543,7 +543,7 @@ const MaterialTable = ({ id }) => {
                       {dynamicColumns.map((column, index) => (
                         <TableCell key={index}>
                           <Tooltip title={getDynamicValue(cabinet, column)}>
-                            <Typography variant='body2' noWrap sx={{ maxWidth: 150 }}>
+                            <Typography variant='body2' noWrap color='inherit' sx={{ maxWidth: 150 }}>
                               {getDynamicValue(cabinet, column)}
                             </Typography>
                           </Tooltip>
