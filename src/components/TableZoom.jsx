@@ -19,7 +19,7 @@ const TableZoom = ({ zoom, onZoomChange }) => {
         sx={{ width: 140, mx: 1 }}
       />
       <ZoomInIcon fontSize="small" />
-      <Typography variant="body3" sx={{ ml: 1, width: 48 }}>
+      <Typography variant="body2" sx={{ ml: 1, width: 48 }}>
         {Math.round(zoom * 100)}%
       </Typography>
     </Box>

@@ -246,7 +246,7 @@ const ProjectSetupTable = () => {
               >
                 <TableCell>{project.id}</TableCell>
                 <TableCell>
-                  <Typography variant='body3' fontWeight='medium'>
+                  <Typography variant='body2' fontWeight='medium'>
                     {project.projectName}
                   </Typography>
                 </TableCell>

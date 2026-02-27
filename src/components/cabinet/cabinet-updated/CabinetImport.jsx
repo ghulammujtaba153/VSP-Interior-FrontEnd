@@ -769,7 +769,7 @@ const CabinetImport = ({ id, setIsInProgress, categoryName }) => {
                       <Typography variant="h6" gutterBottom noWrap>
                         {sub || "(empty)"}
                       </Typography>
-                      <Typography variant="body3" color="text.secondary" gutterBottom>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
                         {rows.length} item{rows.length !== 1 ? 's' : ''}
                       </Typography>
                       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
@@ -939,7 +939,7 @@ const CabinetImport = ({ id, setIsInProgress, categoryName }) => {
             Do you want to upload the template <strong>{pendingFile?.name}</strong> for this category?
           </Typography>
           {categoryName && (
-            <Typography variant="body3" color="text.secondary">
+            <Typography variant="body2" color="text.secondary">
               Category: <strong>{categoryName}</strong>
             </Typography>
           )}

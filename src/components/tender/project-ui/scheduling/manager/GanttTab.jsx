@@ -101,19 +101,19 @@ const GanttTab = () => {
         <Box display="flex" gap={3} flexWrap="wrap">
           <Box display="flex" alignItems="center" gap={1}>
             <Box width={10} height={10} borderRadius="50%" bgcolor="#4caf50" />
-            <Typography variant="body3" color="text.secondary">
+            <Typography variant="body2" color="text.secondary">
               On Schedule
             </Typography>
           </Box>
           <Box display="flex" alignItems="center" gap={1}>
             <Box width={10} height={10} borderRadius="50%" bgcolor="#ffb300" />
-            <Typography variant="body3" color="text.secondary">
+            <Typography variant="body2" color="text.secondary">
               Under-resourced
             </Typography>
           </Box>
           <Box display="flex" alignItems="center" gap={1}>
             <Box width={10} height={10} borderRadius="50%" bgcolor="#f44336" />
-            <Typography variant="body3" color="text.secondary">
+            <Typography variant="body2" color="text.secondary">
               Overdue
             </Typography>
           </Box>
@@ -143,7 +143,7 @@ const GanttTab = () => {
                   color="default"
                 />
               </Box>
-              <Typography variant="body3" color="text.secondary">
+              <Typography variant="body2" color="text.secondary">
                 {project.startDate} — {project.endDate}
               </Typography>
             </Box>
@@ -154,7 +154,7 @@ const GanttTab = () => {
                 <Box key={phase.id}>
                   <Box display="flex" alignItems="center" gap={1}>
                     <ChevronRightIcon fontSize="small" color="disabled" />
-                    <Typography variant="body3" fontWeight="500">
+                    <Typography variant="body2" fontWeight="500">
                       {phase.name}
                     </Typography>
 

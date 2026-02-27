@@ -392,7 +392,7 @@ const MaterialTable = ({ id }) => {
 
       {/* Sub Code Filter Dropdown */}
       <Box display='flex' alignItems='center' gap={2} mb={2}>
-        <Typography variant='body3' fontWeight='bold'>
+        <Typography variant='body2' fontWeight='bold'>
           Filter by Sub Code:
         </Typography>
         <TextField
@@ -512,21 +512,21 @@ const MaterialTable = ({ id }) => {
                             size='small'
                           />
                         ) : (
-                          <Typography variant='body3' color='textSecondary'>
+                          <Typography variant='body2' color='textSecondary'>
                             N/A
                           </Typography>
                         )}
                       </TableCell>
 
                       <TableCell>
-                        <Typography variant='body3' fontWeight='medium' noWrap sx={{ maxWidth: 300 }}>
+                        <Typography variant='body2' fontWeight='medium' noWrap sx={{ maxWidth: 300 }}>
                           {cabinet.code || 'N/A'}
                         </Typography>
                       </TableCell>
 
                       <TableCell>
                         <Tooltip title={cabinet.description || 'No description'}>
-                          <Typography variant='body3' noWrap sx={{ maxWidth: 200 }}>
+                          <Typography variant='body2' noWrap sx={{ maxWidth: 200 }}>
                             {cabinet.description || 'No description'}
                           </Typography>
                         </Tooltip>
@@ -543,7 +543,7 @@ const MaterialTable = ({ id }) => {
                       {dynamicColumns.map((column, index) => (
                         <TableCell key={index}>
                           <Tooltip title={getDynamicValue(cabinet, column)}>
-                            <Typography variant='body3' noWrap sx={{ maxWidth: 150 }}>
+                            <Typography variant='body2' noWrap sx={{ maxWidth: 150 }}>
                               {getDynamicValue(cabinet, column)}
                             </Typography>
                           </Tooltip>

@@ -278,7 +278,7 @@ const AuditSection = () => {
             >
               Clear Filters
             </Button>
-            <Typography variant='body3' color='text.secondary'>
+            <Typography variant='body2' color='text.secondary'>
               {filteredAudits.length !== audits.length &&
                 `Showing ${filteredAudits.length} of ${audits.length} records`}
             </Typography>

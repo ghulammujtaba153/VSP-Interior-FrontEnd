@@ -548,7 +548,7 @@ const SupplierTable = () => {
                                 >
                                     <TableCell>{contact.id}</TableCell>
                                     <TableCell>
-                                        <Typography variant="body3">
+                                        <Typography variant="body2">
                                             {contact.firstName} {contact.lastName}
                                         </Typography>
                                     </TableCell>
@@ -678,7 +678,7 @@ const SupplierTable = () => {
                         Reset
                     </Button>
                 </Box>
-                <Typography variant="body3" color="textSecondary">
+                <Typography variant="body2" color="textSecondary">
                     {totalCount > 0 ? `${totalCount} supplier${totalCount !== 1 ? 's' : ''} found` : 'No suppliers found'}
                     {searchTerm && ` for "${searchTerm}"`}
                 </Typography>
@@ -766,7 +766,7 @@ const SupplierTable = () => {
                                         </TableCell>
                                         <TableCell>{supplier.id}</TableCell>
                                         <TableCell>
-                                            <Typography variant="body3" fontWeight="medium">
+                                            <Typography variant="body2" fontWeight="medium">
                                                 {capitalizeName(supplier.name)}
                                             </Typography>
                                         </TableCell>
