@@ -1,14 +1,15 @@
 "use client"
 
 import React, { useEffect, useState } from 'react'
-import MaterialTable from '@/components/cabinet/cabinet-updated/MaterialTable'
-import CabinetImport from '@/components/cabinet/cabinet-updated/CabinetImport'
-import SubCategories from '@/components/cabinet/cabinet-updated/SubCategories'
+import MaterialTable from '@/components/cabinet/categories-inner/MaterialTable'
+import CabinetMaterialImport from '@/components/cabinet/categories-inner/CabinetMaterialImport'
+import SubCategories from '@/components/cabinet/categories-inner/SubCategories'
 import { useParams } from 'next/navigation'
 import { Tabs, Tab, Box, Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Paper } from '@mui/material'
 import axios from 'axios'
 import { BASE_URL } from '@/configs/url'
 import { useAuth } from '@/context/authContext'
+
 
 
 const SubCategoriesPage = () => {
@@ -77,7 +78,7 @@ const SubCategoriesPage = () => {
       {tabIndex === 0 && <SubCategories id={id} />}
       {tabIndex === 1 && <MaterialTable id={id} />}
       {tabIndex === 2 && (
-        <CabinetImport
+        <CabinetMaterialImport
           id={id}
           setIsInProgress={setIsInProgress}
           categoryName={data.name}

@@ -21,7 +21,7 @@ import {
   TableRow,
 } from "@mui/material";
 
-const ViewCabinet = ({ open, setOpen, data }) => {
+const ViewMaterial = ({ open, setOpen, data }) => {
   if (!data) return null;
 
   const formatDate = (dateString) => {
@@ -51,7 +51,7 @@ const ViewCabinet = ({ open, setOpen, data }) => {
         <TableContainer component={Paper} variant="outlined">
           <Table sx={{ minWidth: 400 }} size="small">
             <TableHead>
-              <TableRow sx={{ backgroundColor: 'grey.50' }}>
+              <TableRow sx={{ bgcolor: 'action.hover' }}>
                 <TableCell sx={{ fontWeight: 'bold', color: 'primary.main' }}>Property Name</TableCell>
                 <TableCell sx={{ fontWeight: 'bold', color: 'primary.main' }}>Value</TableCell>
               </TableRow>
@@ -61,7 +61,7 @@ const ViewCabinet = ({ open, setOpen, data }) => {
                 <TableRow 
                   key={index} 
                   sx={{ 
-                    backgroundColor: index % 2 === 0 ? 'white' : 'grey.50',
+                    backgroundColor: index % 2 === 0 ? (theme) => theme.palette.background.paper : (theme) => theme.palette.action.hover,
                     '&:last-child td, &:last-child th': { border: 0 }
                   }}
                 >
@@ -178,7 +178,7 @@ const ViewCabinet = ({ open, setOpen, data }) => {
               <Typography variant="h6" color="primary" gutterBottom>
                 Additional Properties
               </Typography>
-              <Typography variant="body2" color="textSecondary">
+              <Typography variant="body2" color="text.primary">
                 {(() => {
                   const count = Array.isArray(data.dynamicData?.arrayList)
                     ? data.dynamicData.arrayList.length
@@ -246,4 +246,4 @@ const ViewCabinet = ({ open, setOpen, data }) => {
   );
 };
 
-export default ViewCabinet;
+export default ViewMaterial;

@@ -24,13 +24,15 @@ const BackgroundPattern = styled(Box)({
 })
 
 const ContentCard = styled(Paper)(({ theme }) => ({
-  background: "rgba(255, 255, 255, 0.95)",
+  background: theme.palette.mode === 'dark' 
+    ? 'rgba(0, 0, 0, 0.4)' 
+    : theme.palette.background.paper,
   backdropFilter: "blur(20px)",
   borderRadius: "24px",
   padding: theme.spacing(6),
   textAlign: "center",
-  boxShadow: "0 20px 60px rgba(0, 0, 0, 0.1)",
-  border: "1px solid rgba(255, 255, 255, 0.3)",
+  boxShadow: "0 20px 60px rgba(0, 0, 0, 0.3)",
+  border: `1px solid ${theme.palette.divider}`,
   maxWidth: 500,
   width: "100%",
   position: "relative",

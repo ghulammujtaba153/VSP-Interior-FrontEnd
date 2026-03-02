@@ -24,8 +24,8 @@ import {
   MenuItem
 } from '@mui/material'
 import { Visibility, Edit, Delete, Add } from '@mui/icons-material'
-import CabinetModal from '@components/cabinet/CabinetModal'
-import ViewCabinet from '@components/cabinet/ViewCabinet'
+import ViewCabinet from '@/components/cabinet/categories-inner/ViewMaterial'
+import MaterialModal from '@/components/cabinet/categories-inner/MaterialModal'
 import { toast } from 'react-toastify'
 import { useAuth } from '@/context/authContext'
 import PermissionWrapper from '@/components/PermissionWrapper'
@@ -613,7 +613,7 @@ const MaterialTable = ({ id }) => {
           </Paper>
         </Box>
 
-        <CabinetModal
+        <MaterialModal
           open={open}
           setOpen={setOpen}
           editData={editData}

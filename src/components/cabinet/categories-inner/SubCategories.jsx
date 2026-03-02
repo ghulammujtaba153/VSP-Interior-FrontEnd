@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import PermissionWrapper from '@/components/PermissionWrapper'
-import SubCategoryModal from '../categories/SubCategoryModal'
+import SubCategoryModal from './SubCategoryModal'
 import { BASE_URL } from '@/configs/url'
 import { toast } from 'react-toastify'
 import axios from 'axios'
