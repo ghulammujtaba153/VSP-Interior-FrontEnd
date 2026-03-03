@@ -317,7 +317,7 @@ const CreateProjectStep4 = ({ allData, formData, setFormData }) => {
       </Typography>
 
       {/* Labour Cost Input */}
-      <Card variant="outlined" sx={{ mb: 3 }}>
+      <Card sx={{ mb: 3, backgroundImage: "none" }}>
         <CardContent>
           <Typography variant="subtitle1" fontWeight="600" gutterBottom>
             Labour Cost
@@ -341,7 +341,7 @@ const CreateProjectStep4 = ({ allData, formData, setFormData }) => {
       </Card>
 
       {/* Cost Summary Table */}
-      <Card variant="outlined" sx={{ mb: 3 }}>
+      <Card sx={{ mb: 3, backgroundImage: "none" }}>
         <CardContent>
           <Typography variant="subtitle1" fontWeight="600" gutterBottom>
             Cost Summary
@@ -349,7 +349,7 @@ const CreateProjectStep4 = ({ allData, formData, setFormData }) => {
           <TableContainer component={Paper}>
             <Table size="small">
               <TableHead>
-                <TableRow sx={{ backgroundColor: "#f9f9f9" }}>
+                <TableRow sx={{ backgroundColor: "action.hover" }}>
                   <TableCell>
                     <Typography variant="subtitle2" fontWeight="bold">
                       ITEM
@@ -370,7 +370,7 @@ const CreateProjectStep4 = ({ allData, formData, setFormData }) => {
                     <TableRow 
                       key={idx}
                       sx={{ 
-                        backgroundColor: isSummaryRow ? '#f0f8ff' : 'inherit',
+                        backgroundColor: isSummaryRow ? 'primary.lighterOpacity' : 'inherit',
                         '&:last-child td, &:last-child th': { border: 0 } 
                       }}
                     >
@@ -394,7 +394,7 @@ const CreateProjectStep4 = ({ allData, formData, setFormData }) => {
       </Card>
 
       {/* Project Details */}
-      <Card variant="outlined" sx={{ mb: 3 }}>
+      <Card sx={{ mb: 3, backgroundImage: "none" }}>
         <CardContent>
           <Typography variant="subtitle1" fontWeight="600" gutterBottom>
             Project Details
@@ -428,7 +428,7 @@ const CreateProjectStep4 = ({ allData, formData, setFormData }) => {
 
       {/* Materials Summary */}
       {materialsArray.length > 0 && (
-        <Card variant="outlined">
+        <Card sx={{ backgroundImage: "none" }}>
           <CardContent>
             <Typography variant="subtitle1" fontWeight="600" gutterBottom>
               Materials Summary ({materialsArray.length} items)
@@ -436,7 +436,7 @@ const CreateProjectStep4 = ({ allData, formData, setFormData }) => {
             <TableContainer component={Paper}>
               <Table size="small">
                 <TableHead>
-                  <TableRow sx={{ backgroundColor: "#f9f9f9" }}>
+                  <TableRow sx={{ backgroundColor: "action.hover" }}>
                     <TableCell><strong>Material</strong></TableCell>
                     <TableCell><strong>Type</strong></TableCell>
                     <TableCell><strong>Measure</strong></TableCell>

@@ -407,13 +407,9 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
           key={index} 
           sx={{ 
             mb: 2, 
+            backgroundImage: "none",
             border: '1px solid',
             borderColor: 'divider',
-            boxShadow: 1,
-            '&:hover': {
-              boxShadow: 3,
-              borderColor: 'primary.light'
-            },
             transition: 'all 0.3s'
           }}
         >
@@ -462,9 +458,9 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
           sx={{ 
             p: 4, 
             textAlign: 'center', 
-            backgroundColor: 'grey.50',
+            backgroundImage: "none",
             border: '2px dashed',
-            borderColor: 'grey.300'
+            borderColor: 'divider',
           }}
         >
           <Typography color="text.secondary">
@@ -476,7 +472,7 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
   );
 
   const renderNestedSection = (title, section, fields, icon) => (
-    <Card sx={{ mb: 3, boxShadow: 2 }}>
+    <Card sx={{ mb: 3, backgroundImage: "none" }}>
       <CardContent>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
           {icon}
@@ -503,7 +499,7 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
   );
 
   const renderLabourSection = (title, section, fields) => (
-    <Card sx={{ mb: 2, boxShadow: 1 }}>
+    <Card sx={{ mb: 2, backgroundImage: "none" }}>
       <CardContent>
         <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600, color: 'text.secondary' }}>
           {title}
@@ -529,13 +525,9 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
     <Card 
       sx={{ 
         height: '100%',
-        boxShadow: 2,
+        backgroundImage: "none",
         border: '1px solid',
-        borderColor: 'primary.light',
-        '&:hover': {
-          boxShadow: 4,
-          transform: 'translateY(-2px)'
-        },
+        borderColor: 'divider',
         transition: 'all 0.3s'
       }}
     >
@@ -584,11 +576,11 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
       <Box sx={{ width: '100%' }}>
         {/* Header */}
         <Paper 
-          elevation={3} 
           sx={{ 
             p: 3, 
             mb: 3, 
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: (theme) => theme.palette.primary.main,
+            backgroundImage: "none",
             color: 'white'
           }}
         >
@@ -601,7 +593,7 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
         </Paper>
 
         {/* Basic Information Section */}
-        <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
+        <Paper sx={{ p: 4, mb: 3, backgroundImage: "none" }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
             <InfoIcon sx={{ mr: 1, color: 'primary.main', fontSize: 28 }} />
             <Typography variant="h5" sx={{ fontWeight: 600 }}>
@@ -624,7 +616,7 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
       </Paper>
 
         {/* Tabs Section */}
-        <Paper elevation={2} sx={{ mb: 3 }}>
+        <Paper sx={{ mb: 3, backgroundImage: "none" }}>
           <Tabs
             value={activeTab}
             onChange={handleTabChange}

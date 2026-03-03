@@ -164,7 +164,7 @@ const CreateProjectStep2 = ({ records, setRecords }) => {
   };
 
   const renderSection = (rateType) => (
-    <Card key={rateType.type} sx={{ height: "100%" }}>
+    <Card key={rateType.type} sx={{ height: "100%", backgroundImage: "none" }}>
       <CardContent>
         <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
           {rateType.label}
@@ -211,7 +211,7 @@ const CreateProjectStep2 = ({ records, setRecords }) => {
   );
 
   return (
-    <Box sx={{ p: 3 }} component={Paper}>
+    <Box sx={{ p: 4, borderRadius: 2, backgroundImage: "none" }} component={Paper}>
       <Typography variant="h6" fontWeight="bold" gutterBottom>
         Project Rates Setup
       </Typography>
