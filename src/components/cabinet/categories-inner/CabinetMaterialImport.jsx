@@ -49,7 +49,7 @@ function normalizeHeader(header) {
   return header?.toString().trim().toLowerCase();
 }
 
-const CabinetImport = ({ id, setIsInProgress, categoryName }) => {
+const CabinetMaterialImport = ({ id, setIsInProgress, categoryName }) => {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState(1)
@@ -1034,4 +1034,4 @@ const CabinetImport = ({ id, setIsInProgress, categoryName }) => {
   )
 }
 
-export default CabinetImport
+export default CabinetMaterialImport

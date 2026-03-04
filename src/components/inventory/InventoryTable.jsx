@@ -20,6 +20,7 @@ import {
   TablePagination,
   Select,
   MenuItem,
+  TableSortLabel
 } from "@mui/material";
 import { Visibility, Edit, Delete } from "@mui/icons-material";
 import InventoryModal from "./InventoryModal";
@@ -56,6 +57,10 @@ const InventoryTable = () => {
   const [limit, setLimit] = useState(100);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
+
+  // Sorting
+  const [orderBy, setOrderBy] = useState('createdAt');
+  const [order, setOrder] = useState('desc');
   // Confirmation dialog states
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [confirmationConfig, setConfirmationConfig] = useState({
@@ -90,7 +95,13 @@ const InventoryTable = () => {
     });
   };
 
-  const fetchData = async (currentPage = page, currentLimit = limit, searchTerm = search) => {
+  const fetchData = async (
+    currentPage = page, 
+    currentLimit = limit, 
+    searchTerm = search,
+    sortField = orderBy,
+    sortOrder = order
+  ) => {
     setLoading(true);
     try {
       const params = [
@@ -104,7 +115,7 @@ const InventoryTable = () => {
         .filter(Boolean)
         .join("&");
 
-      const res = await axios.get(`${BASE_URL}/api/inventory/get?${params}`);
+      const res = await axios.get(`${BASE_URL}/api/inventory/get?${params}&sortBy=${sortField}&order=${sortOrder}`);
       setData(res.data.inventory || []);
       setRowCount(res.data.total || 0);
     } catch (error) {
@@ -128,7 +139,7 @@ const InventoryTable = () => {
   const fetchCategories = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/api/pricebook-categories/get?page=1&limit=10000`);
-      setCategories(res.data || []);
+      setCategories(res.data.priceBookCategories || []);
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
@@ -140,11 +151,11 @@ const InventoryTable = () => {
     // eslint-disable-next-line
   }, []);
 
-  // Refetch data when page or limit changes
+  // Refetch data when page, limit, supplier, search, or sorting changes
   useEffect(() => {
-    fetchData(page, limit, search);
+    fetchData(page, limit, search, orderBy, order);
     // eslint-disable-next-line
-  }, [page, limit, selectedSupplier, search]);
+  }, [page, limit, selectedSupplier, search, orderBy, order]);
 
   const handleDelete = (inventoryRow) => {
     showConfirmation({
@@ -261,6 +272,12 @@ const InventoryTable = () => {
     }
   };
 
+  const handleSort = (property) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
+
   // Pagination logic for Table
   const paginatedData = data;
 
@@ -349,17 +366,64 @@ const InventoryTable = () => {
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ minWidth: 80, fontWeight: 'bold' }}>ID</TableCell>
-              <TableCell sx={{ minWidth: 160, fontWeight: 'bold' }}>Name</TableCell>
+              <TableCell sx={{ minWidth: 80, fontWeight: 'bold' }}>
+                <TableSortLabel
+                  active={orderBy === 'id'}
+                  direction={orderBy === 'id' ? order : 'asc'}
+                  onClick={() => handleSort('id')}
+                >
+                  #
+                </TableSortLabel>
+              </TableCell>
+              <TableCell sx={{ minWidth: 160, fontWeight: 'bold' }}>
+                <TableSortLabel
+                  active={orderBy === 'name'}
+                  direction={orderBy === 'name' ? order : 'asc'}
+                  onClick={() => handleSort('name')}
+                >
+                  Name
+                </TableSortLabel>
+              </TableCell>
               <TableCell sx={{ minWidth: 220, fontWeight: 'bold' }}>Description</TableCell>
               <TableCell sx={{ minWidth: 120, fontWeight: 'bold' }}>Category</TableCell>
               <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Supplier</TableCell>
-              {/* <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Unit</TableCell> */}
-              <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Purchase Price</TableCell>
-              <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Quantity in Stock</TableCell>
-              <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Status</TableCell>
+              <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>
+                <TableSortLabel
+                  active={orderBy === 'costPrice'}
+                  direction={orderBy === 'costPrice' ? order : 'asc'}
+                  onClick={() => handleSort('costPrice')}
+                >
+                  Purchase Price
+                </TableSortLabel>
+              </TableCell>
+              <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>
+                <TableSortLabel
+                  active={orderBy === 'quantity'}
+                  direction={orderBy === 'quantity' ? order : 'asc'}
+                  onClick={() => handleSort('quantity')}
+                >
+                  Quantity in Stock
+                </TableSortLabel>
+              </TableCell>
+              <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>
+                <TableSortLabel
+                  active={orderBy === 'status'}
+                  direction={orderBy === 'status' ? order : 'asc'}
+                  onClick={() => handleSort('status')}
+                >
+                  Status
+                </TableSortLabel>
+              </TableCell>
               <TableCell sx={{ minWidth: 180, fontWeight: 'bold' }}>Notes</TableCell>
-              <TableCell sx={{ minWidth: 120, fontWeight: 'bold' }}>Date</TableCell>
+              <TableCell sx={{ minWidth: 120, fontWeight: 'bold' }}>
+                <TableSortLabel
+                  active={orderBy === 'createdAt'}
+                  direction={orderBy === 'createdAt' ? order : 'asc'}
+                  onClick={() => handleSort('createdAt')}
+                >
+                  Date
+                </TableSortLabel>
+              </TableCell>
               <TableCell sx={{ minWidth: 190, fontWeight: 'bold' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -375,7 +439,7 @@ const InventoryTable = () => {
                 //   }
                 // }}
               >
-                <TableCell sx={{ minWidth: 80 }}>{item.id}</TableCell>
+                <TableCell sx={{ minWidth: 80 }}>{(page * limit) + index + 1}</TableCell>
                 <TableCell sx={{ minWidth: 160 }}>{item.name}</TableCell>
                 <TableCell sx={{ minWidth: 220 }}>{item.description}</TableCell>
                 <TableCell sx={{ minWidth: 120 }}>{item.categoryDetails.name}</TableCell>

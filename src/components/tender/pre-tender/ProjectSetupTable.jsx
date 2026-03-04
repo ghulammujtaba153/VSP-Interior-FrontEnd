@@ -161,25 +161,41 @@ const ProjectSetupTable = () => {
   if (loading) return <Loader />
 
   return (
-    <Paper sx={{ padding: 2 }}>
+    <Paper sx={{ padding: 3, backgroundImage: "none", borderRadius: 2 }}>
       <Link href='/quotes'>
-        <Button variant='contained' color='primary'>
-          back
+        <Button variant='outlined' color='primary' sx={{ mb: 3 }}>
+          Back to Quotes
         </Button>
       </Link>
+
       {/* Header */}
-      <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
-        <Typography variant='h5' fontWeight='bold'>
-          Project Setup Management
-        </Typography>
+      <Box display='flex' justifyContent='space-between' alignItems='center' mb={4}>
+        <Box>
+          <Typography variant='h4' fontWeight='700' color='primary' sx={{ mb: 0.5 }}>
+            Project Setup Management
+          </Typography>
+          <Typography variant='body2' color='text.secondary'>
+            Manage and monitor all your interior design projects
+          </Typography>
+        </Box>
 
         <Box display='flex' gap={2}>
-          <Button variant='outlined' color='success' onClick={handleExportExcel}>
+          <Button 
+            variant='outlined' 
+            color='success' 
+            onClick={handleExportExcel}
+            sx={{ borderRadius: 2, px: 3 }}
+          >
             Export Excel
           </Button>
 
           <Link href='/project/form'>
-            <Button variant='contained' color='primary' startIcon={<Add />}>
+            <Button 
+              variant='contained' 
+              color='primary' 
+              startIcon={<Add />}
+              sx={{ borderRadius: 2, px: 3 }}
+            >
               Add Project
             </Button>
           </Link>
@@ -187,35 +203,44 @@ const ProjectSetupTable = () => {
       </Box>
 
       {/* Search */}
-      <Box display='flex' gap={1} mb={2}>
+      <Box 
+        display='flex' 
+        gap={2} 
+        mb={4} 
+        component={Paper} 
+        variant="outlined" 
+        sx={{ p: 2, backgroundImage: 'none', borderStyle: 'dashed' }}
+      >
         <TextField
-          label='Search by name/description'
-          size='small'
+          label='Search Projects'
+          size='medium'
           value={searchInput}
           onChange={e => setSearchInput(e.target.value)}
-          sx={{ width: '300px' }}
-          placeholder='Search...'
+          sx={{ width: '400px' }}
+          placeholder='Search by name, site, or description...'
         />
         <Button
           variant='contained'
+          size="large"
+          sx={{ px: 4 }}
           onClick={() => {
             setPage(0)
             setSearch(searchInput)
           }}
         >
-          Apply
+          Apply Filter
         </Button>
-        <Button variant='outlined' color='secondary' onClick={handleResetSearch}>
+        <Button variant='outlined' color='secondary' size="large" onClick={handleResetSearch}>
           Reset
         </Button>
       </Box>
 
       {/* Table */}
-      <TableContainer>
-        <Table sx={{ minWidth: 650 }} aria-label='project table'>
+      <TableContainer sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: 2, boxShadow: (theme) => theme.shadows[2] }}>
+        <Table sx={{ minWidth: 800 }} aria-label='project table'>
           <TableHead>
-            <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-              <TableCell>
+            <TableRow sx={{ backgroundColor: 'action.hover' }}>
+              <TableCell sx={{ fontWeight: 'bold', py: 2 }}>
                 <TableSortLabel
                   active={orderBy === 'id'}
                   direction={orderBy === 'id' ? order : 'asc'}
@@ -224,29 +249,28 @@ const ProjectSetupTable = () => {
                   ID
                 </TableSortLabel>
               </TableCell>
-              <TableCell sx={{minWidth: 250}}>Project Name</TableCell>
-              <TableCell sx={{minWidth: 250}}>Site Location</TableCell>
-              <TableCell sx={{minWidth: 200}}>Estimator</TableCell>
-              <TableCell sx={{minWidth: 180}}>Project Date</TableCell>
-              <TableCell>Client</TableCell>
-              <TableCell>Revision</TableCell>
-              <TableCell>Created At</TableCell>
-
-              <TableCell sx={{minWidth: 250}}>Amendment</TableCell>
-              <TableCell sx={{minWidth: 250}}>Tender Template</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell sx={{ minWidth: 250, fontWeight: 'bold' }}>Project Name</TableCell>
+              <TableCell sx={{ minWidth: 250, fontWeight: 'bold' }}>Site Location</TableCell>
+              <TableCell sx={{ minWidth: 200, fontWeight: 'bold' }}>Estimator</TableCell>
+              <TableCell sx={{ minWidth: 180, fontWeight: 'bold' }}>Project Date</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Client</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Revision</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>Created At</TableCell>
+              <TableCell sx={{ minWidth: 280, fontWeight: 'bold', textAlign: 'center' }}>Manage</TableCell>
+              <TableCell sx={{ minWidth: 220, fontWeight: 'bold', textAlign: 'center' }}>Outputs</TableCell>
+              <TableCell sx={{ fontWeight: 'bold', textAlign: 'right' }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {data.map(project => (
               <TableRow
                 key={project.id}
-                sx={{ '&:nth-of-type(odd)': { backgroundColor: '#fafafa' } }}
                 hover
+                sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
               >
-                <TableCell>{project.id}</TableCell>
+                <TableCell sx={{ py: 2.5 }}>{project.id}</TableCell>
                 <TableCell>
-                  <Typography variant='body2' fontWeight='medium'>
+                  <Typography variant='subtitle2' fontWeight='700'>
                     {project.projectName}
                   </Typography>
                 </TableCell>
@@ -259,7 +283,8 @@ const ProjectSetupTable = () => {
                       label={project.client.companyName}
                       color='primary'
                       variant='outlined'
-                      size='small'
+                      size='medium'
+                      sx={{ fontWeight: 600 }}
                     />
                   ) : (
                     'N/A'
@@ -268,71 +293,90 @@ const ProjectSetupTable = () => {
                 <TableCell>
                   {project.revision === 0 ? (
                     <Chip
-                      label='Awaiting Super Admin Approval'
+                      label='Awaiting Approval'
                       color='warning'
                       size='small'
+                      sx={{ fontWeight: 600, fontSize: '0.75rem' }}
                     />
                   ) : project.revision === 1 ? (
                     <Chip
-                      label='Ready for Quotation'
+                      label='Ready'
                       color='success'
                       size='small'
+                      sx={{ fontWeight: 600, fontSize: '0.75rem' }}
                     />
                   ) : (
                     <Chip label={project.revision} color='secondary' size='small' />
                   )}
                 </TableCell>
                 <TableCell>{formatDate(project.createdAt)}</TableCell>
-                <TableCell>
-                  <Tooltip title='Create Amendment'>
-                    <IconButton
-                      color='primary'
-                      size='small'
-                      onClick={() =>
-                        router.push(`/project/form?id=${project.id}&mode=edit&amend=true`)
-                      }
-                    >
-                      <Assignment />
-                    </IconButton>
-                  </Tooltip>
+                <TableCell align="center">
+                  <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center' }}>
+                    <Tooltip title='Create Amendment'>
+                      <IconButton
+                        color='primary'
+                        variant="contained"
+                        sx={{ 
+                          backgroundColor: 'primary.lighterOpacity',
+                          '&:hover': { backgroundColor: 'primary.main', color: 'white' }
+                        }}
+                        onClick={() =>
+                          router.push(`/project/form?id=${project.id}&mode=edit&amend=true`)
+                        }
+                      >
+                        <Assignment fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
 
-                  <Link href={`/project/history?id=${project.id}`}>
-                  <Button
-                    variant='contained'
-                    >
-                      View History
-                    </Button>
+                    <Link href={`/project/history?id=${project.id}`}>
+                      <Button
+                        variant='contained'
+                        size='small'
+                        sx={{ borderRadius: 1.5 }}
+                      >
+                        History
+                      </Button>
                     </Link>
-
-                  
-
-
+                  </Box>
                 </TableCell>
-                <TableCell>
-                  <Button variant='contained' color='primary' onClick={() => handleTenderTemplate(project.id)}>
-                    Generate Tender Template
+                <TableCell align="center">
+                  <Button 
+                    variant='outlined' 
+                    color='info' 
+                    size='small' 
+                    fullWidth
+                    sx={{ borderRadius: 1.5, fontWeight: 600 }}
+                    onClick={() => handleTenderTemplate(project.id)}
+                  >
+                    Tender Template
                   </Button>
                 </TableCell>
-                <TableCell>
-                  <Box display='flex' gap={0.5}>
+                <TableCell align="right">
+                  <Box display='flex' gap={1} justifyContent="flex-end">
                     <Tooltip title='Edit Project'>
                       <IconButton
                         color='secondary'
-                        size='small'
+                        sx={{ 
+                          backgroundColor: 'secondary.lighterOpacity',
+                          '&:hover': { backgroundColor: 'secondary.main', color: 'white' }
+                        }}
                         onClick={() =>
                           router.push(`/project/form?id=${project.id}&mode=edit`)
                         }
                       >
-                        <Edit />
+                        <Edit fontSize="small" />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title='Delete Project'>
                       <IconButton
                         color='error'
-                        size='small'
+                        sx={{ 
+                          backgroundColor: 'error.lighterOpacity',
+                          '&:hover': { backgroundColor: 'error.main', color: 'white' }
+                        }}
                         onClick={() => handleDelete(project)}
                       >
-                        <Delete />
+                        <Delete fontSize="small" />
                       </IconButton>
                     </Tooltip>
                   </Box>
@@ -341,8 +385,8 @@ const ProjectSetupTable = () => {
             ))}
             {data.length === 0 && (
               <TableRow>
-                <TableCell colSpan={11} align='center'>
-                  No records found
+                <TableCell colSpan={11} align='center' sx={{ py: 10 }}>
+                  <Typography variant="h6" color="text.secondary">No records found</Typography>
                 </TableCell>
               </TableRow>
             )}
@@ -359,6 +403,10 @@ const ProjectSetupTable = () => {
         page={page}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
+        sx={{ 
+          borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+          mt: 2
+        }}
       />
 
       {/* Delete Confirmation */}

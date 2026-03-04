@@ -2,7 +2,6 @@
 
 import jsPDF from "jspdf";
 
-
 /**
  * Loads an image and converts it to base64
  */
@@ -29,7 +28,7 @@ const loadImageAsDataURL = (imagePath) => {
 };
 
 /**
- * Generates General Exclusions and Health, Safety & Environment page for tender template
+ * Generates Exclusions, HSE, and Terms & Conditions Summary page
  * @param {jsPDF} doc - The jsPDF document instance
  */
 export const generateGeneralExclusionsPage = async (doc) => {
@@ -44,215 +43,140 @@ export const generateGeneralExclusionsPage = async (doc) => {
   doc.addPage();
   let currentY = 15;
 
-  // Logo on Page 6 (Top Right)
+  // Logo (Top Right)
   try {
     const logoDataURL = await loadImageAsDataURL('/logo.png');
     const logoWidth = 40;
     const logoHeight = 15;
     doc.addImage(logoDataURL, 'PNG', pageWidth - logoWidth - 10, 10, logoWidth, logoHeight);
   } catch (error) {
-    console.warn('Failed to load logo on page 6:', error);
-    doc.setTextColor(...redColor);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(18);
-    doc.text('VSP', pageWidth - 40, 15);
-    doc.setFontSize(12);
-    doc.setTextColor(...blackColor);
-    doc.text('Interiors', pageWidth - 40, 22);
+    console.warn('Failed to load logo on exclusions page:', error);
   }
 
-  // General Exclusions Section
+  // ==================== EXCLUSIONS ====================
   doc.setTextColor(...blackColor);
-  doc.setFontSize(14);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text('General Exclusions:', 10, currentY);
-
-  currentY += 8;
-
+  doc.text('Exclusions:', 10, currentY);
+  
+  currentY += 5;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
+  const exclusionIntro = "Unless specifically included within this tender submission, the following items are excluded from VSP Interiors Limited's scope of works:";
+  const splitIntro = doc.splitTextToSize(exclusionIntro, pageWidth - 20);
+  doc.text(splitIntro, 10, currentY);
+  currentY += splitIntro.length * 4 + 4;
 
   const exclusions = [
-    'Vertical delivery (e.g., carrying items upstairs).',
-    'Structural, building, or alteration works, including demolition, carpentry, framing, linings, and associated works by others.',
-    'Electrical, plumbing, gas fitting, or mechanical works, including appliance connections.',
-    'Mirror, glass splash-back, LED lighting, Autex unless specifically included.',
-    'Painting, finishing, or decoration of existing joinery items unless specifically included.',
+    'Vertical delivery (e.g., stairs, lifts, cranage, or upper-level transportation).',
+    'Structural, building, or alteration works including demolition, framing, linings, carpentry, or associated builder’s works by others.',
+    'Electrical, plumbing, gas fitting, mechanical, and data service works including appliance connections.',
+    'Mirrors, glass splashbacks, LED lighting, Autex panels, or specialist finishes unless specifically included.',
+    'Making good to walls, floors, ceilings, or existing finishes due to building tolerances or site conditions.',
+    'Painting, finishing, or decoration of existing joinery.',
     'Supply or installation of any appliances, fixtures, or fittings.',
     'Provision of access equipment (e.g., scaffolding, hoists, Hiab) unless explicitly noted.',
     'Site preparation works, including clearing, levelling, or remedial building works to accommodate joinery.',
-    'Removal of existing joinery or cabinetry unless otherwise specified.',
-    'Costs associated with delays or disruptions outside of VSP Interiors\' control.',
+    'Removal of existing joinery or cabinetry unless otherwise noted.',
+    'Protection of installed works by others after installation completion.',
+    'Builder’s clean or final construction clean.',
+    'Seismic restraint engineering or design, unless specifically documented.',
+    'Costs associated with delays or disruptions outside of VSP Interiors’ control.',
+    'Delays arising from late information, incomplete documentation, or delayed approvals by others, including architectural, consultant, or client instructions.',
     'Supply of materials, finishes, or products not available locally or requiring special import unless stated.',
     'Any fees, permits, or consents required by councils or regulatory bodies.'
   ];
 
-  for (const exclusion of exclusions) {
-    // Check if we need a new page
-    if (currentY > pageHeight - 100) {
-      doc.addPage();
-      currentY = 15;
-      
-      // Add logo to new page
-      try {
-        const logoDataURL = await loadImageAsDataURL('/logo.png');
-        const logoWidth = 40;
-        const logoHeight = 15;
-        doc.addImage(logoDataURL, 'PNG', pageWidth - logoWidth - 10, 10, logoWidth, logoHeight);
-      } catch (error) {
-        console.warn('Failed to load logo on continuation page:', error);
-      }
-    }
+  exclusions.forEach((item) => {
+    doc.text('•', 15, currentY);
+    const splitText = doc.splitTextToSize(item, pageWidth - 30);
+    doc.text(splitText, 22, currentY);
+    currentY += splitText.length * 4 + 1;
+  });
 
-    // Bullet point
-    doc.text('•', 10, currentY);
-    
-    // Text with wrapping
-    const textLines = doc.splitTextToSize(exclusion, pageWidth - 25);
-    doc.text(textLines, 20, currentY);
-    currentY += textLines.length * 3.5 + 2;
-  }
-
-  // Health, Safety & Environment Section
+  // ==================== HEALTH, SAFETY & ENVIRONMENT ====================
   currentY += 5;
-  
-  // Check if we need a new page for this section
-  if (currentY > pageHeight - 100) {
-    doc.addPage();
-    currentY = 15;
-    
-    // Add logo to new page
-    try {
-      const logoDataURL = await loadImageAsDataURL('/logo.png');
-      const logoWidth = 40;
-      const logoHeight = 15;
-      doc.addImage(logoDataURL, 'PNG', pageWidth - logoWidth - 10, 10, logoWidth, logoHeight);
-    } catch (error) {
-      console.warn('Failed to load logo on continuation page:', error);
-    }
-  }
-
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(14);
+  doc.setFontSize(11);
   doc.text('Health, Safety & Environment', 10, currentY);
-
-  currentY += 8;
-
+  
+  currentY += 5;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-
-  const healthSafetyItems = [
+  
+  const hseItems = [
     'Fully compliant with the Health and Safety at Work Act 2015 (HSWA).',
-    'Preparation and implementation of a Site-specific Safety Plan (SSSP) and risk registers prior to commencement.',
-    'Active participation in Site Wise or equivalent safety programs, with current certification for all site personnel.',
-    'Use of personal protective equipment (PPE) and adherence to site-specific safety requirements at all times.',
-    'All personnel are trained and briefed in site safety protocols before commencing work.',
-    'Safe handling, storage, and use of tools, machinery, and materials in accordance with manufacturer and site safety guidelines.',
-    'Coordination with other trades to maintain a safe, organized, and clean worksite.',
-    'Ongoing monitoring, reporting, and management of hazards throughout the project to ensure a safe working environment.',
-    'Minimisation of dust, noise, and other site environmental impacts.',
-    'Implementation of environmentally responsible work practices to be maintained throughout the project.'
+    'Site-specific Safety Plan (SSSP) and risk registers prepared prior to commencement.',
+    'Active SiteWise participation and certification.',
+    'All personnel hold current inductions, relevant competencies, and participate in toolbox meetings and ongoing safety monitoring.',
+    'Environmentally responsible work practices to be maintained throughout the project.'
   ];
 
-  for (const item of healthSafetyItems) {
-    // Check if we need a new page
-    if (currentY > pageHeight - 100) {
-      doc.addPage();
-      currentY = 15;
-      
-      // Add logo to new page
-      try {
-        const logoDataURL = await loadImageAsDataURL('/logo.png');
-        const logoWidth = 40;
-        const logoHeight = 15;
-        doc.addImage(logoDataURL, 'PNG', pageWidth - logoWidth - 10, 10, logoWidth, logoHeight);
-      } catch (error) {
-        console.warn('Failed to load logo on continuation page:', error);
-      }
+  hseItems.forEach((item) => {
+    doc.text('•', 15, currentY);
+    const splitText = doc.splitTextToSize(item, pageWidth - 30);
+    // Dynamic Bold for HSWA
+    if (item.includes('Health and Safety at Work Act 2015 (HSWA)')) {
+      const parts = item.split('Health and Safety at Work Act 2015 (HSWA)');
+      doc.text(parts[0], 22, currentY);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Health and Safety at Work Act 2015 (HSWA).', 22 + doc.getTextWidth(parts[0]), currentY);
+      doc.setFont('helvetica', 'normal');
+    } else {
+      doc.text(splitText, 22, currentY);
     }
+    currentY += splitText.length * 4 + 1;
+  });
 
-    // Bullet point
-    doc.text('•', 10, currentY);
-    
-    // Text with wrapping
-    const textLines = doc.splitTextToSize(item, pageWidth - 25);
-    doc.text(textLines, 20, currentY);
-    currentY += textLines.length * 3.5 + 2;
-  }
-
-  // Signature Block
-  currentY += 6;
-  
-  // Check if we need a new page for signature
-  if (currentY > pageHeight - 50) {
-    doc.addPage();
-    currentY = 15;
-    
-    // Add logo to new page
-    try {
-      const logoDataURL = await loadImageAsDataURL('/logo.png');
-      const logoWidth = 40;
-      const logoHeight = 15;
-      doc.addImage(logoDataURL, 'PNG', pageWidth - logoWidth - 10, 10, logoWidth, logoHeight);
-    } catch (error) {
-      console.warn('Failed to load logo on continuation page:', error);
-    }
-  }
-
-  currentY += 15;
-
-  // Signature line
-  doc.setLineWidth(0.5);
-  doc.line(10, currentY, 50, currentY);
-  currentY += 6;
-  
+  // ==================== TERMS & CONDITIONS (SUMMARY) ====================
+  currentY += 5;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.text('Vishal Prasad', 10, currentY);
-  currentY += 4;
+  doc.setFontSize(11);
+  doc.text('Terms & Conditions (Summary)', 10, currentY);
   
+  currentY += 5;
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.text('Director', 10, currentY);
-  currentY += 4;
-  
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.text('VSP Interiors Limited', 10, currentY);
-  currentY += 4;
-  
   doc.setFontSize(9);
-  doc.text('021 183 9151', 10, currentY);
-  currentY += 4;
-  
-  doc.setTextColor(25, 118, 210);
-  doc.text('vishal@vspinteriors.co.nz', 10, currentY);
 
-  // ==================== FOOTER SECTION ====================
-  const footerY = pageHeight - 25;
-  
-  // Red horizontal line
-  doc.setDrawColor(...redColor);
-  doc.setLineWidth(0.5);
-  doc.line(10, footerY, pageWidth - 10, footerY);
-  
-  // Footer content
-  let footerYPos = footerY + 5;
-  doc.setTextColor(...blackColor);
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
-  doc.text('VSP Interiors', 10, footerYPos);
-  
-  doc.setFont('helvetica', 'normal');
-  doc.text('Address: 36 Parkway Drive, Rosedale, Auckland', 10, footerYPos + 4);
-  doc.setTextColor(25, 118, 210);
-  doc.text('Email: info@vspinteriors.co.nz', 10, footerYPos + 8);
-  
-  // Right side footer
-  doc.setTextColor(...blackColor);
-  doc.text('Phone: (09) 442 2588', pageWidth - 60, footerYPos);
-  doc.text('Fax: (09) 442 2585', pageWidth - 60, footerYPos + 4);
-  doc.setTextColor(25, 118, 210);
-  doc.text('Web: www.vspinteriors.co.nz', pageWidth - 60, footerYPos + 8);
+  const tcItems = [
+    { label: 'Tender Validity:', text: '90 calendar days from submission.' },
+    { label: 'Payment:', text: 'Progress payments shall be made in accordance with the Construction Contracts Act 2002 and the agreed payment schedule, payable on the 20th of the month following the date' }
+  ];
+
+  tcItems.forEach((item) => {
+    doc.text('•', 15, currentY);
+    doc.setFont('helvetica', 'bold');
+    doc.text(item.label, 22, currentY);
+    doc.setFont('helvetica', 'normal');
+    const labelW = doc.getTextWidth(item.label);
+    const splitText = doc.splitTextToSize(item.text, pageWidth - 30 - labelW);
+    doc.text(splitText, 22 + labelW + 1, currentY);
+    currentY += splitText.length * 4 + 2;
+  });
+
+  // Footer helper
+  const addFooter = (docInstance) => {
+    const footerY = pageHeight - 25;
+    docInstance.setDrawColor(...redColor);
+    docInstance.setLineWidth(0.5);
+    docInstance.line(10, footerY, pageWidth - 10, footerY);
+    
+    docInstance.setTextColor(...blackColor);
+    docInstance.setFont('helvetica', 'bold');
+    docInstance.setFontSize(8);
+    docInstance.text('VSP Interiors', 10, footerY + 5);
+    
+    docInstance.setFont('helvetica', 'normal');
+    docInstance.text('Address: 36 Parkway Drive, Rosedale, Auckland', 10, footerY + 9);
+    docInstance.setTextColor(25, 118, 210);
+    docInstance.text('Email: info@vspinteriors.co.nz', 10, footerY + 13);
+    
+    docInstance.setTextColor(...blackColor);
+    docInstance.text('Phone: (09) 442 2588', pageWidth - 60, footerY + 5);
+    docInstance.text('Fax: (09) 442 2585', pageWidth - 60, footerY + 9);
+    docInstance.setTextColor(25, 118, 210);
+    docInstance.text('Web: www.vspinteriors.co.nz', pageWidth - 60, footerY + 13);
+  };
+
+  addFooter(doc);
 };
-

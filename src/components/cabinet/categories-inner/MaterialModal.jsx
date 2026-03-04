@@ -29,10 +29,10 @@ import axios from "axios";
 import { BASE_URL } from "@/configs/url";
 import { toast } from "react-toastify";
 import { useAuth } from "@/context/authContext";
-import ConfirmationDialog from '../ConfirmationDialog';
+import ConfirmationDialog from '../../ConfirmationDialog';
 import { useParams } from "next/navigation";
 
-const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess, existingDynamicColumns = [] }) => {
+const MaterialModal = ({ open, setOpen, editData, setEditData, onSuccess, existingDynamicColumns = [] }) => {
   const {id} = useParams();
 
   console.log("cabinet modal", existingDynamicColumns)
@@ -319,12 +319,13 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess, existin
           />
         </Box>
       </DialogTitle>
+
       <DialogContent dividers>
         <Box sx={{ p: 2 }}>
           <Grid container spacing={4}>
             {/* Subcategory Selection */}
             <Grid item xs={12}>
-              <Paper elevation={2} sx={{ p: 3, backgroundColor: '#f8f9fa' }}>
+              <Paper elevation={2} sx={{ p: 3, bgcolor: 'background.paper' }}>
                 <Typography variant="h6" gutterBottom color="primary" sx={{ fontWeight: 600 }}>
                   📂 Category Information
                 </Typography>
@@ -352,7 +353,7 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess, existin
 
             {/* Cabinet Details */}
             <Grid item xs={12}>
-              <Paper elevation={2} sx={{ p: 3, backgroundColor: '#f8f9fa' }}>
+              <Paper elevation={2} sx={{ p: 3, bgcolor: 'background.paper' }}>
                 <Typography variant="h6" gutterBottom color="primary" sx={{ fontWeight: 600 }}>
                   🗄️ Cabinet Details
                 </Typography>
@@ -413,7 +414,7 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess, existin
 
             {/* Dynamic Fields Section */}
             <Grid item xs={12}>
-              <Paper elevation={2} sx={{ p: 3, backgroundColor: '#f8f9fa' }}>
+              <Paper elevation={2} sx={{ p: 3, bgcolor: 'background.paper' }}>
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
                   <Box>
                     <Typography variant="h6" color="primary" sx={{ fontWeight: 600 }}>
@@ -491,7 +492,7 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess, existin
                                 size="medium"
                                 sx={{
                                   '&:hover': {
-                                    backgroundColor: '#ffebee',
+                                    backgroundColor: (theme) => theme.palette.error.light,
                                   }
                                 }}
                               >
@@ -511,9 +512,9 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess, existin
                     borderColor="divider" 
                     borderRadius={3}
                     sx={{
-                      backgroundColor: '#fafafa',
+                      backgroundColor: (theme) => theme.palette.background.default,
                       '&:hover': {
-                        backgroundColor: '#f5f5f5',
+                        backgroundColor: (theme) => theme.palette.background.paper,
                         transition: 'background-color 0.3s ease'
                       }
                     }}
@@ -531,7 +532,7 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess, existin
           </Grid>
         </Box>
       </DialogContent>
-      <DialogActions sx={{ p: 3, gap: 2, backgroundColor: '#fafafa' }}>
+      <DialogActions sx={{ p: 3, gap: 2}}>
         <Button 
           onClick={() => setOpen(false)} 
           variant="outlined"
@@ -576,4 +577,4 @@ const CabinetModal = ({ open, setOpen, editData, setEditData, onSuccess, existin
   );
 };
 
-export default CabinetModal;
+export default MaterialModal;

@@ -81,11 +81,10 @@ const CreateProjectStep1 = ({ formData, setFormData }) => {
 
   return (
     <Card
-      elevation={3}
       sx={{
-        borderRadius: 3,
-        p: 2,
-        backgroundColor: "#fafafa",
+        borderRadius: 2,
+        backgroundImage: "none",
+        border: (theme) => `1px solid ${theme.palette.divider}`,
       }}
     >
       <CardContent>

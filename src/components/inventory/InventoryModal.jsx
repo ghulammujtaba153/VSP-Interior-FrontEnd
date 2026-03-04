@@ -89,7 +89,7 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
     setLoadingCategories(true);
     try {
       const res = await axios.get(`${BASE_URL}/api/pricebook-categories/get`);
-      setSupplierCategories(res.data || []);
+      setSupplierCategories(res.data.priceBookCategories || []);
     } catch (error) {
       console.error("Error fetching categories:", error);
       setSupplierCategories([]);

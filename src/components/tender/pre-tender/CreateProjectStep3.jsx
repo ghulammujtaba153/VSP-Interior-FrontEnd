@@ -87,13 +87,13 @@ const CreateProjectStep3 = ({ records, setRecords }) => {
         Project Materials Setup
       </Typography>
 
-      <Card variant="outlined" sx={{ borderRadius: 2, boxShadow: 2 }}>
+      <Card sx={{ borderRadius: 2, backgroundImage: "none", border: (theme) => `1px solid ${theme.palette.divider}` }}>
         <CardContent sx={{ p: 0 }}>
           <TableContainer component={Paper} elevation={0}>
             <Table size="small">
               <TableHead>
-                <TableRow sx={{ backgroundColor: "primary.light" }}>
-                  <TableCell sx={{ color: "white", fontWeight: "bold", width: "18%" }}>
+                <TableRow sx={{ backgroundColor: "primary.main" }}>
+                  <TableCell sx={{ color: "primary.contrastText", fontWeight: "bold", width: "18%" }}>
                     Supplier
                   </TableCell>
                   <TableCell sx={{ color: "white", fontWeight: "bold", width: "18%" }}>
@@ -111,7 +111,7 @@ const CreateProjectStep3 = ({ records, setRecords }) => {
                   <TableCell sx={{ color: "white", fontWeight: "bold", width: "15%" }}>
                     Edging Cost ($)
                   </TableCell>
-                  <TableCell sx={{ color: "white", fontWeight: "bold", width: "7%" }}>
+                  <TableCell sx={{ color: "primary.contrastText", fontWeight: "bold", width: "7%" }}>
                     Actions
                   </TableCell>
                 </TableRow>
@@ -273,7 +273,7 @@ const CreateProjectStep3 = ({ records, setRecords }) => {
 
       {/* Summary */}
       {records.length > 0 && (
-        <Card variant="outlined" sx={{ mt: 3, backgroundColor: 'grey.50' }}>
+        <Card sx={{ mt: 3, backgroundImage: "none", border: (theme) => `1px solid ${theme.palette.divider}` }}>
           <CardContent>
             <Typography variant="subtitle2" fontWeight="bold" color="primary">
               Materials Summary

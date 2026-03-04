@@ -237,8 +237,8 @@ const CreateProject = () => {
           p: 3,
           mb: 3,
           borderRadius: 2,
-          boxShadow: 3,
-          backgroundColor: '#fafafa',
+          boxShadow: (theme) => theme.shadows[3],
+          backgroundImage: "none",
         }}
       >
         <StepComponent

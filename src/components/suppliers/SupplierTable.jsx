@@ -22,6 +22,7 @@ import {
     TextField,
     InputAdornment,
     Chip,
+    TableSortLabel,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -77,6 +78,10 @@ const SupplierTable = () => {
 
     // Search state
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Sorting state
+    const [orderBy, setOrderBy] = useState('name');
+    const [order, setOrder] = useState('asc');
 
     // Confirmation dialog states
     const [confirmationOpen, setConfirmationOpen] = useState(false);
@@ -203,13 +208,21 @@ const SupplierTable = () => {
         }
     };
 
-    const fetchSuppliers = async (currentPage = page, currentRowsPerPage = rowsPerPage, search = searchTerm) => {
+    const fetchSuppliers = async (
+        currentPage = page, 
+        currentRowsPerPage = rowsPerPage, 
+        search = searchTerm,
+        sortField = orderBy,
+        sortOrder = order
+    ) => {
         try {
             setLoading(true);
             const searchParams = new URLSearchParams({
                 page: (currentPage + 1).toString(),
                 limit: currentRowsPerPage.toString(),
-                ...(search && { search })
+                ...(search && { search }),
+                sortBy: sortField,
+                order: sortOrder
             });
             const res = await axios.get(`${BASE_URL}/api/suppliers/get?${searchParams}`);
             setSuppliers(res.data.data);
@@ -225,12 +238,12 @@ const SupplierTable = () => {
         fetchSuppliers();
     }, []);
 
-    // Refetch data when page, rowsPerPage, or searchTerm changes
+    // Refetch data when page, rowsPerPage, orderBy, or order changes
     useEffect(() => {
         if (!loading) {
             fetchSuppliers();
         }
-    }, [page, rowsPerPage]);
+    }, [page, rowsPerPage, orderBy, order]);
 
     // Remove automatic debounced search - now using Apply button
 
@@ -408,8 +421,16 @@ const SupplierTable = () => {
     const handleResetSearch = () => {
         setSearchTerm('')
         setPage(0)
-        fetchSuppliers(0, rowsPerPage, '') // Immediately fetch all results when clearing
+        setOrderBy('name')
+        setOrder('asc')
+        fetchSuppliers(0, rowsPerPage, '', 'name', 'asc') // Immediately fetch all results when clearing
     }
+
+    const handleSort = (property) => {
+        const isAsc = orderBy === property && order === 'asc';
+        setOrder(isAsc ? 'desc' : 'asc');
+        setOrderBy(property);
+    };
 
     // Export contacts for a specific supplier
     const exportContactsToExcel = (contacts, supplierId, supplierName) => {
@@ -525,7 +546,7 @@ const SupplierTable = () => {
                     <Table size="small">
                         <TableHead>
                             <TableRow >
-                                <TableCell sx={{ minWidth: 100 }}><strong>Contact ID</strong></TableCell>
+                                <TableCell sx={{ minWidth: 50 }}><strong>#</strong></TableCell>
                                 <TableCell sx={{ minWidth: 100 }}><strong>Name</strong></TableCell>
                                 <TableCell sx={{ minWidth: 100 }}><strong>Role</strong></TableCell>
                                 <TableCell sx={{ minWidth: 220 }}><strong>Email</strong></TableCell>
@@ -546,7 +567,7 @@ const SupplierTable = () => {
                                     //     }
                                     // }}
                                 >
-                                    <TableCell>{contact.id}</TableCell>
+                                    <TableCell>{index + 1}</TableCell>
                                     <TableCell>
                                         <Typography variant="body2" color="inherit">
                                             {contact.firstName} {contact.lastName}
@@ -731,14 +752,70 @@ const SupplierTable = () => {
                         <TableHead>
                             <TableRow>
                                 <TableCell width="50px"></TableCell>
-                                <TableCell sx={{ minWidth: 100 }}><strong>Supplier ID</strong></TableCell>
-                                <TableCell sx={{ minWidth: 100 }}><strong>Name</strong></TableCell>
-                                <TableCell sx={{ minWidth: 220 }}><strong>Email</strong></TableCell>
-                                <TableCell sx={{ minWidth: 100 }}><strong>Phone</strong></TableCell>
-                                <TableCell sx={{ minWidth: 250 }}><strong>Address</strong></TableCell>
-                                <TableCell sx={{ minWidth: 60 }}><strong>Post Code</strong></TableCell>
+                                <TableCell sx={{ minWidth: 50 }}>
+                                    <TableSortLabel
+                                        active={orderBy === 'id'}
+                                        direction={orderBy === 'id' ? order : 'asc'}
+                                        onClick={() => handleSort('id')}
+                                    >
+                                        <strong>#</strong>
+                                    </TableSortLabel>
+                                </TableCell>
+                                <TableCell sx={{ minWidth: 100 }}>
+                                    <TableSortLabel
+                                        active={orderBy === 'name'}
+                                        direction={orderBy === 'name' ? order : 'asc'}
+                                        onClick={() => handleSort('name')}
+                                    >
+                                        <strong>Name</strong>
+                                    </TableSortLabel>
+                                </TableCell>
+                                <TableCell sx={{ minWidth: 220 }}>
+                                    <TableSortLabel
+                                        active={orderBy === 'email'}
+                                        direction={orderBy === 'email' ? order : 'asc'}
+                                        onClick={() => handleSort('email')}
+                                    >
+                                        <strong>Email</strong>
+                                    </TableSortLabel>
+                                </TableCell>
+                                <TableCell sx={{ minWidth: 100 }}>
+                                    <TableSortLabel
+                                        active={orderBy === 'phone'}
+                                        direction={orderBy === 'phone' ? order : 'asc'}
+                                        onClick={() => handleSort('phone')}
+                                    >
+                                        <strong>Phone</strong>
+                                    </TableSortLabel>
+                                </TableCell>
+                                <TableCell sx={{ minWidth: 250 }}>
+                                    <TableSortLabel
+                                        active={orderBy === 'address'}
+                                        direction={orderBy === 'address' ? order : 'asc'}
+                                        onClick={() => handleSort('address')}
+                                    >
+                                        <strong>Address</strong>
+                                    </TableSortLabel>
+                                </TableCell>
+                                <TableCell sx={{ minWidth: 60 }}>
+                                    <TableSortLabel
+                                        active={orderBy === 'postCode'}
+                                        direction={orderBy === 'postCode' ? order : 'asc'}
+                                        onClick={() => handleSort('postCode')}
+                                    >
+                                        <strong>Post Code</strong>
+                                    </TableSortLabel>
+                                </TableCell>
                                 <TableCell sx={{ minWidth: 60 }}><strong>Contacts</strong></TableCell>
-                                <TableCell sx={{ minWidth: 60 }}><strong>Status</strong></TableCell>
+                                <TableCell sx={{ minWidth: 60 }}>
+                                    <TableSortLabel
+                                        active={orderBy === 'status'}
+                                        direction={orderBy === 'status' ? order : 'asc'}
+                                        onClick={() => handleSort('status')}
+                                    >
+                                        <strong>Status</strong>
+                                    </TableSortLabel>
+                                </TableCell>
                                 <TableCell sx={{ minWidth: 100 }}><strong>Actions</strong></TableCell>
                             </TableRow>
                         </TableHead>
@@ -764,7 +841,7 @@ const SupplierTable = () => {
                                                 {expandedRows.has(supplier.id) ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                                             </IconButton>
                                         </TableCell>
-                                        <TableCell>{supplier.id}</TableCell>
+                                        <TableCell>{(page * rowsPerPage) + index + 1}</TableCell>
                                         <TableCell>
                                             <Typography variant="body2" fontWeight="medium" color="inherit">
                                                 {capitalizeName(supplier.name)}

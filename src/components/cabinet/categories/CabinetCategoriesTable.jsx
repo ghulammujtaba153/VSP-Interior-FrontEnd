@@ -23,7 +23,8 @@ import {
   Tooltip,
   TextField,
   InputAdornment,
-  TablePagination
+  TablePagination,
+  TableSortLabel
 } from "@mui/material";
 import { 
   Delete, 
@@ -56,11 +57,21 @@ const CabinetCategoriesTable = () => {
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchData = async (currentPage = page, currentRowsPerPage = rowsPerPage, search = '') => {
+  // Sorting state
+  const [orderBy, setOrderBy] = useState('createdAt');
+  const [order, setOrder] = useState('desc');
+
+  const fetchData = async (
+    currentPage = page, 
+    currentRowsPerPage = rowsPerPage, 
+    search = searchTerm,
+    sortField = orderBy,
+    sortOrder = order
+  ) => {
     try {
       setLoading(true);
       console.log("fetching data", currentPage, currentRowsPerPage, search);
-      const response = await axios.get(`${BASE_URL}/api/cabinet-categories/get?page=${currentPage + 1}&limit=${currentRowsPerPage}&search=${search}`);
+      const response = await axios.get(`${BASE_URL}/api/cabinet-categories/get?page=${currentPage + 1}&limit=${currentRowsPerPage}&search=${search}&sortBy=${sortField}&order=${sortOrder}`);
       setData(response.data.cabinetCategories);
 
       setTotalCount(response.data.total);
@@ -75,12 +86,12 @@ const CabinetCategoriesTable = () => {
     fetchData();
   }, []);
 
-  // Refetch data when page or rowsPerPage changes
+  // Refetch data when page, rowsPerPage, orderBy or order changes
   useEffect(() => {
     if (!loading) {
       fetchData();
     }
-  }, [page, rowsPerPage]);
+  }, [page, rowsPerPage, orderBy, order]);
 
   const handleOpenModal = (mode, category = null) => {
     setModalMode(mode);
@@ -159,6 +170,12 @@ const CabinetCategoriesTable = () => {
     if (event.key === 'Enter') {
       handleSearchApply();
     }
+  };
+
+  const handleSort = (property) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
   };
 
   // Zoom / font scale state
@@ -256,11 +273,43 @@ const CabinetCategoriesTable = () => {
             <Table>
             <TableHead>
               <TableRow >
-                <TableCell><strong>Category ID</strong></TableCell>
-                <TableCell><strong>Category Name</strong></TableCell>
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === 'id'}
+                    direction={orderBy === 'id' ? order : 'asc'}
+                    onClick={() => handleSort('id')}
+                  >
+                    <strong>#</strong>
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === 'name'}
+                    direction={orderBy === 'name' ? order : 'asc'}
+                    onClick={() => handleSort('name')}
+                  >
+                    <strong>Category Name</strong>
+                  </TableSortLabel>
+                </TableCell>
                 <TableCell><strong>Subcategories</strong></TableCell>
-                <TableCell><strong>Created Date</strong></TableCell>
-                <TableCell><strong>Updated Date</strong></TableCell>
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === 'createdAt'}
+                    direction={orderBy === 'createdAt' ? order : 'asc'}
+                    onClick={() => handleSort('createdAt')}
+                  >
+                    <strong>Created Date</strong>
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell>
+                  <TableSortLabel
+                    active={orderBy === 'updatedAt'}
+                    direction={orderBy === 'updatedAt' ? order : 'asc'}
+                    onClick={() => handleSort('updatedAt')}
+                  >
+                    <strong>Updated Date</strong>
+                  </TableSortLabel>
+                </TableCell>
                 <TableCell><strong>Actions</strong></TableCell>
               </TableRow>
             </TableHead>
@@ -276,7 +325,7 @@ const CabinetCategoriesTable = () => {
                   //   }
                   // }}
                 >
-                  <TableCell>{category.id}</TableCell>
+                  <TableCell>{(page * rowsPerPage) + index + 1}</TableCell>
                   <TableCell>
                     <Typography variant="body2">
                       {category.name}

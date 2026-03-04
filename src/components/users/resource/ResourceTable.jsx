@@ -117,7 +117,15 @@ const ResourceTable = () => {
   if (loading) return <Loader />;
 
   const columns = [
-    { field: "id", headerName: "ID", flex: 1 },
+    {
+      field: "id",
+      headerName: "#",
+      width: 50,
+      renderCell: (params) => {
+        const index = resources.findIndex(r => r.id === params.id);
+        return index + 1;
+      }
+    },
     { field: "name", headerName: "Name", flex: 2 },
     {
       field: "actions",

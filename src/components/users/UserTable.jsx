@@ -33,8 +33,10 @@ const UserTable = () => {
   const [modalMode, setModalMode] = useState('view');
   const [selectedUser, setSelectedUser] = useState(null);
   const [users, setUsers] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(100);
+  const [sortModel, setSortModel] = useState([{ field: 'name', sort: 'asc' }]);
   
   // Confirmation dialog states (only for delete)
   const [confirmationOpen, setConfirmationOpen] = useState(false);
@@ -51,8 +53,11 @@ const UserTable = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${BASE_URL}/api/user/get?page=${page}&limit=${limit}`);
-      setUsers(res.data);
+      const sortBy = sortModel[0]?.field || 'id';
+      const order = sortModel[0]?.sort || 'asc';
+      const res = await axios.get(`${BASE_URL}/api/user/get?page=${page}&limit=${limit}&sortBy=${sortBy}&order=${order}`);
+      setUsers(res.data.users || []);
+      setTotalCount(res.data.total || 0);
       setLoading(false);
     } catch (error) {
       setLoading(false);
@@ -62,7 +67,7 @@ const UserTable = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, [page, limit]);
+  }, [page, limit, sortModel]);
 
   const handleOpenModal = (mode, user = null) => {
     setModalMode(mode);
@@ -202,6 +207,14 @@ const UserTable = () => {
 
   const columns = [
     {
+      field: 'id',
+      headerName: '#',
+      width: 50,
+      renderCell: (params) => {
+        return params.api.getRowIndexRelativeToVisibleRows(params.id) + 1 + (page - 1) * limit;
+      }
+    },
+    {
       field: 'name',
       headerName: 'Name',
       flex: 1,
@@ -316,10 +329,20 @@ const UserTable = () => {
           rows={users}
           columns={columns}
           getRowId={(row) => row.id}
-          pageSize={10}
+          pageSize={limit}
+          onPageSizeChange={(newLimit) => setLimit(newLimit)}
+          page={page - 1}
+          onPageChange={(newPage) => setPage(newPage + 1)}
+          pagination
+          paginationMode="server"
+          rowCount={totalCount}
+          sortingMode="server"
+          sortModel={sortModel}
+          onSortModelChange={(newModel) => setSortModel(newModel)}
           rowsPerPageOptions={[25, 50, 75, 100, 150]}
           disableRowSelectionOnClick
           loading={loading}
+          autoHeight
         />
       </Box>
 

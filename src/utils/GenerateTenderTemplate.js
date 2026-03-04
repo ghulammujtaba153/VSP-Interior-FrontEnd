@@ -5,10 +5,11 @@ import axios from "axios";
 import { BASE_URL } from "@/configs/url";
 import { toast } from "react-toastify";
 import { generateProjectOverviewPage } from "./GenerateProjectOverviewPage";
-import { generatePricingBreakdownPage } from "./GeneratePricingBreakdownPage";
-import { generateTermsConditionsPage } from "./GenerateTermsConditionsPage";
-import { generateGeneralInclusionsPage } from "./GenerateGeneralInclusionsPage";
 import { generateGeneralExclusionsPage } from "./GenerateGeneralExclusionsPage";
+import { generateTermsConditionsPage } from "./GenerateTermsConditionsPage";
+import { generateCoverPage } from "./GenerateCoverPage";
+import { generateScopeOfWorksPage } from "./GenerateScopeOfWorksPage";
+
 
 /**
  * Loads an image and converts it to base64
@@ -62,10 +63,15 @@ export const GenerateTenderTemplate = async (projectId) => {
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     
+    // ==================== PAGE 1: COVER PAGE ====================
+    await generateCoverPage(doc, project);
+    doc.addPage();
+
     // Colors
     const blackColor = [0, 0, 0];
     const redColor = [220, 20, 60]; // #dc143c for red accents
     const whiteColor = [255, 255, 255];
+    const yellowHighlight = [255, 255, 0];
 
     let currentY = 15;
 
@@ -126,23 +132,58 @@ export const GenerateTenderTemplate = async (projectId) => {
       year: 'numeric' 
     });
 
-    doc.text(`Date: ${dateStr}`, 10, currentY);
+    // Date with Highlight
+    const dateLabel = "Date: ";
+    const dateTextWidth = doc.getTextWidth(dateStr);
+    doc.text(dateLabel, 10, currentY);
+    doc.setFillColor(...yellowHighlight);
+    doc.rect(10 + doc.getTextWidth(dateLabel), currentY - 4, dateTextWidth + 2, 6, 'F');
+    doc.text(dateStr, 10 + doc.getTextWidth(dateLabel) + 1, currentY);
+    
     currentY += 6;
     
+    // To (Client) with Highlight
+    const toLabel = "To: ";
     const clientName = project.client?.companyName || '[Client Name]';
-    doc.text(`To: ${clientName}`, 10, currentY);
+    const clientWidth = doc.getTextWidth(clientName);
+    doc.text(toLabel, 10, currentY);
+    doc.setFillColor(...yellowHighlight);
+    doc.rect(10 + doc.getTextWidth(toLabel), currentY - 4, clientWidth + 2, 6, 'F');
+    doc.text(clientName, 10 + doc.getTextWidth(toLabel) + 1, currentY);
+
     currentY += 6;
     
+    // Project Name with Highlight
+    const subjectLabel = "Project Name: ";
     const projectName = project.projectName || '[Project Name]';
-    doc.text(`Subject: Tender Submission – ${projectName}`, 10, currentY);
+    const projectWidth = doc.getTextWidth(projectName);
+    doc.text(subjectLabel, 10, currentY);
+    doc.setFillColor(...yellowHighlight);
+    doc.rect(10 + doc.getTextWidth(subjectLabel), currentY - 4, projectWidth + 2, 6, 'F');
+    doc.text(projectName, 10 + doc.getTextWidth(subjectLabel) + 1, currentY);
+
     currentY += 6;
     
+    // Location with Highlight
+    const locationLabel = "Project Location: ";
     const siteLocation = project.siteLocation || '[Site Address]';
-    doc.text(`Project Location: ${siteLocation}`, 10, currentY);
+    const locWidth = doc.getTextWidth(siteLocation);
+    doc.text(locationLabel, 10, currentY);
+    doc.setFillColor(...yellowHighlight);
+    doc.rect(10 + doc.getTextWidth(locationLabel), currentY - 4, locWidth + 2, 6, 'F');
+    doc.text(siteLocation, 10 + doc.getTextWidth(locationLabel) + 1, currentY);
+
     currentY += 6;
     
-    const tenderRef = project.id ? `TENDER-${project.id}` : '[TENDER NUMBER OR QUOTATION NUMBER]';
-    doc.text(`Tender Reference: ${tenderRef}`, 10, currentY);
+    // Tender Reference with Highlight
+    const refLabel = "Tender Reference: ";
+    const revision = project.revision !== undefined ? ` (REV ${project.revision})` : "";
+    const tenderRef = (project.id ? `TENDER-${project.id}` : '[TENDER NUMBER]') + revision;
+    const refWidth = doc.getTextWidth(tenderRef);
+    doc.text(refLabel, 10, currentY);
+    doc.setFillColor(...yellowHighlight);
+    doc.rect(10 + doc.getTextWidth(refLabel), currentY - 4, refWidth + 2, 6, 'F');
+    doc.text(tenderRef, 10 + doc.getTextWidth(refLabel) + 1, currentY);
 
     // ==================== LETTER BODY ====================
     currentY += 12;
@@ -153,62 +194,58 @@ export const GenerateTenderTemplate = async (projectId) => {
     currentY += 8;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    doc.text('Dear Sir/Madam,', 10, currentY);
+    doc.text('Dear Tender Evaluation Team,', 10, currentY);
     
-    currentY += 8;
-    const bodyText1 = 'On behalf of VSP Interiors Limited, we are pleased to submit our formal tender for the above project. We offer more than competitive pricing — we deliver reliability, quality, and peace of mind.';
+    currentY += 10;
+    const bodyText1 = 'VSP Interiors Limited is pleased to submit our subcontract tender for the Interior Joinery, Cabinetry, and Shopfitting Works for the above project in response to your invitation to tender.';
     const splitText1 = doc.splitTextToSize(bodyText1, pageWidth - 20);
     doc.text(splitText1, 10, currentY);
-    currentY += splitText1.length * 5 + 5;
+    currentY += splitText1.length * 5 + 6;
 
-    const bodyText2 = 'As a specialist manufacturer and installer of bespoke kitchens and architectural joinery, we understand that fit-out work defines the final impression of any building. We take this responsibility seriously — which is why some of New Zealand\'s most respected builders and developers rely on us to deliver projects that are visually exceptional, on schedule, and to the highest standards.';
+    const bodyText2 = 'VSP Interiors Limited, established in 2012, is an Auckland-based specialist contractor providing manufacture, supply, and installation of interior joinery solutions across commercial, healthcare, education, retail, and residential sectors throughout New Zealand.';
+    // Bold "2012"
     const splitText2 = doc.splitTextToSize(bodyText2, pageWidth - 20);
     doc.text(splitText2, 10, currentY);
-    currentY += splitText2.length * 5 + 5;
+    currentY += splitText2.length * 5 + 6;
 
-    const bodyText3 = 'Founded on strong trade principles and sharp business systems, we provide complete in-house control of the joinery process — from shop drawings and CNC production to edge-banding, finishing, delivery, site installation, and quality assurance. Our workshop and skilled team are structured to manage multiple projects simultaneously, with short lead times. We routinely deliver:';
+    const bodyText3 = 'This submission has been prepared in accordance with the issued drawings, specifications, and tender documentation. VSP Interiors Limited confirms that it has the capability, resources, and manufacturing capacity required to successfully deliver the works in alignment with the project programme and quality requirements.';
     const splitText3 = doc.splitTextToSize(bodyText3, pageWidth - 20);
     doc.text(splitText3, 10, currentY);
-    currentY += splitText3.length * 5 + 5;
+    currentY += splitText3.length * 5 + 6;
 
-    // ==================== SERVICES LIST ====================
-    currentY += 3;
-    const services = [
-      'Kitchens, vanities, laundry, wardrobes, office, and retail joinery',
-      'Engineered stone benchtops, laminate tops, solid surface, and timber benchtop solutions',
-      'Public sector works (schools, aged care), commercial apartments, and high-end homes'
-    ];
+    const bodyText4 = 'The company is led by experienced industry professionals with extensive backgrounds in cabinet making, project management, and commercial construction delivery.';
+    const splitText4 = doc.splitTextToSize(bodyText4, pageWidth - 20);
+    doc.text(splitText4, 10, currentY);
+    currentY += splitText4.length * 5 + 6;
 
-    services.forEach((service) => {
-      doc.text('•', 15, currentY);
-      const serviceText = doc.splitTextToSize(service, pageWidth - 25);
-      doc.text(serviceText, 20, currentY);
-      currentY += serviceText.length * 5;
-    });
-
-    // ==================== CONCLUDING STATEMENT ====================
-    currentY += 5;
-    const concludingText = 'All production is managed through integrated systems for traceability, accuracy, and delivery control.';
-    const splitConcluding = doc.splitTextToSize(concludingText, pageWidth - 20);
-    doc.text(splitConcluding, 10, currentY);
-    currentY += splitConcluding.length * 5 + 10;
+    const bodyText5 = 'We appreciate the opportunity to tender and look forward to the opportunity to work collaboratively with your team to successfully deliver this project.';
+    const splitText5 = doc.splitTextToSize(bodyText5, pageWidth - 20);
+    doc.text(splitText5, 10, currentY);
+    currentY += splitText5.length * 5 + 10;
 
     // ==================== SIGNATURE BLOCK ====================
-    doc.text('Yours faithfully,', 10, currentY);
-    currentY += 15;
+    doc.text('Yours sincerely,', 10, currentY);
+    currentY += 10;
     
-    // Signature line (stylized - just a line for now)
-    doc.setLineWidth(0.5);
-    doc.line(10, currentY, 50, currentY);
-    currentY += 8;
-    
-    doc.setFont('helvetica', 'normal');
+    // Space for signature image (if exists) or just line
+    try {
+      // If you have a signature image file, you can add it here
+      // const sigDataURL = await loadImageAsDataURL('/signature.png');
+      // doc.addImage(sigDataURL, 'PNG', 10, currentY, 30, 15);
+      // currentY += 20;
+    } catch(e) {}
+
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.text('Vishal Prasad', 10, currentY);
     currentY += 5;
-    doc.text('Director', 10, currentY);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Director – VSP Interiors Limited', 10, currentY);
     currentY += 5;
-    doc.text('VSP Interiors Limited', 10, currentY);
+    doc.text('021 183 9151', 10, currentY);
+    currentY += 5;
+    doc.setTextColor(25, 118, 210);
+    doc.text('vishal@vspinteriors.co.nz', 10, currentY);
 
     // ==================== FOOTER SECTION ====================
     const footerY = pageHeight - 25;
@@ -237,20 +274,17 @@ export const GenerateTenderTemplate = async (projectId) => {
     doc.setTextColor(25, 118, 210);
     doc.text('Web: www.vspinteriors.co.nz', pageWidth - 60, currentY + 8);
 
-    // ==================== PAGE 2: PROJECT OVERVIEW AND SCOPE ====================
+    // ==================== PAGE 3: PROJECT OVERVIEW, TENDER SUM & PRICING BREAKDOWN ====================
     await generateProjectOverviewPage(doc, project);
 
-    // ==================== PAGE 3: TENDER PRICING BREAKDOWN ====================
-    await generatePricingBreakdownPage(doc);
+    // ==================== PAGE 4: SCOPE OF WORKS ====================
+    await generateScopeOfWorksPage(doc);
 
-    // ==================== PAGE 4: TERMS & CONDITIONS ====================
-    await generateTermsConditionsPage(doc);
-
-    // ==================== PAGE 5: GENERAL INCLUSIONS ====================
-    await generateGeneralInclusionsPage(doc);
-
-    // ==================== PAGE 6: GENERAL EXCLUSIONS & HEALTH, SAFETY & ENVIRONMENT ====================
+    // ==================== PAGE 5: EXCLUSIONS, HSE & TERMS (SUMMARY) ====================
     await generateGeneralExclusionsPage(doc);
+
+    // ==================== PAGE 6: TERMS & CONDITIONS (CONTINUED) ====================
+    await generateTermsConditionsPage(doc);
 
     
     // Save the PDF
