@@ -22,6 +22,7 @@ import {
   TextField,
   InputAdornment,
   Chip,
+  TableSortLabel,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
@@ -77,6 +78,10 @@ const ClientsTable = () => {
   const [rowsPerPage, setRowsPerPage] = useState(100);
   const [totalCount, setTotalCount] = useState(0);
 
+  // Sorting state
+  const [orderBy, setOrderBy] = useState('companyName');
+  const [order, setOrder] = useState('asc');
+
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -105,13 +110,21 @@ const ClientsTable = () => {
 
 
 
-  const fetchClients = async (currentPage = page, currentRowsPerPage = rowsPerPage, search = searchTerm) => {
+  const fetchClients = async (
+    currentPage = page, 
+    currentRowsPerPage = rowsPerPage, 
+    search = searchTerm,
+    sortField = orderBy,
+    sortOrder = order
+  ) => {
     try {
       setLoading(true);
       const searchParams = new URLSearchParams({
         page: (currentPage + 1).toString(),
         limit: currentRowsPerPage.toString(),
-        ...(search && { search })
+        ...(search && { search }),
+        sortBy: sortField,
+        order: sortOrder
       });
       const response = await axios.get(`${BASE_URL}/api/client/get?${searchParams}`, {
         headers: {
@@ -429,8 +442,18 @@ const ClientsTable = () => {
   const handleResetSearch = () => {
     setSearchTerm('')
     setPage(0)
-    fetchClients(0, rowsPerPage, '') // Immediately fetch all results when clearing
+    setOrderBy('companyName')
+    setOrder('asc')
+    fetchClients(0, rowsPerPage, '', 'companyName', 'asc') // Immediately fetch all results when clearing
   }
+
+  const handleSort = (property) => {
+    const isAsc = orderBy === property && order === 'asc';
+    const newOrder = isAsc ? 'desc' : 'asc';
+    setOrder(newOrder);
+    setOrderBy(property);
+    fetchClients(page, rowsPerPage, searchTerm, property, newOrder);
+  };
 
   useEffect(() => {
     fetchClients();
@@ -572,7 +595,7 @@ const ClientsTable = () => {
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell><strong>Contact ID</strong></TableCell>
+                <TableCell><strong>#</strong></TableCell>
                 <TableCell><strong>Name</strong></TableCell>
                 <TableCell><strong>Role</strong></TableCell>
                 <TableCell><strong>Email</strong></TableCell>
@@ -597,7 +620,7 @@ const ClientsTable = () => {
                   //   }
                   // }}
                 >
-                  <TableCell>{contact.id}</TableCell>
+                  <TableCell>{index + 1}</TableCell>
                   <TableCell>
                     <Typography variant="body2" color="inherit">
                       {contact.firstName} {contact.lastName}
@@ -786,14 +809,70 @@ const ClientsTable = () => {
             <TableHead>
               <TableRow>
                 <TableCell width="50px"></TableCell>
-                <TableCell sx={{ minWidth: 90 }}><strong>Client ID</strong></TableCell>
-                <TableCell sx={{ minWidth: 260, maxWidth: 290 }}><strong>Name</strong></TableCell>
-                <TableCell sx={{ minWidth: 220 }}><strong>Email</strong></TableCell>
-                <TableCell sx={{ minWidth: 160 }}><strong>Phone</strong></TableCell>
-                <TableCell sx={{ minWidth: 300 }}><strong>Address</strong></TableCell>
-                <TableCell sx={{ minWidth: 100 }}><strong>City</strong></TableCell>
+                <TableCell sx={{ minWidth: 50 }}>
+                  <TableSortLabel
+                    active={orderBy === 'id'}
+                    direction={orderBy === 'id' ? order : 'asc'}
+                    onClick={() => handleSort('id')}
+                  >
+                    <strong>#</strong>
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={{ minWidth: 260, maxWidth: 290 }}>
+                  <TableSortLabel
+                    active={orderBy === 'companyName'}
+                    direction={orderBy === 'companyName' ? order : 'asc'}
+                    onClick={() => handleSort('companyName')}
+                  >
+                    <strong>Name</strong>
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={{ minWidth: 220 }}>
+                  <TableSortLabel
+                    active={orderBy === 'emailAddress'}
+                    direction={orderBy === 'emailAddress' ? order : 'asc'}
+                    onClick={() => handleSort('emailAddress')}
+                  >
+                    <strong>Email</strong>
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={{ minWidth: 160 }}>
+                  <TableSortLabel
+                    active={orderBy === 'phoneNumber'}
+                    direction={orderBy === 'phoneNumber' ? order : 'asc'}
+                    onClick={() => handleSort('phoneNumber')}
+                  >
+                    <strong>Phone</strong>
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={{ minWidth: 300 }}>
+                  <TableSortLabel
+                    active={orderBy === 'address'}
+                    direction={orderBy === 'address' ? order : 'asc'}
+                    onClick={() => handleSort('address')}
+                  >
+                    <strong>Address</strong>
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sx={{ minWidth: 100 }}>
+                  <TableSortLabel
+                    active={orderBy === 'postCode'}
+                    direction={orderBy === 'postCode' ? order : 'asc'}
+                    onClick={() => handleSort('postCode')}
+                  >
+                    <strong>City</strong>
+                  </TableSortLabel>
+                </TableCell>
                 <TableCell sx={{ minWidth: 20 }}><strong>Contacts</strong></TableCell>
-                <TableCell sx={{ minWidth: 20 }}><strong>Status</strong></TableCell>
+                <TableCell sx={{ minWidth: 20 }}>
+                  <TableSortLabel
+                    active={orderBy === 'accountStatus'}
+                    direction={orderBy === 'accountStatus' ? order : 'asc'}
+                    onClick={() => handleSort('accountStatus')}
+                  >
+                    <strong>Status</strong>
+                  </TableSortLabel>
+                </TableCell>
                 <TableCell><strong>Actions</strong></TableCell>
               </TableRow>
             </TableHead>
@@ -826,7 +905,7 @@ const ClientsTable = () => {
                         </IconButton>
                       ) : null}
                     </TableCell>
-                    <TableCell>{client.id}</TableCell>
+                    <TableCell>{(page * rowsPerPage) + index + 1}</TableCell>
                     <TableCell>
                       <Typography variant="body2" fontWeight="medium" noWrap color="inherit" sx={{ maxWidth: 260 }}>
                         {capitalizeName(client.companyName)}

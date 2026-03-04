@@ -1,4 +1,6 @@
 "use client";
+
+import { useTheme } from "@mui/material/styles";
 import React, { useState } from "react";
 import {
   Dialog,
@@ -17,6 +19,12 @@ import {
   IconButton,
   Tooltip,
   Alert,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from "@mui/material";
 import * as XLSX from "xlsx";
 import axios from "axios";
@@ -82,6 +90,8 @@ const ImportModal = ({ open, onClose, fetchSuppliers }) => {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
   const { user } = useAuth();
 
   // Sample template data for suppliers with contacts
@@ -500,10 +510,10 @@ const ImportModal = ({ open, onClose, fetchSuppliers }) => {
       </DialogTitle>
       <DialogContent>
         {/* Template Download Section */}
-        <Paper sx={{ p: 2, mb: 3, bgcolor: 'warning.50', border: '1px solid', borderColor: 'warning.200' }}>
+        <Paper sx={{ p: 2, mb: 3, bgcolor: 'primary.50', border: '1px solid', borderColor: 'primary.200' }}>
           <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
             <Box>
-              <Typography variant="h6" color="warning.main" gutterBottom>
+              <Typography variant="h6" color="primary.main" gutterBottom>
                 🏢 Download Suppliers & Contacts Template
               </Typography>
               <Typography variant="body2" color="text.secondary">
@@ -515,7 +525,7 @@ const ImportModal = ({ open, onClose, fetchSuppliers }) => {
               startIcon={<DownloadIcon />}
               onClick={downloadTemplate}
               size="small"
-              color="warning"
+              color="primary"
             >
               Download Template
             </Button>
@@ -527,13 +537,13 @@ const ImportModal = ({ open, onClose, fetchSuppliers }) => {
           sx={{
             p: 3,
             mb: 3,
-            border: `2px dashed ${dragOver ? 'warning.main' : 'grey.300'}`,
-            bgcolor: dragOver ? 'warning.50' : 'background.paper',
+            border: `2px dashed ${dragOver ? 'primary.main' : 'grey.300'}`,
+            bgcolor: dragOver ? 'primary.50' : 'background.paper',
             transition: 'all 0.2s ease',
             cursor: 'pointer',
             '&:hover': {
-              borderColor: 'warning.main',
-              bgcolor: 'warning.50'
+              borderColor: 'primary.main',
+              bgcolor: 'primary.50'
             }
           }}
           onDragOver={handleDragOver}
@@ -550,7 +560,7 @@ const ImportModal = ({ open, onClose, fetchSuppliers }) => {
           />
           
           <Stack alignItems="center" spacing={2}>
-            <UploadIcon sx={{ fontSize: 48, color: dragOver ? 'warning.main' : 'grey.400' }} />
+            <UploadIcon sx={{ fontSize: 48, color: dragOver ? 'primary.main' : 'grey.400' }} />
             <Box textAlign="center">
               <Typography variant="h6" gutterBottom>
                 {dragOver ? 'Drop your suppliers & contacts file here' : 'Drag & drop your suppliers & contacts file here'}
@@ -559,9 +569,9 @@ const ImportModal = ({ open, onClose, fetchSuppliers }) => {
                 or click to browse files
               </Typography>
               <Stack direction="row" spacing={1} justifyContent="center" mt={1}>
-                <Chip label="Excel (.xlsx)" size="small" variant="outlined" color="warning" />
-                <Chip label="Excel (.xls)" size="small" variant="outlined" color="warning" />
-                <Chip label="CSV" size="small" variant="outlined" color="warning" />
+                <Chip label="Excel (.xlsx)" size="small" variant="outlined" color="primary" />
+                <Chip label="Excel (.xls)" size="small" variant="outlined" color="primary" />
+                <Chip label="CSV" size="small" variant="outlined" color="primary" />
               </Stack>
               <Typography variant="caption" color="text.secondary" display="block" mt={1}>
                 Maximum file size: 5MB • Contact fields are optional
@@ -574,7 +584,7 @@ const ImportModal = ({ open, onClose, fetchSuppliers }) => {
         {uploading && (
           <Box mb={2}>
             <Typography variant="body2" gutterBottom>Processing suppliers & contacts file...</Typography>
-            <LinearProgress color="warning" />
+            <LinearProgress color="primary" />
           </Box>
         )}
 
@@ -624,124 +634,129 @@ const ImportModal = ({ open, onClose, fetchSuppliers }) => {
             <Typography variant="h6" mb={2} display="flex" alignItems="center" gap={1}>
               🏢 Suppliers & Contacts Data Preview & Edit
             </Typography>
-            <Paper sx={{ overflow: 'hidden' }}>
-              <Box sx={{ overflow: 'auto', maxHeight: '500px' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead style={{ position: 'sticky', top: 0, backgroundColor: '#fff3e0', zIndex: 1 }}>
-                    <tr>
-                      <th style={{ border: '1px solid #ddd', padding: '8px', fontWeight: 'bold', fontSize: '12px' }}>
-                        #
-                      </th>
-                      {allFields.map((field) => {
-                        const isSupplierRequired = supplierRequiredFields.includes(field);
-                        const isContactField = contactFields.includes(field);
-                        
-                        return (
-                          <th
-                            key={field}
-                            style={{ 
-                              border: '1px solid #ddd', 
-                              padding: '8px', 
-                              fontWeight: 'bold', 
-                              fontSize: '11px', 
-                              minWidth: 
-                                field === 'Address' ? '250px' : 
-                                field === 'Notes' ? '200px' :
-                                field === 'Name' ? '200px' :
-                                field === 'Email' || field === 'Contact Email' ? '180px' :
-                                field === 'Contact First Name' || field === 'Contact Last Name' ? '140px' :
-                                field === 'Contact Role' ? '150px' : '130px',
-                              backgroundColor: isContactField ? '#e8f5e9' : '#fff3e0'
-                            }}
-                          >
+            <TableContainer component={Paper} sx={{ maxHeight: '500px', border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
+              <Table stickyHeader size="small" aria-label="suppliers import table">
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ 
+                      fontWeight: 'bold', 
+                      fontSize: '12px',
+                    }}>
+                      #
+                    </TableCell>
+                    {allFields.map((field) => {
+                      const isSupplierRequired = supplierRequiredFields.includes(field);
+                      const isContactField = contactFields.includes(field);
+                      
+                      return (
+                        <TableCell
+                          key={field}
+                          sx={{ 
+                            fontWeight: 'bold', 
+                            fontSize: '11px', 
+                            minWidth: 
+                              field === 'Address' ? '250px' : 
+                              field === 'Notes' ? '200px' :
+                              field === 'Name' ? '200px' :
+                              field === 'Email' || field === 'Contact Email' ? '180px' :
+                              field === 'Contact First Name' || field === 'Contact Last Name' ? '140px' :
+                              field === 'Contact Role' ? '150px' : '130px',
+                            backgroundColor: 'inherit',
+                          }}
+                        >
+                          <Box display="flex" alignItems="center">
                             {field}
                             {isSupplierRequired && (
-                              <span style={{ color: 'red', marginLeft: '2px' }}>*</span>
+                              <Typography component="span" sx={{ color: 'error.main', ml: 0.5, fontSize: '12px' }}>*</Typography>
                             )}
                             {isContactField && (
-                              <span style={{ color: '#4caf50', marginLeft: '4px', fontSize: '10px' }}>(Optional)</span>
+                              <Typography component="span" sx={{ color: 'success.main', ml: 0.5, fontSize: '9px' }}>(Optional)</Typography>
                             )}
-                          </th>
-                        );
-                      })}
-                      <th style={{ border: '1px solid #ddd', padding: '8px', fontWeight: 'bold', fontSize: '12px', minWidth: '180px' }}>
-                        Validation Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((row, idx) => (
-                      <tr key={idx} style={{ backgroundColor: errors[idx] ? '#ffebee' : 'white' }}>
-                        <td style={{ border: '1px solid #ddd', padding: '4px', textAlign: 'center', fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>
-                          {idx + 1}
-                        </td>
-                        {allFields.map((field) => (
-                          <td key={field} style={{ border: '1px solid #ddd', padding: '4px' }}>
-                            <TextField
-                              value={row[field] || ""}
-                              onChange={(e) => handleEdit(idx, field, e.target.value)}
-                              size="small"
-                              variant="outlined"
-                              fullWidth
-                              multiline={['Address', 'Notes'].includes(field)}
-                              rows={
-                                field === 'Address' ? 2 : 
-                                field === 'Notes' ? 2 : 1
-                              }
-                              error={errors[idx]?.some(err => err.includes(field))}
-                              sx={{ 
-                                '& .MuiOutlinedInput-root': { 
-                                  fontSize: '12px',
-                                  '& fieldset': {
-                                    borderWidth: '1px'
-                                  }
+                          </Box>
+                        </TableCell>
+                      );
+                    })}
+                    <TableCell sx={{ 
+                      fontWeight: 'bold', 
+                      fontSize: '12px', 
+                      minWidth: '180px',
+                    }}>
+                      Validation Status
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {rows.map((row, idx) => (
+                    <TableRow 
+                      key={idx} 
+                      hover
+                      sx={{ 
+                        bgcolor: errors[idx] 
+                          ? (isDarkMode ? '#3e1a1a' : '#ffebee') 
+                          : 'background.paper'
+                      }}
+                    >
+                      <TableCell sx={{ 
+                        textAlign: 'center', 
+                        fontWeight: 'bold', 
+                      }}>
+                        {idx + 1}
+                      </TableCell>
+                      {allFields.map((field) => (
+                        <TableCell key={field} sx={{ p: 0.5 }}>
+                          <TextField
+                            value={row[field] || ""}
+                            onChange={(e) => handleEdit(idx, field, e.target.value)}
+                            size="small"
+                            variant="outlined"
+                            fullWidth
+                            multiline={['Address', 'Notes'].includes(field)}
+                            rows={
+                              field === 'Address' ? 2 : 
+                              field === 'Notes' ? 2 : 1
+                            }
+                            error={errors[idx]?.some(err => err.includes(field))}
+                            sx={{ 
+                              '& .MuiOutlinedInput-root': { 
+                                fontSize: '12px',
+                                '& fieldset': {
+                                  borderWidth: '0.5px'
                                 }
-                              }}
-                              type={field === 'Email' || field === 'Contact Email' ? 'email' : field === 'Phone' || field === 'Contact Phone' ? 'tel' : 'text'}
-                              placeholder={
-                                field === 'Email' ? 'example@company.com' :
-                                field === 'Phone' ? '+1-555-0123' :
-                                field === 'Post Code' ? '12345' :
-                                field === 'Name' ? 'Supplier Name' :
-                                field === 'Contact Email' ? 'contact@company.com' :
-                                field === 'Contact Phone' ? '+1-555-0124' :
-                                field === 'Contact First Name' ? 'John' :
-                                field === 'Contact Last Name' ? 'Doe' :
-                                field === 'Contact Role' ? 'Sales Manager' : ''
                               }
-                            />
-                          </td>
-                        ))}
-                        <td style={{ border: '1px solid #ddd', padding: '4px' }}>
-                          {errors[idx] ? (
-                            <Stack spacing={0.5}>
-                              {errors[idx].map((err, i) => (
-                                <Chip
-                                  key={i}
-                                  label={err}
-                                  size="small"
-                                  color="error"
-                                  variant="outlined"
-                                  sx={{ fontSize: '9px', height: '18px' }}
-                                />
-                              ))}
-                            </Stack>
-                          ) : (
-                            <Chip 
-                              label="✓ Valid Supplier" 
-                              size="small" 
-                              color="success" 
-                              variant="outlined"
-                              sx={{ fontSize: '10px', height: '20px' }}
-                            />
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </Box>
-            </Paper>
+                            }}
+                            type={field === 'Email' || field === 'Contact Email' ? 'email' : field === 'Phone' || field === 'Contact Phone' ? 'tel' : 'text'}
+                          />
+                        </TableCell>
+                      ))}
+                      <TableCell sx={{ p: 1 }}>
+                        {errors[idx] ? (
+                          <Stack spacing={0.5}>
+                            {errors[idx].map((err, i) => (
+                              <Chip
+                                key={i}
+                                label={err}
+                                size="small"
+                                color="error"
+                                variant="outlined"
+                                sx={{ fontSize: '9px', height: '18px' }}
+                              />
+                            ))}
+                          </Stack>
+                        ) : (
+                          <Chip 
+                            label="✓ Valid Supplier" 
+                            size="small" 
+                            color="success" 
+                            variant="outlined"
+                            sx={{ fontSize: '10px', height: '20px' }}
+                          />
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </Box>
         )}
       </DialogContent>
@@ -754,7 +769,7 @@ const ImportModal = ({ open, onClose, fetchSuppliers }) => {
           onClick={downloadTemplate}
           startIcon={<DownloadIcon />}
           size="large"
-          color="warning"
+          color="primary"
         >
           Download Template
         </Button>
@@ -764,7 +779,7 @@ const ImportModal = ({ open, onClose, fetchSuppliers }) => {
           disabled={rows.length === 0 || Object.keys(errors).length > 0}
           size="large"
           startIcon={<UploadIcon />}
-          color="warning"
+          color="primary"
         >
           {Object.keys(errors).length > 0 
             ? `Fix ${Object.keys(errors).length} Errors First` 

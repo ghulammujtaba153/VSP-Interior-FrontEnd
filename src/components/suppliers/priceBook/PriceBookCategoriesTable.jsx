@@ -23,6 +23,7 @@ import {
   CircularProgress,
   Typography,
   TablePagination,
+  TableSortLabel
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -39,6 +40,11 @@ const PriceBookCategoriesTable = () => {
   // Pagination
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+
+  // Sorting
+  const [orderBy, setOrderBy] = useState('createdAt');
+  const [order, setOrder] = useState('desc');
 
   // Modal states
   const [open, setOpen] = useState(false);
@@ -51,9 +57,10 @@ const PriceBookCategoriesTable = () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        `${BASE_URL}/api/pricebook-categories/get${search ? `?search=${search}` : ''}`
+        `${BASE_URL}/api/pricebook-categories/get?page=${page + 1}&limit=${rowsPerPage}&search=${search}&sortBy=${orderBy}&order=${order}`
       );
-      setCategories(response.data);
+      setCategories(response.data.priceBookCategories || []);
+      setTotalCount(response.data.total || 0);
     } catch (error) {
       toast.error("Failed to fetch categories");
     } finally {
@@ -63,7 +70,13 @@ const PriceBookCategoriesTable = () => {
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+  }, [page, rowsPerPage, orderBy, order]);
+
+  const handleSort = (property) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
 
   const handleDelete = async (categoryId) => {
     toast.loading("Please wait...");
@@ -127,6 +140,7 @@ const PriceBookCategoriesTable = () => {
 
   const handleClearSearch = () => {
     setSearch("");
+    setPage(0);
   };
 
   useEffect(() => {
@@ -153,12 +167,6 @@ const PriceBookCategoriesTable = () => {
     setPage(0);
   };
 
-  // Slice data for current page
-  const paginatedData = categories.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
-  );
-
   return (
     <Box>
       <Typography variant="h6" fontWeight="bold" mb={2}>
@@ -180,50 +188,59 @@ const PriceBookCategoriesTable = () => {
         >
           Clear
         </Button>
-        {/* <Button
-          variant="contained"
-          color="primary"
-          onClick={handleSearch}
-        >
-          Search
-        </Button> */}
 
         <Button
-        variant="contained"
-        color="primary"
-        onClick={handleAdd}
-        sx={{ mb: 2, ml: "auto" }}
-      >
-        Add Category
-      </Button>
-      <Box sx={{ mb: 2 }}>
-        <TableZoom zoom={zoom} onZoomChange={handleZoomChange} />
-      </Box>
+          variant="contained"
+          color="primary"
+          onClick={handleAdd}
+          sx={{ mb: 2, ml: "auto" }}
+        >
+          Add Category
+        </Button>
+        <Box sx={{ mb: 2 }}>
+          <TableZoom zoom={zoom} onZoomChange={handleZoomChange} />
+        </Box>
 
       </Box>
 
       <Box sx={{ overflowX: 'auto', width: '100%' }}>
-      <Box sx={zoomStyle}>
-       <TableContainer component={Paper}>
-        {loading ? (
-          <Box display="flex" justifyContent="center" p={3}>
-            <Loader />
-          </Box>
-        ) : (
-          <>
-            <Table>
-              <TableHead>
+        <Box sx={zoomStyle}>
+          <TableContainer component={Paper}>
+            {loading ? (
+              <Box display="flex" justifyContent="center" p={3}>
+                <Loader />
+              </Box>
+            ) : (
+              <>
+                <Table>
+                  <TableHead>
                 <TableRow>
-                  <TableCell><b>ID</b></TableCell>
-                  <TableCell><b>Name</b></TableCell>
+                  <TableCell>
+                    <TableSortLabel
+                      active={orderBy === 'id'}
+                      direction={orderBy === 'id' ? order : 'asc'}
+                      onClick={() => handleSort('id')}
+                    >
+                      <b>#</b>
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell>
+                    <TableSortLabel
+                      active={orderBy === 'name'}
+                      direction={orderBy === 'name' ? order : 'asc'}
+                      onClick={() => handleSort('name')}
+                    >
+                      <b>Name</b>
+                    </TableSortLabel>
+                  </TableCell>
                   <TableCell align="center"><b>Actions</b></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {paginatedData.length > 0 ? (
-                  paginatedData.map((row) => (
+                {categories.length > 0 ? (
+                  categories.map((row, index) => (
                     <TableRow key={row.id}>
-                      <TableCell>{row.id}</TableCell>
+                      <TableCell>{(page * rowsPerPage) + index + 1}</TableCell>
                       <TableCell>{row.name}</TableCell>
                       <TableCell align="center">
                         <IconButton
@@ -255,12 +272,12 @@ const PriceBookCategoriesTable = () => {
             </Table>
             <TablePagination
               component="div"
-              count={categories.length}
+              count={totalCount}
               page={page}
               onPageChange={handleChangePage}
               rowsPerPage={rowsPerPage}
               onRowsPerPageChange={handleChangeRowsPerPage}
-              rowsPerPageOptions={[5, 10, 20]}
+              rowsPerPageOptions={[5, 10, 20, 50, 100]}
             />
           </>
         )}

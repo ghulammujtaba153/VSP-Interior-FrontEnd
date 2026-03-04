@@ -144,7 +144,15 @@ const RolesTable = () => {
   
 
   const columns = [
-    { field: 'id', headerName: 'ID', width: 100 },
+    {
+      field: 'id',
+      headerName: '#',
+      width: 50,
+      renderCell: (params) => {
+        const index = roles.findIndex(r => r.id === params.id);
+        return index + 1;
+      }
+    },
     { field: 'name', headerName: 'Name', flex: 1 },
     {
       field: 'actions',

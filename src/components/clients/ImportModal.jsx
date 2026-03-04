@@ -1,4 +1,4 @@
-"use client";
+import { useTheme } from "@mui/material/styles";
 import React, { useState, useMemo, useCallback, useRef } from "react";
 import {
   Dialog,
@@ -23,6 +23,12 @@ import {
   FormControl,
   InputLabel,
   Grid,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from "@mui/material";
 import * as XLSX from "xlsx";
 import axios from "axios";
@@ -226,6 +232,8 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [mapping, setMapping] = useState(false); // <-- Add this
   const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
   const { user, token } = useAuth();
   
   // ✅ Use ref for debounced validation
@@ -659,12 +667,20 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
       
       
       return (
-        <tr key={originalIdx} style={{ backgroundColor: errors[originalIdx] ? '#ffebee' : 'white' }}>
-          <td style={{ border: '1px solid #ddd', padding: '4px', textAlign: 'center', fontWeight: 'bold', backgroundColor: '#f5f5f5' }}>
+        <TableRow 
+          key={originalIdx} 
+          hover
+          sx={{ 
+            bgcolor: errors[originalIdx] 
+              ? (isDarkMode ? '#3e1a1a' : '#ffebee') 
+              : 'background.paper'
+          }}
+        >
+          <TableCell sx={{ textAlign: 'center', fontWeight: 'bold' }}>
             {(currentPage - 1) * rowsPerPage + displayIdx + 1}
-          </td>
+          </TableCell>
           {allFields.map((field) => (
-            <td key={field} style={{ border: '1px solid #ddd', padding: '4px' }}>
+            <TableCell key={field} sx={{ p: 0.5 }}>
               <TextField
                 value={row[field] || ""}
                 onChange={(e) => handleEdit(originalIdx, field, e.target.value)}
@@ -681,7 +697,7 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
                   '& .MuiOutlinedInput-root': { 
                     fontSize: '12px',
                     '& fieldset': {
-                      borderWidth: '1px'
+                      borderWidth: '0.5px'
                     }
                   }
                 }}
@@ -698,9 +714,9 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
                   field === 'Contact Role' ? 'Manager' : ''
                 }
               />
-            </td>
+            </TableCell>
           ))}
-          <td style={{ border: '1px solid #ddd', padding: '4px' }}>
+          <TableCell sx={{ p: 1 }}>
             {errors[originalIdx] ? (
               <Stack spacing={0.5}>
                 {errors[originalIdx].map((err, i) => (
@@ -723,8 +739,8 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
                 sx={{ fontSize: '10px', height: '20px' }}
               />
             )}
-          </td>
-        </tr>
+          </TableCell>
+        </TableRow>
       );
     });
   }, [paginatedRows, errors, currentPage, rowsPerPage, handleEdit, searchTerm, filterStatus]);
@@ -948,57 +964,58 @@ const ImportModal = ({ open, onClose, refreshClients }) => {
                     variant="outlined" 
                   />
                 </Typography>
-                <Paper sx={{ overflow: 'hidden' }}>
-                  <Box sx={{ overflow: 'auto', maxHeight: '600px' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                      <thead style={{ position: 'sticky', top: 0, backgroundColor: '#f3e5f5', zIndex: 1 }}>
-                        <tr>
-                          <th style={{ border: '1px solid #ddd', padding: '8px', fontWeight: 'bold', fontSize: '12px' }}>
-                            #
-                          </th>
-                          {allFields.map((field) => {
-                            const isClientRequired = clientRequiredFields.includes(field);
-                            const isContactField = contactFields.includes(field);
-                            
-                            return (
-                              <th
-                                key={field}
-                                style={{ 
-                                  border: '1px solid #ddd', 
-                                  padding: '8px', 
-                                  fontWeight: 'bold', 
-                                  fontSize: '11px', 
-                                  minWidth: 
-                                    field === 'Address' ? '250px' : 
-                                    field === 'Notes' ? '200px' :
-                                    field === 'Name' ? '200px' :
-                                    field === 'Email Address' || field === 'Contact Email' ? '180px' :
-                                    field === 'Contact First Name' || field === 'Contact Last Name' ? '140px' :
-                                    field === 'Contact Role' ? '150px' : '130px',
-                                  backgroundColor: isContactField ? '#e8f5e9' : '#f3e5f5'
-                                }}
-                              >
+                <TableContainer component={Paper} sx={{ maxHeight: '600px', border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
+                  <Table stickyHeader size="small" aria-label="clients import table">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ 
+                          fontWeight: 'bold', 
+                          fontSize: '12px',
+                        }}>
+                          #
+                        </TableCell>
+                        {allFields.map((field) => {
+                          const isClientRequired = clientRequiredFields.includes(field);
+                          const isContactField = contactFields.includes(field);
+                          
+                          return (
+                            <TableCell
+                              key={field}
+                              sx={{ 
+                                fontWeight: 'bold', 
+                                fontSize: '11px', 
+                                minWidth: 
+                                  field === 'Address' ? '250px' : 
+                                  field === 'Notes' ? '200px' :
+                                  field === 'Name' ? '200px' :
+                                  field === 'Email Address' || field === 'Contact Email' ? '180px' :
+                                  field === 'Contact First Name' || field === 'Contact Last Name' ? '140px' :
+                                  field === 'Contact Role' ? '150px' : '130px',
+                                backgroundColor: 'inherit',
+                              }}
+                            >
+                              <Box display="flex" alignItems="center">
                                 {field}
                                 {isClientRequired && (
-                                  <span style={{ color: 'red', marginLeft: '2px' }}>*</span>
+                                  <Typography component="span" sx={{ color: 'error.main', ml: 0.5, fontSize: '12px' }}>*</Typography>
                                 )}
                                 {isContactField && (
-                                  <span style={{ color: '#4caf50', marginLeft: '4px', fontSize: '10px' }}>(Optional)</span>
+                                  <Typography component="span" sx={{ color: 'success.main', ml: 0.5, fontSize: '9px' }}>(Optional)</Typography>
                                 )}
-                              </th>
-                            );
-                          })}
-                          <th style={{ border: '1px solid #ddd', padding: '8px', fontWeight: 'bold', fontSize: '12px', minWidth: '180px' }}>
-                            Validation Status
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {TableRows}
-                      </tbody>
-                    </table>
-                  </Box>
-                </Paper>
+                              </Box>
+                            </TableCell>
+                          );
+                        })}
+                        <TableCell sx={{ fontWeight: 'bold', fontSize: '12px', minWidth: '180px' }}>
+                          Validation Status
+                        </TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {TableRows}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
 
                 {/* Pagination Controls */}
                 {totalPages > 1 && (

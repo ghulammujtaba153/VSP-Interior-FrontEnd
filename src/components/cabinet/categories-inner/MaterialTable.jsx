@@ -83,7 +83,7 @@ const MaterialTable = ({ id }) => {
       // Add subCode as a query param if not 'all'
       let subCodeParam = subCode && subCode !== 'all' ? `&subCode=${encodeURIComponent(subCode)}` : ''
       const res = await axios.get(
-        `${BASE_URL}/api/cabinet/get/${id}?page=${page + 1}&limit=${limit}&search=${search}&subCode=${subCodeParam}`,
+        `${BASE_URL}/api/cabinet/get/${id}?page=${page + 1}&limit=${limit}&search=${search}&subCode=${subCodeParam}&sortBy=${orderBy}&order=${order}`,
         {
           headers: {
             Authorization: `Bearer ${token}`
@@ -282,7 +282,7 @@ const MaterialTable = ({ id }) => {
 
   useEffect(() => {
     fetchCabinets()
-  }, [page, limit, search]) // ✅ only runs when Apply updates `search`
+  }, [page, limit, search, orderBy, order]) // ✅ now runs when sorting updates too
 
   const formatDate = dateString => {
     if (!dateString) return 'N/A'
@@ -453,7 +453,7 @@ const MaterialTable = ({ id }) => {
                         direction={orderBy === 'id' ? order : 'asc'}
                         onClick={() => handleSort('id')}
                       >
-                        VSP_ID
+                        #
                       </TableSortLabel>
                     </TableCell>
                     <TableCell>
@@ -502,7 +502,7 @@ const MaterialTable = ({ id }) => {
                       //   }
                       // }}
                     >
-                      <TableCell>{cabinet.id}</TableCell>
+                      <TableCell>{(page * limit) + index + 1}</TableCell>
                       <TableCell>
                         {cabinet.cabinetSubCategory ? (
                           <Chip
