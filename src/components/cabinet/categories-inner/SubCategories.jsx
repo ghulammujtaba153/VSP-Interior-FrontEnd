@@ -95,6 +95,16 @@ const SubCategories = ({ id }) => {
     page * rowsPerPage + rowsPerPage
   )
 
+
+  // Capitalize name: "john more" → "John More"
+  const capitalizeName = (name) => {
+    if (!name) return 'N/A';
+    return String(name)
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
@@ -137,7 +147,7 @@ const SubCategories = ({ id }) => {
                     
                   >
                     <TableCell>{(page * rowsPerPage) + index + 1}</TableCell>
-                    <TableCell>{sub.name}</TableCell>
+                    <TableCell>{capitalizeName(sub.name)}</TableCell>
                     <TableCell>
                       {sub.createdAt ? new Date(sub.createdAt).toLocaleString() : "-"}
                     </TableCell>

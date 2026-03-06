@@ -114,6 +114,16 @@ const ResourceTable = () => {
     setResourceToDelete(null);
   };
 
+
+  // Capitalize name: "john more" → "John More"
+  const capitalizeName = (name) => {
+    if (!name) return 'N/A';
+    return String(name)
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   if (loading) return <Loader />;
 
   const columns = [
@@ -126,7 +136,13 @@ const ResourceTable = () => {
         return index + 1;
       }
     },
-    { field: "name", headerName: "Name", flex: 2 },
+    { field: "name", headerName: "Name", flex: 2, 
+      renderCell: (params) => {
+        const row = params?.row;
+        if (!row || !row.name) return 'N/A';
+        return capitalizeName(row.name);
+      }
+     },
     {
       field: "actions",
       headerName: "Actions",

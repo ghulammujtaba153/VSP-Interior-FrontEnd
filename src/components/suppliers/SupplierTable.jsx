@@ -570,18 +570,18 @@ const SupplierTable = () => {
                                     <TableCell>{index + 1}</TableCell>
                                     <TableCell>
                                         <Typography variant="body2" color="inherit">
-                                            {contact.firstName} {contact.lastName}
+                                            {capitalizeName(`${contact.firstName || ''} ${contact.lastName || ''}`)}
                                         </Typography>
                                     </TableCell>
                                     <TableCell>
                                         <Chip
-                                            label={contact.role}
+                                            label={capitalizeName(contact.role)}
                                             size="small"
                                             color="primary"
                                             variant="outlined"
                                         />
                                     </TableCell>
-                                    <TableCell>{contact.emailAddress || 'N/A'}</TableCell>
+                                    <TableCell>{capitalizeName(contact.emailAddress) || 'N/A'}</TableCell>
                                     <TableCell>{contact.phoneNumber || 'N/A'}</TableCell>
                                     <TableCell>
                                         {contact.createdAt ? new Date(contact.createdAt).toLocaleDateString() : 'N/A'}
@@ -841,17 +841,17 @@ const SupplierTable = () => {
                                                 {expandedRows.has(supplier.id) ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                                             </IconButton>
                                         </TableCell>
-                                        <TableCell>{(page * rowsPerPage) + index + 1}</TableCell>
+                                        <TableCell>S{(page * rowsPerPage) + index + 1}</TableCell>
                                         <TableCell>
                                             <Typography variant="body2" fontWeight="medium" color="inherit">
                                                 {capitalizeName(supplier.name)}
                                             </Typography>
                                         </TableCell>
                                         
-                                        <TableCell>{supplier.email}</TableCell>
+                                        <TableCell>{capitalizeName(supplier.email)}</TableCell>
                                         <TableCell>{supplier.phone}</TableCell>
-                                        <TableCell>{supplier.address}</TableCell>
-                                        <TableCell>{supplier.postCode}</TableCell>
+                                        <TableCell>{capitalizeName(supplier.address)}</TableCell>
+                                        <TableCell>{capitalizeName(supplier.postCode)}</TableCell>
                                         <TableCell>
                                             <Chip
                                                 label={supplier.contacts?.length || 0}

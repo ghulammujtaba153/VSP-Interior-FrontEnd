@@ -178,6 +178,16 @@ const CabinetCategoriesTable = () => {
     setOrderBy(property);
   };
 
+
+  // Capitalize name: "john more" → "John More"
+  const capitalizeName = (name) => {
+    if (!name) return 'N/A';
+    return String(name)
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   // Zoom / font scale state
   const { zoom, handleZoomChange, zoomStyle } = useTableZoom('cabinet_categories_table_zoom');
 
@@ -328,7 +338,7 @@ const CabinetCategoriesTable = () => {
                   <TableCell>{(page * rowsPerPage) + index + 1}</TableCell>
                   <TableCell>
                     <Typography variant="body2">
-                      {category.name}
+                      {capitalizeName(category.name)}
                     </Typography>
                   </TableCell>
                   <TableCell>

@@ -50,6 +50,15 @@ const PermissionsTable = () => {
     fetch();
   }, []);
 
+  // Capitalize name: "john more" → "John More"
+  const capitalizeName = (name) => {
+    if (!name) return 'N/A';
+    return String(name)
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   const handleSave = async (permission) => {
     try {
       if (isEditMode && selectedPermission?.id) {
@@ -132,7 +141,7 @@ const PermissionsTable = () => {
             {data.map((perm) => (
               <TableRow key={perm.id}>
                 <TableCell>{perm.id}</TableCell>
-                <TableCell>{perm.resource}</TableCell>
+                <TableCell> {capitalizeName(perm.resource)}</TableCell>
                 <TableCell>
                   <IconButton aria-label="view" color="primary" onClick={() => handleView(perm)}>
                     <VisibilityIcon />

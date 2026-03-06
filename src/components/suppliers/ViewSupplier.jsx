@@ -26,6 +26,14 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 
 
 const ViewSupplier = ({ open, onClose, selectedSupplier }) => {
+  const capitalizeName = (name) => {
+    if (!name) return 'N/A';
+    return String(name)
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   if (!selectedSupplier) return null;
 
   const contacts = selectedSupplier.contacts || [];
@@ -46,8 +54,8 @@ const ViewSupplier = ({ open, onClose, selectedSupplier }) => {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          bgcolor: "#f0f0f5",
-          color: "#6366f1",
+          bgcolor: (theme) => theme.palette.mode === 'light' ? 'rgba(25, 118, 210, 0.04)' : 'rgba(144, 202, 249, 0.08)',
+          color: "primary.main",
           borderRadius: 1,
           flexShrink: 0,
         }}
@@ -101,7 +109,7 @@ const ViewSupplier = ({ open, onClose, selectedSupplier }) => {
           pb: 2,
           pt: 3,
           px: 3,
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
           color: "white",
           display: "flex",
           alignItems: "center",
@@ -112,7 +120,7 @@ const ViewSupplier = ({ open, onClose, selectedSupplier }) => {
           <BusinessIcon sx={{ fontSize: 28 }} />
           <Box>
             <Typography variant="h5" fontWeight="bold">
-              {selectedSupplier.companyName || "Supplier Details"}
+              {capitalizeName(selectedSupplier.companyName) || "Supplier Details"}
             </Typography>
             <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
               Supplier profile and contact information
@@ -130,7 +138,7 @@ const ViewSupplier = ({ open, onClose, selectedSupplier }) => {
       </DialogTitle>
 
       {/* Content */}
-      <DialogContent sx={{ p: 0 }}>
+      <DialogContent dividers sx={{ p: 0 }}>
         <Box sx={{ p: 3 }}>
           {/* Supplier Info */}
           <Typography
@@ -159,19 +167,17 @@ const ViewSupplier = ({ open, onClose, selectedSupplier }) => {
                 <InfoRow
                   icon={BusinessIcon}
                   label="Name"
-                  value={selectedSupplier.name}
+                  value={capitalizeName(selectedSupplier.name)}
                 />
               </Grid>
-            </Grid>
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6} sx={{ mr: 20 }}>
+              <Grid item xs={12} sm={6}>
                 <InfoRow
                   icon={EmailIcon}
                   label="Email"
-                  value={selectedSupplier.email}
+                  value={capitalizeName(selectedSupplier.email)}
                 />
               </Grid>
-              <Grid item xs={12} sm={6} sx={{ mr: 20 }}>
+              <Grid item xs={12} sm={6}>
                 <InfoRow
                   icon={ContactPhoneIcon}
                   label="Phone"
@@ -182,8 +188,7 @@ const ViewSupplier = ({ open, onClose, selectedSupplier }) => {
                 <InfoRow
                   icon={LocationOnIcon}
                   label="Address"
-                  value={`${selectedSupplier.address || ""}, ${selectedSupplier.postCode || ""
-                    }`}
+                  value={capitalizeName(`${selectedSupplier.address || ""}, ${selectedSupplier.postCode || ""}`)}
                 />
               </Grid>
               {selectedSupplier.notes && (
@@ -191,7 +196,7 @@ const ViewSupplier = ({ open, onClose, selectedSupplier }) => {
                   <InfoRow
                     icon={NotesIcon}
                     label="Notes"
-                    value={selectedSupplier.notes}
+                    value={capitalizeName(selectedSupplier.notes)}
                   />
                 </Grid>
               )}
@@ -199,7 +204,7 @@ const ViewSupplier = ({ open, onClose, selectedSupplier }) => {
                 <InfoRow
                   icon={PersonIcon}
                   label="Status"
-                  value={selectedSupplier.status}
+                  value={capitalizeName(selectedSupplier.status)}
                   color={
                     selectedSupplier.status === "active"
                       ? "success.main"
@@ -240,6 +245,7 @@ const ViewSupplier = ({ open, onClose, selectedSupplier }) => {
                 <Chip
                   label={contacts.length}
                   size="small"
+                  variant="outlined"
                   color="primary"
                   sx={{ ml: 1 }}
                 />
@@ -272,13 +278,15 @@ const ViewSupplier = ({ open, onClose, selectedSupplier }) => {
                             width: 45,
                             height: 45,
                             borderRadius: "50%",
-                            bgcolor: "#f0f0f5",
-                            color: "#6366f1",
+                            bgcolor: (theme) => theme.palette.mode === 'light' ? 'rgba(25, 118, 210, 0.1)' : 'rgba(144, 202, 249, 0.1)',
+                            color: "primary.main",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
                             fontWeight: "bold",
                             fontSize: "1.1rem",
+                            border: '2px solid',
+                            borderColor: 'primary.main'
                           }}
                         >
                           {contact.firstName?.[0] || "?"}
@@ -286,15 +294,14 @@ const ViewSupplier = ({ open, onClose, selectedSupplier }) => {
                         </Box>
                         <Box flex={1}>
                           <Typography variant="h6" fontWeight="bold" noWrap>
-                            {contact.firstName || "—"}{" "}
-                            {contact.lastName || ""}
+                            {capitalizeName(`${contact.firstName || ""} ${contact.lastName || ""}`)}
                           </Typography>
                           <Typography
                             variant="body2"
                             color="text.secondary"
                             noWrap
                           >
-                            {contact.role || "No role specified"}
+                            {capitalizeName(contact.role) || "No Role Specified"}
                           </Typography>
                         </Box>
                       </Box>
@@ -303,7 +310,7 @@ const ViewSupplier = ({ open, onClose, selectedSupplier }) => {
                         <Stack direction="row" spacing={1.2} alignItems="center">
                           <EmailIcon fontSize="small" color="action" />
                           <Typography variant="body2" fontWeight={500}>
-                            {contact.emailAddress || "—"}
+                            {capitalizeName(contact.emailAddress) || "—"}
                           </Typography>
                         </Stack>
 
@@ -324,7 +331,7 @@ const ViewSupplier = ({ open, onClose, selectedSupplier }) => {
       </DialogContent>
 
       {/* Footer */}
-      <DialogActions sx={{ p: 2, bgcolor: "grey.50" }}>
+      <DialogActions sx={{ p: 2, bgcolor: "background.paper" }}>
         <Button
           onClick={onClose}
           variant="contained"

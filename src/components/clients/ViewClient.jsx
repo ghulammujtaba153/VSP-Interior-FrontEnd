@@ -28,6 +28,14 @@ import {
 } from '@mui/icons-material';
 
 const ViewClient = ({ open, onClose, client }) => {
+    const capitalizeName = (name) => {
+        if (!name) return 'N/A';
+        return String(name)
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
+    };
+
     if (!client) return null;
 
     const InfoRow = ({ icon: Icon, label, value, color }) => (
@@ -35,21 +43,28 @@ const ViewClient = ({ open, onClose, client }) => {
             sx={{
                 display: 'flex',
                 alignItems: 'flex-start',
-                gap: 1.5,
-                py: 1
+                gap: 2,
+                py: 1.5,
+                px: 2,
+                borderRadius: 1,
+                transition: 'background-color 0.2s',
+                '&:hover': {
+                    bgcolor: (theme) => theme.palette.mode === 'light' ? 'rgba(0,0,0,0.02)' : 'rgba(255,255,255,0.02)'
+                }
             }}
         >
             <Box
                 sx={{
-                    minWidth: 40,
-                    height: 40,
+                    minWidth: 42,
+                    height: 42,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    bgcolor: '#f0f0f5',
-                    color: '#6366f1',
-                    borderRadius: 1,
-                    flexShrink: 0
+                    bgcolor: (theme) => theme.palette.mode === 'light' ? 'rgba(25, 118, 210, 0.04)' : 'rgba(144, 202, 249, 0.08)',
+                    color: 'primary.main',
+                    borderRadius: 1.5,
+                    flexShrink: 0,
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
                 }}
             >
                 <Icon fontSize="small" />
@@ -60,9 +75,9 @@ const ViewClient = ({ open, onClose, client }) => {
                     color="text.secondary"
                     sx={{
                         textTransform: 'uppercase',
-                        letterSpacing: 0.5,
-                        fontWeight: 600,
-                        fontSize: '0.7rem'
+                        letterSpacing: 1,
+                        fontWeight: 700,
+                        fontSize: '0.65rem'
                     }}
                 >
                     {label}
@@ -70,10 +85,11 @@ const ViewClient = ({ open, onClose, client }) => {
                 <Typography
                     variant="body1"
                     sx={{
-                        mt: 0.5,
-                        fontWeight: 500,
+                        mt: 0.2,
+                        fontWeight: 600,
                         wordBreak: 'break-word',
-                        color: color || 'text.primary'
+                        color: color || 'text.primary',
+                        fontSize: '0.95rem'
                     }}
                 >
                     {value || 'N/A'}
@@ -100,7 +116,7 @@ const ViewClient = ({ open, onClose, client }) => {
                     pb: 2,
                     pt: 3,
                     px: 3,
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    background: (theme) => `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
                     color: 'white',
                     display: 'flex',
                     alignItems: 'center',
@@ -111,7 +127,7 @@ const ViewClient = ({ open, onClose, client }) => {
                     <Business sx={{ fontSize: 28 }} />
                     <Box>
                         <Typography variant="h5" fontWeight="bold">
-                            {client.companyName || 'Client Details'}
+                            {capitalizeName(client.companyName) || 'Client Details'}
                         </Typography>
                         <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
                             Complete client and contact information
@@ -134,41 +150,42 @@ const ViewClient = ({ open, onClose, client }) => {
                 />
             </DialogTitle>
 
-            <DialogContent sx={{ p: 0 }}>
+            <DialogContent dividers sx={{ p: 0 }}>
                 <Stack spacing={0}>
                     {/* Company Information Section */}
-                    <Box sx={{ p: 3, bgcolor: 'background.paper' }}>
+                    <Box sx={{ p: 3 }}>
                         <Typography
-                            variant="h6"
+                            variant="subtitle1"
+                            color="primary"
                             fontWeight="bold"
                             gutterBottom
                             sx={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 1,
-                                mb: 2,
-                                color: 'primary.main'
+                                mb: 2
                             }}
                         >
+                            <Box component="span" sx={{ width: 4, height: 18, bgcolor: 'primary.main', borderRadius: 4 }} />
                             <Business />
                             Information
                         </Typography>
 
                         <Paper
                             variant="outlined"
-                            sx={{ borderRadius: 2, overflow: 'hidden', bgcolor: 'white' }}
+                            sx={{ borderRadius: 2, overflow: 'hidden' }}
                         >
                             <Box sx={{ p: 3 }}>
-                                <Grid container spacing={3}>
+                                <Grid container spacing={2}>
                                     {/* Row 1 */}
-                                    <Grid item xs={12} md={6} sx={{ mr: 20 }}>
+                                    <Grid item xs={12} md={6}>
                                         <InfoRow
                                             icon={Email}
                                             label="Email Address"
-                                            value={client.emailAddress}
+                                            value={capitalizeName(client.emailAddress)}
                                         />
                                     </Grid>
-                                    <Grid item xs={12} md={6} sx={{ mr: 20 }}>
+                                    <Grid item xs={12} md={6}>
                                         <InfoRow
                                             icon={Phone}
                                             label="Phone Number"
@@ -177,23 +194,23 @@ const ViewClient = ({ open, onClose, client }) => {
                                     </Grid>
 
                                     {/* Row 2 */}
-                                    <Grid item xs={12} md={12} sx={{ mr: 3 }}>
+                                    <Grid item xs={12}>
                                         <InfoRow
                                             icon={LocationOn}
                                             label="Address"
-                                            value={client.address}
+                                            value={capitalizeName(client.address)}
                                         />
                                     </Grid>
 
                                     {/* Row 3 */}
-                                    <Grid item xs={12} md={6} sx={{ mr: 20 }}>
+                                    <Grid item xs={12} md={6}>
                                         <InfoRow
                                             icon={LocalPostOffice}
                                             label="Post Code"
-                                            value={client.postCode}
+                                            value={capitalizeName(client.postCode)}
                                         />
                                     </Grid>
-                                    <Grid item xs={12} md={6} sx={{ mr: 20 }}>
+                                    <Grid item xs={12} md={6}>
                                         <InfoRow
                                             icon={Business}
                                             label="Company Type"
@@ -208,11 +225,11 @@ const ViewClient = ({ open, onClose, client }) => {
                                     </Grid>
 
                                     {/* Row 4 */}
-                                    <Grid item xs={12} md={6} sx={{ mr: 42 }}>
+                                    <Grid item xs={12} md={6}>
                                         <InfoRow
                                             icon={AccountCircle}
                                             label="Account Status"
-                                            value={client.accountStatus}
+                                            value={capitalizeName(client.accountStatus)}
                                             color={
                                                 client.accountStatus === 'active'
                                                     ? 'success.main'
@@ -221,11 +238,11 @@ const ViewClient = ({ open, onClose, client }) => {
                                         />
                                     </Grid>
                                     {client.notes && (
-                                        <Grid item xs={12} sx={{ mr: 20 }}>
+                                        <Grid item xs={12}>
                                             <InfoRow
                                                 icon={Notes}
                                                 label="Notes"
-                                                value={client.notes}
+                                                value={capitalizeName(client.notes)}
                                             />
                                         </Grid>
                                     )}
@@ -237,24 +254,26 @@ const ViewClient = ({ open, onClose, client }) => {
                     <Divider />
 
                     {/* Contacts Section */}
-                    <Box sx={{ p: 3, bgcolor: 'grey.50' }}>
+                    <Box sx={{ p: 3 }}>
                         <Typography
-                            variant="h6"
+                            variant="subtitle1"
+                            color="primary"
                             fontWeight="bold"
                             gutterBottom
                             sx={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 1,
-                                mb: 2,
-                                color: 'primary.main'
+                                mb: 2
                             }}
                         >
+                            <Box component="span" sx={{ width: 4, height: 18, bgcolor: 'primary.main', borderRadius: 4 }} />
                             <ContactPhone />
                             Contact Persons
                             <Chip
                                 label={client.contacts?.length || 0}
                                 size="small"
+                                variant="outlined"
                                 color="primary"
                                 sx={{ ml: 1 }}
                             />
@@ -288,13 +307,15 @@ const ViewClient = ({ open, onClose, client }) => {
                                                         width: 48,
                                                         height: 48,
                                                         borderRadius: '50%',
-                                                        bgcolor: '#f0f0f5',
-                                                        color: '#6366f1',
+                                                        bgcolor: (theme) => theme.palette.mode === 'light' ? 'rgba(25, 118, 210, 0.1)' : 'rgba(144, 202, 249, 0.1)',
+                                                        color: 'primary.main',
                                                         display: 'flex',
                                                         alignItems: 'center',
                                                         justifyContent: 'center',
                                                         fontWeight: 'bold',
-                                                        fontSize: '1.2rem'
+                                                        fontSize: '1.2rem',
+                                                        border: '2px solid',
+                                                        borderColor: 'primary.main'
                                                     }}
                                                 >
                                                     {contact.firstName?.[0] || '?'}
@@ -306,15 +327,16 @@ const ViewClient = ({ open, onClose, client }) => {
                                                         fontWeight="bold"
                                                         noWrap
                                                     >
-                                                        {contact.firstName || '—'}{' '}
-                                                        {contact.lastName || '—'}
+                                                        {capitalizeName(`${contact.firstName || ''} ${contact.lastName || ''}`)}
                                                     </Typography>
                                                     <Typography
                                                         variant="body2"
-                                                        color="text.secondary"
+                                                        fontWeight={700}
+                                                        color="primary"
                                                         noWrap
+                                                        sx={{ textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: 0.5 }}
                                                     >
-                                                        {contact.role || 'No role specified'}
+                                                        {capitalizeName(contact.role) || 'No Role Specified'}
                                                     </Typography>
                                                 </Box>
                                             </Box>
@@ -327,10 +349,21 @@ const ViewClient = ({ open, onClose, client }) => {
                                                     alignItems="center"
                                                     gap={1.5}
                                                 >
-                                                    <Email
-                                                        color="action"
-                                                        fontSize="small"
-                                                    />
+                                                    <Box
+                                                        sx={{
+                                                            minWidth: 32,
+                                                            height: 32,
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            bgcolor: (theme) => theme.palette.mode === 'light' ? 'rgba(25, 118, 210, 0.05)' : 'rgba(144, 202, 249, 0.1)',
+                                                            color: 'primary.main',
+                                                            borderRadius: 1,
+                                                            flexShrink: 0
+                                                        }}
+                                                    >
+                                                        <Email fontSize="small" />
+                                                    </Box>
                                                     <Box flex={1} minWidth={0}>
                                                         <Typography
                                                             variant="caption"
@@ -340,10 +373,10 @@ const ViewClient = ({ open, onClose, client }) => {
                                                         </Typography>
                                                         <Typography
                                                             variant="body2"
-                                                            fontWeight={500}
+                                                            fontWeight={600}
                                                             noWrap
                                                         >
-                                                            {contact.emailAddress || '—'}
+                                                            {capitalizeName(contact.emailAddress) || '—'}
                                                         </Typography>
                                                     </Box>
                                                 </Box>
@@ -353,10 +386,21 @@ const ViewClient = ({ open, onClose, client }) => {
                                                     alignItems="center"
                                                     gap={1.5}
                                                 >
-                                                    <Phone
-                                                        color="action"
-                                                        fontSize="small"
-                                                    />
+                                                    <Box
+                                                        sx={{
+                                                            minWidth: 32,
+                                                            height: 32,
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            bgcolor: (theme) => theme.palette.mode === 'light' ? 'rgba(25, 118, 210, 0.05)' : 'rgba(144, 202, 249, 0.1)',
+                                                            color: 'primary.main',
+                                                            borderRadius: 1,
+                                                            flexShrink: 0
+                                                        }}
+                                                    >
+                                                        <Phone fontSize="small" />
+                                                    </Box>
                                                     <Box flex={1} minWidth={0}>
                                                         <Typography
                                                             variant="caption"
@@ -366,7 +410,7 @@ const ViewClient = ({ open, onClose, client }) => {
                                                         </Typography>
                                                         <Typography
                                                             variant="body2"
-                                                            fontWeight={500}
+                                                            fontWeight={600}
                                                             noWrap
                                                         >
                                                             {contact.phoneNumber || '—'}
@@ -412,7 +456,7 @@ const ViewClient = ({ open, onClose, client }) => {
                 sx={{
                     p: 2,
                     justifyContent: 'flex-end',
-                    bgcolor: 'grey.50'
+                    bgcolor: 'background.paper'
                 }}
             >
                 <Button
