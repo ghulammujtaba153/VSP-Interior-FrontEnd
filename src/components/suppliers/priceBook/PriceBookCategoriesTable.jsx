@@ -72,6 +72,16 @@ const PriceBookCategoriesTable = () => {
     fetchCategories();
   }, [page, rowsPerPage, orderBy, order]);
 
+
+  // Capitalize name: "john more" → "John More"
+  const capitalizeName = (name) => {
+    if (!name) return 'N/A';
+    return String(name)
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   const handleSort = (property) => {
     const isAsc = orderBy === property && order === 'asc';
     setOrder(isAsc ? 'desc' : 'asc');
@@ -241,7 +251,7 @@ const PriceBookCategoriesTable = () => {
                   categories.map((row, index) => (
                     <TableRow key={row.id}>
                       <TableCell>{(page * rowsPerPage) + index + 1}</TableCell>
-                      <TableCell>{row.name}</TableCell>
+                      <TableCell>{capitalizeName(row.name)}</TableCell>
                       <TableCell align="center">
                         <IconButton
                           color="primary"

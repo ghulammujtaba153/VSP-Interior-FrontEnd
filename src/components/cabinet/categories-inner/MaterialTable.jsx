@@ -190,6 +190,15 @@ const MaterialTable = ({ id }) => {
     }
   }
 
+  // Capitalize name: "john more" → "John More"
+  const capitalizeName = (name) => {
+    if (!name) return 'N/A';
+    return String(name)
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   // Open export dialog and fetch all sub codes
   const handleExportExcel = async () => {
     setExportDialogOpen(true)
@@ -506,7 +515,7 @@ const MaterialTable = ({ id }) => {
                       <TableCell>
                         {cabinet.cabinetSubCategory ? (
                           <Chip
-                            label={cabinet.cabinetSubCategory.name}
+                            label={capitalizeName(cabinet.cabinetSubCategory.name)}
                             color='inherit'
                             variant='outlined'
                             size='small'
@@ -520,20 +529,20 @@ const MaterialTable = ({ id }) => {
 
                       <TableCell>
                         <Typography variant='body2' fontWeight='medium' noWrap color='inherit' sx={{ maxWidth: 300 }}>
-                          {cabinet.code || 'N/A'}
+                          {capitalizeName(cabinet.code) || 'N/A'}
                         </Typography>
                       </TableCell>
 
                       <TableCell>
                         <Tooltip title={cabinet.description || 'No description'}>
                           <Typography variant='body2' color='inherit' noWrap sx={{ maxWidth: 200 }}>
-                            {cabinet.description || 'No description'}
+                            {capitalizeName(cabinet.description) || 'No description'}
                           </Typography>
                         </Tooltip>
                       </TableCell>
                       <TableCell>
                         <Chip
-                          label={cabinet.status || 'N/A'}
+                          label={capitalizeName(cabinet.status) || 'N/A'}
                           color={cabinet.status === 'active' ? 'success' : 'default'}
                           size='small'
                         />
@@ -544,7 +553,7 @@ const MaterialTable = ({ id }) => {
                         <TableCell key={index}>
                           <Tooltip title={getDynamicValue(cabinet, column)}>
                             <Typography variant='body2' noWrap color='inherit' sx={{ maxWidth: 150 }}>
-                              {getDynamicValue(cabinet, column)}
+                              {capitalizeName(getDynamicValue(cabinet, column))}
                             </Typography>
                           </Tooltip>
                         </TableCell>

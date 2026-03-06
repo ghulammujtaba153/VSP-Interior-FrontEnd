@@ -292,7 +292,7 @@ const ClientsTable = () => {
               "Client Email": client.emailAddress,
               "Client Phone": client.phoneNumber,
               "Address": client.address,
-              "City": client.postCode,
+              "Post Code": client.postCode,
               "Client Status": client.accountStatus,
               "Client Created At": client.createdAt ? new Date(client.createdAt).toLocaleString() : "N/A",
               "Contact #": index + 1,
@@ -315,7 +315,7 @@ const ClientsTable = () => {
             "Client Email": client.emailAddress,
             "Client Phone": client.phoneNumber,
             "Address": client.address,
-            "City": client.postCode,
+            "Post Code": client.postCode,
             "Client Status": client.accountStatus,
             "Client Created At": client.createdAt ? new Date(client.createdAt).toLocaleString() : "N/A",
             "Contact #": "No Contacts",
@@ -352,7 +352,7 @@ const ClientsTable = () => {
         });
       } else {
         // Default widths if no data
-        const defaultColumns = ['Client ID', 'Name', 'Is Company', 'Client Email', 'Client Phone', 'Address', 'City', 'Client Status', 'Client Created At', 'Contact #', 'Contact ID', 'Contact First Name', 'Contact Last Name', 'Contact Full Name', 'Contact Role', 'Contact Email', 'Contact Phone', 'Contact Created At'];
+        const defaultColumns = ['Client ID', 'Name', 'Is Company', 'Client Email', 'Client Phone', 'Address', 'Post Code', 'Client Status', 'Client Created At', 'Contact #', 'Contact ID', 'Contact First Name', 'Contact Last Name', 'Contact Full Name', 'Contact Role', 'Contact Email', 'Contact Phone', 'Contact Created At'];
         defaultColumns.forEach(() => {
           columnWidths.push({ wch: 15 });
         });
@@ -623,12 +623,12 @@ const ClientsTable = () => {
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>
                     <Typography variant="body2" color="inherit">
-                      {contact.firstName} {contact.lastName}
+                      {capitalizeName(`${contact.firstName || ''} ${contact.lastName || ''}`)}
                     </Typography>
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={contact.role}
+                      label={capitalizeName(contact.role)}
                       size="small"
                       color="primary"
                       variant="outlined"
@@ -860,7 +860,7 @@ const ClientsTable = () => {
                     direction={orderBy === 'postCode' ? order : 'asc'}
                     onClick={() => handleSort('postCode')}
                   >
-                    <strong>City</strong>
+                    <strong>Post Code</strong>
                   </TableSortLabel>
                 </TableCell>
                 <TableCell sx={{ minWidth: 20 }}><strong>Contacts</strong></TableCell>
@@ -905,7 +905,7 @@ const ClientsTable = () => {
                         </IconButton>
                       ) : null}
                     </TableCell>
-                    <TableCell>{(page * rowsPerPage) + index + 1}</TableCell>
+                    <TableCell>C{(page * rowsPerPage) + index + 1}</TableCell>
                     <TableCell>
                       <Typography variant="body2" fontWeight="medium" noWrap color="inherit" sx={{ maxWidth: 260 }}>
                         {capitalizeName(client.companyName)}
@@ -913,7 +913,7 @@ const ClientsTable = () => {
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" noWrap color="inherit" sx={{ maxWidth: 220 }}>
-                        {client.emailAddress}
+                        {capitalizeName(client.emailAddress)}
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -923,12 +923,12 @@ const ClientsTable = () => {
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" noWrap color="inherit" sx={{ maxWidth: 300 }}>
-                        {client.address}
+                        {capitalizeName(client.address)}
                       </Typography>
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" noWrap color="inherit" sx={{ maxWidth: 140 }}>
-                        {client.postCode}
+                        {capitalizeName(client.postCode)}
                       </Typography>
                     </TableCell>
                     <TableCell>

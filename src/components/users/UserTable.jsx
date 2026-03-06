@@ -224,7 +224,13 @@ const UserTable = () => {
         return capitalizeName(row.name);
       }
     },
-    { field: 'email', headerName: 'Email', flex: 1.5 },
+    { field: 'email', headerName: 'Email', flex: 1.5, 
+      renderCell: (params) => {
+        const row = params?.row;
+        if (!row || !row.email) return 'N/A';
+        return capitalizeName(row.email);
+      }
+     },
     {
       field: 'Role',
       headerName: 'Role',
@@ -233,7 +239,7 @@ const UserTable = () => {
         const row = params?.row;
         if (!row) return null;
         return (
-          <Chip label={row.Role.name} />
+          <Chip label={capitalizeName(row.Role.name)} />
         );
       }
     },

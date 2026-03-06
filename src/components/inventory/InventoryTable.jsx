@@ -186,6 +186,16 @@ const InventoryTable = () => {
     return new Date(dateString).toISOString().slice(0, 10);
   };
 
+
+  // Capitalize name: "john more" → "John More"
+  const capitalizeName = (name) => {
+    if (!name) return 'N/A';
+    return String(name)
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   // Export to Excel
   const handleExportExcel = () => {
     showConfirmation({
@@ -440,10 +450,10 @@ const InventoryTable = () => {
                 // }}
               >
                 <TableCell sx={{ minWidth: 80 }}>{(page * limit) + index + 1}</TableCell>
-                <TableCell sx={{ minWidth: 160 }}>{item.name}</TableCell>
-                <TableCell sx={{ minWidth: 220 }}>{item.description}</TableCell>
-                <TableCell sx={{ minWidth: 120 }}>{item.categoryDetails.name}</TableCell>
-                <TableCell sx={{ minWidth: 100 }}>{item.supplier?.name || "N/A"}</TableCell>
+                <TableCell sx={{ minWidth: 160 }}>{capitalizeName(item.name)}</TableCell>
+                <TableCell sx={{ minWidth: 220 }}>{capitalizeName(item.description)}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{capitalizeName(item.categoryDetails.name)}</TableCell>
+                <TableCell sx={{ minWidth: 100 }}>{capitalizeName(item.supplier?.name) || "N/A"}</TableCell>
                 {/* <TableCell sx={{ minWidth: 100 }}>{item.priceBooks?.unit || "N/A"}</TableCell> */}
                 <TableCell sx={{ minWidth: 100 }}>{item.costPrice}</TableCell>
                 <TableCell sx={{ minWidth: 100 }}>{item.quantity}</TableCell>
