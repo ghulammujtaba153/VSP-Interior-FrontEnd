@@ -117,6 +117,15 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
     setConfirmationConfig({ title: '', message: '', action: null, severity: 'warning' });
   };
 
+  // Capitalize name: "john more" → "John More"
+  const capitalizeName = (name) => {
+    if (!name) return 'N/A';
+    return String(name)
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -241,7 +250,7 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
                 <MenuItem value="">Select category</MenuItem>
                 {supplierCategories.map((cat) => (
                   <MenuItem key={cat.id || cat._id} value={cat.id || cat._id}>
-                    {cat.name}
+                    {capitalizeName(cat.name)}
                   </MenuItem>
                 ))}
               </TextField>
@@ -265,7 +274,7 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
                 <MenuItem value="">Select supplier</MenuItem>
                 {suppliers.map((supplier) => (
                   <MenuItem key={supplier.id} value={supplier.id}>
-                    {supplier.name}
+                    {capitalizeName(supplier.name)}
                   </MenuItem>
                 ))}
               </TextField>

@@ -360,7 +360,7 @@ const InventoryTable = () => {
           <MenuItem value="">All Suppliers</MenuItem>
           {suppliers.map((supplier) => (
             <MenuItem key={supplier.id} value={supplier.id}>
-              {supplier.name}
+              {capitalizeName(supplier.name)}
             </MenuItem>
           ))}
         </Select>
