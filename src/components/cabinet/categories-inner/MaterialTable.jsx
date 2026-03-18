@@ -418,7 +418,7 @@ const MaterialTable = ({ id }) => {
           <MenuItem value='all'>All</MenuItem>
           {uniqueSubCodes.map(subCode => (
             <MenuItem key={subCode} value={subCode}>
-              {subCode}
+              {capitalizeName(subCode)}
             </MenuItem>
           ))}
         </TextField>
@@ -676,13 +676,13 @@ const MaterialTable = ({ id }) => {
                     sx={{ mb: 1, mr: 1 }}
                     onClick={() => setSelectedSubCode(subCode)}
                   >
-                    {subCode}
+                    {capitalizeName(subCode)}
                   </Button>
                 ))}
                 <Typography variant='caption' sx={{ display: 'block', mt: 2 }}>
                   {selectedSubCode === 'all'
                     ? `Exporting all cabinets (${rowCount} items)`
-                    : `Exporting cabinets for Sub Code "${selectedSubCode}"`}
+                    : `Exporting cabinets for Sub Code "${capitalizeName(selectedSubCode)}"`}
                 </Typography>
               </Box>
             )}
