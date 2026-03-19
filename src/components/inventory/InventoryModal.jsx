@@ -88,7 +88,7 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
   const fetchCategories = async () => {
     setLoadingCategories(true);
     try {
-      const res = await axios.get(`${BASE_URL}/api/pricebook-categories/get`);
+      const res = await axios.get(`${BASE_URL}/api/pricebook-categories/get?page=1&limit=10000`);
       setSupplierCategories(res.data.priceBookCategories || []);
     } catch (error) {
       console.error("Error fetching categories:", error);
