@@ -160,7 +160,7 @@ const ViewInventoryModal = ({ open, setOpen, inventory }) => {
                     <InfoRow 
                       icon={Category} 
                       label="Category" 
-                      value={inventory.categoryDetails?.name} 
+                      value={inventory.inventoryCategory?.name} 
                     />
                   </Grid>
                   

@@ -1,8 +1,8 @@
 'use client'
 
 import Loader from '@/components/loader/Loader'
-import { useParams } from 'next/navigation'
-import React, { useEffect, useState } from 'react'
+import { useParams, useSearchParams } from 'next/navigation'
+import React, { useEffect, useState, useMemo } from 'react'
 import { BASE_URL } from '@/configs/url'
 import axios from 'axios'
 import { toast } from 'react-toastify'
@@ -36,10 +36,14 @@ import {
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import VisibilityIcon from '@mui/icons-material/Visibility'
+import AddIcon from '@mui/icons-material/Add'
 import * as XLSX from 'xlsx'
 
-const SupplierCategoryPage = () => {
-  const { id } = useParams()
+const PriceBookPage = ({ supplierId: propSupplierId }) => {
+  const searchParams = useSearchParams()
+  const supplierQueryId = searchParams.get('supplierId')
+  const supplierId = propSupplierId || supplierQueryId
+
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState([])
   const [suppliers, setSuppliers] = useState([])
@@ -57,10 +61,9 @@ const SupplierCategoryPage = () => {
   const [selectedRow, setSelectedRow] = useState(null)
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
-    unit: '',
-    price: '',
-    supplierId: '',
+    variant: '',
+    dynamic: '',
+    supplierId: supplierId || '',
     status: 'Active' // default active, status dropdown removed
   })
 
@@ -69,8 +72,10 @@ const SupplierCategoryPage = () => {
   const [versionAction, setVersionAction] = useState('new')
   const [selectedVersion, setSelectedVersion] = useState('v1')
   const [availableVersions, setAvailableVersions] = useState([])
-  const [categoryInfo, setCategoryInfo] = useState(null)
   const [availableLoading, setAvailableLoading] = useState(false)
+  
+  // Dynamic fields state for modal
+  const [dynamicFields, setDynamicFields] = useState([{ key: '', value: '' }])
 
   // History modal
   const [historyOpen, setHistoryOpen] = useState(false)
@@ -95,21 +100,17 @@ const SupplierCategoryPage = () => {
     }
   }
 
-  // Fetch category (pricebooks under category)
-  const fetchCategory = async () => {
+  // Fetch pricebooks
+  const fetchPriceBooks = async () => {
     setLoading(true)
     try {
-      const response = await axios.get(`${BASE_URL}/api/pricebook/get/${id}`)
+      const endpoint = supplierId 
+        ? `${BASE_URL}/api/pricebook/get/${supplierId}` 
+        : `${BASE_URL}/api/pricebook/get/`
+      const response = await axios.get(endpoint)
       setData(response.data)
-
-      // Store category info for later use
-      if (response.data.length > 0 && response.data[0].PriceBookCategory) {
-        setCategoryInfo({
-          categoryName: response.data[0].PriceBookCategory.name
-        })
-      }
     } catch (error) {
-      toast.error('Failed to fetch category')
+      toast.error('Failed to fetch price books')
     } finally {
       setLoading(false)
     }
@@ -127,7 +128,7 @@ const SupplierCategoryPage = () => {
 
     try {
       const res = await axios.get(`${BASE_URL}/api/pricebook/history`, {
-        params: { name: itemName, priceBookCategoryId: id }
+        params: { name: itemName }
       })
 
       const items = res.data.items || res.data || []
@@ -145,14 +146,11 @@ const SupplierCategoryPage = () => {
   }
 
   useEffect(() => {
-    fetchCategory()
+    fetchPriceBooks()
     fetchSuppliers()
-  }, [id])
+  }, [])
 
-  useEffect(() => {
-    // when categoryInfo becomes available we do not auto-fetch versions globally anymore
-    // versions will be fetched per item (on add / when validating name)
-  }, [categoryInfo])
+  // Removed categoryInfo effect
 
   const handleDelete = async rowId => {
     toast.loading('Please wait...')
@@ -160,7 +158,7 @@ const SupplierCategoryPage = () => {
       await axios.delete(`${BASE_URL}/api/pricebook/delete/${rowId}`)
       toast.dismiss()
       toast.success('Item deleted successfully')
-      fetchCategory()
+      fetchPriceBooks()
     } catch (error) {
       toast.dismiss()
       toast.error('Failed to delete item')
@@ -171,9 +169,8 @@ const SupplierCategoryPage = () => {
     setSelectedRow(row)
     setFormData({
       name: row.name,
-      description: row.description,
-      unit: row.unit,
-      price: row.price,
+      variant: row.variant,
+      dynamic: row.dynamic,
       supplierId: row.supplierId || '',
       status: 'Active' // ensure status remains active on update
     })
@@ -186,11 +183,19 @@ const SupplierCategoryPage = () => {
   }
 
   const handleUpdate = async () => {
-    // Validate required fields
-    if (!formData.name || !formData.unit || !formData.price || !formData.supplierId) {
+    // Validate required fields (Price is now optional)
+    if (!formData.name || !formData.supplierId) {
       toast.error('Please fill all required fields including Supplier')
       return
     }
+
+    // Prepare dynamic JSON from fields
+    const dynamicObject = {}
+    dynamicFields.forEach(field => {
+      if (field.key.trim()) {
+        dynamicObject[field.key.trim()] = field.value
+      }
+    })
 
     // If editing an existing item - update directly keeping its version
     if (selectedRow) {
@@ -198,15 +203,15 @@ const SupplierCategoryPage = () => {
       try {
         await axios.put(`${BASE_URL}/api/pricebook/update/${selectedRow.id}`, {
           ...formData,
+          dynamic: dynamicObject,
           version: selectedRow.version, // preserve previous version
-          priceBookCategoryId: id,
           status: 'Active' // enforce active
         })
         toast.dismiss()
         toast.success('Item updated successfully')
         setOpen(false)
         setSelectedRow(null)
-        fetchCategory()
+        fetchPriceBooks()
       } catch (error) {
         toast.dismiss()
         const errorMessage = error.response?.data?.error || 'Failed to update item'
@@ -215,6 +220,9 @@ const SupplierCategoryPage = () => {
       return
     }
 
+    // Update formData with the dynamic object for handleVersionConfirm
+    setFormData(prev => ({ ...prev, dynamic: dynamicObject }))
+    
     // If adding new item -> fetch versions for the entered name and go to version dialog
     await fetchAvailableVersions(formData.name)
     setOpen(false)
@@ -252,7 +260,6 @@ const SupplierCategoryPage = () => {
         await axios.put(`${BASE_URL}/api/pricebook/update/${existingItem.id}`, {
           ...formData,
           supplierId: formData.supplierId,
-          priceBookCategoryId: id,
           version: selectedVersion,
           status: 'Active'
         })
@@ -275,7 +282,6 @@ const SupplierCategoryPage = () => {
         await axios.post(`${BASE_URL}/api/pricebook/create`, {
           ...formData,
           supplierId: formData.supplierId,
-          priceBookCategoryId: id,
           version: version,
           status: 'Active'
         })
@@ -285,8 +291,8 @@ const SupplierCategoryPage = () => {
       }
       
       setOpenVersionDialog(false)
-      setFormData({ name: '', description: '', unit: '', price: '', supplierId: '', status: 'Active' })
-      fetchCategory()
+      setFormData({ name: '', variant: '', dynamic: '', supplierId: '', status: 'Active' })
+      fetchPriceBooks()
     } catch (error) {
       toast.dismiss()
       const errorMessage = error.response?.data?.error || 'Failed to save item'
@@ -299,24 +305,26 @@ const SupplierCategoryPage = () => {
     setSelectedRow(null)
     setFormData({
       name: '',
-      description: '',
-      unit: '',
+      variant: '',
+      dynamic: '',
       price: '',
       supplierId: '',
       status: 'Active'
     })
+    setDynamicFields([{ key: '', value: '' }])
   }
 
   const handleAddNew = () => {
     setSelectedRow(null)
     setFormData({
       name: '',
-      description: '',
-      unit: '',
+      variant: '',
+      dynamic: '',
       price: '',
       supplierId: '',
       status: 'Active'
     })
+    setDynamicFields([{ key: 'Unit', value: '' }]) // Start with a 'Unit' field as default
     setVersionAction('new')
     setSelectedVersion('v1')
     setOpen(true)
@@ -332,13 +340,11 @@ const SupplierCategoryPage = () => {
     const exportData = data.map(item => ({
       ID: item.id,
       Name: item.name,
-      Description: item.description,
-      Unit: item.unit,
-      Price: item.price,
+      Variant: item.variant,
+      Dynamic: item.dynamic,
       Version: item.version,
       Supplier: item.Suppliers ? item.Suppliers.name : 'N/A',
       Status: item.status,
-      Category: item.PriceBookCategory ? item.PriceBookCategory.name : '',
       CreatedAt: item.createdAt,
       UpdatedAt: item.updatedAt
     }))
@@ -396,7 +402,7 @@ const SupplierCategoryPage = () => {
     setHistoryLoading(true)
     try {
       const res = await axios.get(`${BASE_URL}/api/pricebook/history`, {
-        params: { name: name, priceBookCategoryId: id }
+        params: { name: name }
       })
 
       const items = res.data.items || res.data || []
@@ -425,6 +431,36 @@ const SupplierCategoryPage = () => {
     setHistoryOpen(true)
   }
 
+  // Dynamic fields utility handlers
+  const handleDynamicChange = (index, field, value) => {
+    const updated = [...dynamicFields]
+    updated[index][field] = value
+    setDynamicFields(updated)
+  }
+
+  const addDynamicField = () => {
+    setDynamicFields([...dynamicFields, { key: '', value: '' }])
+  }
+
+  const removeDynamicField = (index) => {
+    if (dynamicFields.length > 1) {
+      const updated = dynamicFields.filter((_, i) => i !== index)
+      setDynamicFields(updated)
+    } else {
+      setDynamicFields([{ key: '', value: '' }])
+    }
+  }
+
+  const renderDynamicValue = (val) => {
+    if (!val) return '-'
+    if (typeof val === 'object') {
+      return Object.entries(val)
+        .map(([k, v]) => `${k}: ${v}`)
+        .join(', ')
+    }
+    return String(val)
+  }
+
   if (loading) return <Loader />
 
   return (
@@ -445,7 +481,7 @@ const SupplierCategoryPage = () => {
       </Box>
 
       <Typography variant='h6' fontWeight='bold' mb={2}>
-        Supplier Category Page
+        Price Book
       </Typography>
 
       <Box className='my-2' display='flex' alignItems='center'>
@@ -471,13 +507,10 @@ const SupplierCategoryPage = () => {
                 <b>Name</b>
               </TableCell>
               <TableCell>
-                <b>Description</b>
+                <b>Variant</b>
               </TableCell>
               <TableCell>
-                <b>Unit</b>
-              </TableCell>
-              <TableCell>
-                <b>Price</b>
+                <b>Dynamic</b>
               </TableCell>
               <TableCell>
                 <b>Version</b>
@@ -499,9 +532,10 @@ const SupplierCategoryPage = () => {
                 <TableRow key={row.id}>
                   <TableCell>{row.id}</TableCell>
                   <TableCell>{row.name}</TableCell>
-                  <TableCell>{row.description}</TableCell>
-                  <TableCell>{row.unit}</TableCell>
-                  <TableCell>{row.price}</TableCell>
+                  <TableCell>{row.variant}</TableCell>
+                  <TableCell title={renderDynamicValue(row.dynamic)} sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {renderDynamicValue(row.dynamic)}
+                  </TableCell>
                   <TableCell>{row.version}</TableCell>
                   <TableCell>{row.Supplier?.name || 'N/A'}</TableCell>
                   <TableCell>{row.status}</TableCell>
@@ -555,42 +589,66 @@ const SupplierCategoryPage = () => {
             onChange={e => setFormData({ ...formData, name: e.target.value })}
           />
           <TextField
-            label='Description'
+            label='Variant'
             fullWidth
             margin='dense'
-            value={formData.description}
-            onChange={e => setFormData({ ...formData, description: e.target.value })}
+            value={formData.variant}
+            onChange={e => setFormData({ ...formData, variant: e.target.value })}
           />
-          <TextField
-            label='Unit'
-            fullWidth
-            margin='dense'
-            value={formData.unit}
-            onChange={e => setFormData({ ...formData, unit: e.target.value })}
-          />
-          <TextField
-            label='Price'
-            type='number'
-            fullWidth
-            margin='dense'
-            value={formData.price}
-            onChange={e => setFormData({ ...formData, price: e.target.value })}
-          />
-          <FormControl fullWidth margin='dense' required>
-            <InputLabel>Supplier</InputLabel>
-            <Select
-              value={formData.supplierId}
-              label='Supplier'
-              onChange={e => setFormData({ ...formData, supplierId: e.target.value })}
-              disabled={loadingSuppliers}
+          
+          <Box sx={{ mt: 2, mb: 1 }}>
+            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+              Dynamic Fields
+            </Typography>
+            {dynamicFields.map((field, index) => (
+              <Box key={index} display="flex" gap={1} mb={1} alignItems="center">
+                <TextField
+                  label="Field Name"
+                  size="small"
+                  value={field.key}
+                  onChange={(e) => handleDynamicChange(index, 'key', e.target.value)}
+                  placeholder="e.g. Unit, Size"
+                  autoComplete="off"
+                />
+                <TextField
+                  label="Value"
+                  size="small"
+                  value={field.value}
+                  onChange={(e) => handleDynamicChange(index, 'value', e.target.value)}
+                  placeholder="e.g. Piece, 10mm"
+                  autoComplete="off"
+                />
+                <IconButton color="error" size="small" onClick={() => removeDynamicField(index)}>
+                  <DeleteIcon />
+                </IconButton>
+              </Box>
+            ))}
+            <Button 
+              startIcon={<AddIcon />} 
+              size="small" 
+              onClick={addDynamicField}
+              sx={{ mt: 0.5 }}
             >
-              {suppliers.map(supplier => (
-                <MenuItem key={supplier.id} value={supplier.id}>
-                  {supplier.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              Add Field
+            </Button>
+          </Box>
+          {!supplierId && (
+            <FormControl fullWidth margin='dense' required>
+              <InputLabel>Supplier</InputLabel>
+              <Select
+                value={formData.supplierId}
+                label='Supplier'
+                onChange={e => setFormData({ ...formData, supplierId: e.target.value })}
+                disabled={loadingSuppliers}
+              >
+                {suppliers.map(supplier => (
+                  <MenuItem key={supplier.id} value={supplier.id}>
+                    {supplier.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
           {/* status removed; default 'Active' is used */}
         </DialogContent>
 
@@ -688,9 +746,8 @@ const SupplierCategoryPage = () => {
                   <TableHead>
                     <TableRow>
                       <TableCell><b>Version</b></TableCell>
-                      <TableCell><b>Name</b></TableCell>
-                      <TableCell><b>Unit</b></TableCell>
-                      <TableCell><b>Price</b></TableCell>
+                      <TableCell><b>Variant</b></TableCell>
+                      <TableCell><b>Dynamic</b></TableCell>
                       <TableCell><b>Status</b></TableCell>
                       <TableCell><b>Created At</b></TableCell>
                       <TableCell><b>Version End</b></TableCell>
@@ -704,9 +761,8 @@ const SupplierCategoryPage = () => {
                     ).map(h => (
                       <TableRow key={h.id}>
                         <TableCell>{h.version}</TableCell>
-                        <TableCell>{h.name}</TableCell>
-                        <TableCell>{h.unit}</TableCell>
-                        <TableCell>{h.price}</TableCell>
+                        <TableCell>{h.variant}</TableCell>
+                        <TableCell>{renderDynamicValue(h.dynamic)}</TableCell>
                         <TableCell>{h.status}</TableCell>
                         <TableCell>{h.createdAt ? new Date(h.createdAt).toLocaleString() : '-'}</TableCell>
                         <TableCell>
@@ -732,6 +788,6 @@ const SupplierCategoryPage = () => {
   )
 }
 
-export default SupplierCategoryPage
+export default PriceBookPage
 
 

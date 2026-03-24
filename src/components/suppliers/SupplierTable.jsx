@@ -35,6 +35,7 @@ import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import DownloadIcon from "@mui/icons-material/Download";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Clear";
+import MenuBookIcon from "@mui/icons-material/MenuBook";
 import { BASE_URL } from "@/configs/url";
 import Loader from "../loader/Loader";
 import SupplierModal from "./SupplierModal";
@@ -80,8 +81,8 @@ const SupplierTable = () => {
     const [searchTerm, setSearchTerm] = useState('');
 
     // Sorting state
-    const [orderBy, setOrderBy] = useState('name');
-    const [order, setOrder] = useState('asc');
+    const [orderBy, setOrderBy] = useState('id');
+    const [order, setOrder] = useState('desc');
 
     // Confirmation dialog states
     const [confirmationOpen, setConfirmationOpen] = useState(false);
@@ -108,7 +109,7 @@ const SupplierTable = () => {
         if (!name) return 'N/A';
         return String(name)
             .split(' ')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
             .join(' ');
     };
 
@@ -421,9 +422,9 @@ const SupplierTable = () => {
     const handleResetSearch = () => {
         setSearchTerm('')
         setPage(0)
-        setOrderBy('name')
-        setOrder('asc')
-        fetchSuppliers(0, rowsPerPage, '', 'name', 'asc') // Immediately fetch all results when clearing
+        setOrderBy('id')
+        setOrder('desc')
+        fetchSuppliers(0, rowsPerPage, '', 'id', 'desc') // Immediately fetch all results when clearing
     }
 
     const handleSort = (property) => {
@@ -753,12 +754,15 @@ const SupplierTable = () => {
                             <TableRow>
                                 <TableCell width="50px"></TableCell>
                                 <TableCell sx={{ minWidth: 50 }}>
+                                    <strong>#</strong>
+                                </TableCell>
+                                <TableCell sx={{ minWidth: 80 }}>
                                     <TableSortLabel
                                         active={orderBy === 'id'}
                                         direction={orderBy === 'id' ? order : 'asc'}
                                         onClick={() => handleSort('id')}
                                     >
-                                        <strong>#</strong>
+                                        <strong>ID</strong>
                                     </TableSortLabel>
                                 </TableCell>
                                 <TableCell sx={{ minWidth: 100 }}>
@@ -841,7 +845,8 @@ const SupplierTable = () => {
                                                 {expandedRows.has(supplier.id) ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                                             </IconButton>
                                         </TableCell>
-                                        <TableCell>S{(page * rowsPerPage) + index + 1}</TableCell>
+                                        <TableCell>{(page * rowsPerPage) + index + 1}</TableCell>
+                                        <TableCell>S{supplier.id}</TableCell>
                                         <TableCell>
                                             <Typography variant="body2" fontWeight="medium" color="inherit">
                                                 {capitalizeName(supplier.name)}
@@ -892,6 +897,17 @@ const SupplierTable = () => {
                                                 <Tooltip title="Delete">
                                                         <IconButton size="small" onClick={() => handleDelete(supplier)} color="error">
                                                             <DeleteIcon />
+                                                        </IconButton>
+                                                </Tooltip>
+                                                
+                                                <Tooltip title="Manage Price Book">
+                                                        <IconButton 
+                                                            size="small" 
+                                                            component={Link} 
+                                                            href={`/suppliers/pricebook?supplierId=${supplier.id}`} 
+                                                            color="warning"
+                                                        >
+                                                            <MenuBookIcon />
                                                         </IconButton>
                                                 </Tooltip>
                                                 

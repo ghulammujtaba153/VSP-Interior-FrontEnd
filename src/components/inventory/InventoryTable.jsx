@@ -138,8 +138,8 @@ const InventoryTable = () => {
   // Fetch categories
   const fetchCategories = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/api/pricebook-categories/get?page=1&limit=10000`);
-      setCategories(res.data.priceBookCategories || []);
+      const res = await axios.get(`${BASE_URL}/api/inventory-category/get`);
+      setCategories(res.data || []);
     } catch (error) {
       console.error("Error fetching categories:", error);
     }
@@ -211,7 +211,7 @@ const InventoryTable = () => {
       ID: item.id,
       Name: item.name,
       Description: item.description,
-      Category: item.categoryDetails?.name || item.category || "N/A",
+      Category: item.inventoryCategory?.name || "N/A",
       "Supplier Name": item.supplier?.name || item.supplier?.companyName || "N/A",
       "Cost Price": item.costPrice,
       Quantity: item.quantity,
@@ -364,9 +364,25 @@ const InventoryTable = () => {
             </MenuItem>
           ))}
         </Select>
-        
-        
-        
+
+        <Select
+          sx={{ minWidth: 180 }}
+          label="Category"
+          size="small"
+          value={selectedCategory || ""}
+          onChange={(e) => {
+            setSelectedCategory(e.target.value);
+            setPage(0);
+          }}
+          displayEmpty
+        >
+          <MenuItem value="">All Categories</MenuItem>
+          {categories.map((cat) => (
+            <MenuItem key={cat.id} value={cat.id}>
+              {capitalizeName(cat.name)}
+            </MenuItem>
+          ))}
+        </Select>
       </Box>
 
       <Box sx={{ overflowX: 'auto', width: '100%' }}>
@@ -452,7 +468,7 @@ const InventoryTable = () => {
                 <TableCell sx={{ minWidth: 80 }}>{(page * limit) + index + 1}</TableCell>
                 <TableCell sx={{ minWidth: 160 }}>{capitalizeName(item.name)}</TableCell>
                 <TableCell sx={{ minWidth: 220 }}>{capitalizeName(item.description)}</TableCell>
-                <TableCell sx={{ minWidth: 120 }}>{capitalizeName(item.categoryDetails.name)}</TableCell>
+                <TableCell sx={{ minWidth: 120 }}>{capitalizeName(item.inventoryCategory?.name)}</TableCell>
                 <TableCell sx={{ minWidth: 100 }}>{capitalizeName(item.supplier?.name) || "N/A"}</TableCell>
                 {/* <TableCell sx={{ minWidth: 100 }}>{item.priceBooks?.unit || "N/A"}</TableCell> */}
                 <TableCell sx={{ minWidth: 100 }}>{item.costPrice}</TableCell>

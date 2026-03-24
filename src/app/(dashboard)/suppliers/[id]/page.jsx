@@ -2,8 +2,7 @@
 
 
 import Loader from '@/components/loader/Loader';
-import PriceBookCategoriesTable from '@/components/suppliers/priceBook/PriceBookCategoriesTable';
-import PriceBookImport from '@/components/suppliers/priceBook/PriceBookImport';
+import PriceBookPage from '../pricebook/page';
 import { BASE_URL } from '@/configs/url';
 import { Box, Button, Paper, Tab, Tabs } from '@mui/material';
 import axios from 'axios';
@@ -49,13 +48,9 @@ const SupplierPage = () => {
                 onChange={(e, newValue) => setTabIndex(newValue)}
                 sx={{ mb: 2 }}
             >
-
-                <Tab label="Categories" />
-                {/* <Tab label="Import" /> */}
-                
+                <Tab label="Price List" />
             </Tabs>
-            {tabIndex === 0 && <PriceBookCategoriesTable id={id} />}
-            {/* {tabIndex === 1 && <PriceBookImport id={id} />} */}
+            {tabIndex === 0 && <PriceBookPage supplierId={id} />}
             
 
         </Box>

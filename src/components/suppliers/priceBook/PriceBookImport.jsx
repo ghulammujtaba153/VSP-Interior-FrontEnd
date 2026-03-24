@@ -40,34 +40,28 @@ import {
   Category as CategoryIcon,
 } from "@mui/icons-material";
 
-// ✅ Required fields for PriceBook (per schema); Description optional
-const requiredFields = ["Name", "Category", "Unit", "Price", "Status"];
-const allFields = ["Name", "Description", "Category", "Unit", "Price", "Status"]; 
+// ✅ Required fields for PriceBook (per schema); Variant optional
+const requiredFields = ["Name", "Dynamic", "Status"];
+const allFields = ["Name", "Variant", "Dynamic", "Status"]; 
 
 // ✅ Sample template (Title Case headers)
 const templateData = [
   {
     Name: "Oak Wood Plank",
-    Description: "High quality oak wood plank, 2x4 inches",
-    Category: "Wood",
-    Unit: "piece",
-    Price: "25.50",
+    Variant: "High quality oak wood plank, 2x4 inches",
+    Dynamic: "piece",
     Status: "Active",
   },
   {
     Name: "Steel Handle",
-    Description: "Durable stainless steel cabinet handle",
-    Category: "Hardware",
-    Unit: "set",
-    Price: "12.00",
+    Variant: "Durable stainless steel cabinet handle",
+    Dynamic: "set",
     Status: "Active",
   },
   {
     Name: "Paint Bucket",
-    Description: "5-liter white wall paint",
-    Category: "Paint",
-    Unit: "bucket",
-    Price: "35.00",
+    Variant: "5-liter white wall paint",
+    Dynamic: "bucket",
     Status: "Inactive",
   },
 ];
@@ -119,10 +113,6 @@ const PriceBookImport = () => {
           rowErrors.push(`${field} is required`);
         }
       });
-
-      if (row.Price && isNaN(Number(row.Price))) {
-        rowErrors.push("Price must be a valid number");
-      }
 
       if (row.Status && !["active", "inactive"].includes(String(row.Status).toLowerCase())) {
         rowErrors.push("Status must be Active or Inactive");
@@ -257,10 +247,8 @@ const PriceBookImport = () => {
       // Normalize and build payload per schema
       const items = validRows.map((row) => ({
         name: String(row.Name || '').trim(),
-        description: String(row.Description || '').trim(),
-        category: String(row.Category || '').trim(),
-        unit: String(row.Unit || '').trim(),
-        price: Number(row.Price),
+        variant: String(row.Variant || '').trim(),
+        dynamic: row.Dynamic,
         status: String(row.Status || 'Active').toLowerCase(),
       }))
 
