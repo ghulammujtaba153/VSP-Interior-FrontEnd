@@ -22,6 +22,7 @@ import {
   MenuItem,
   TableSortLabel
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { Visibility, Edit, Delete } from "@mui/icons-material";
 import InventoryModal from "./InventoryModal";
 import { toast } from "react-toastify";
@@ -36,6 +37,7 @@ import useTableZoom from "@/hooks/useTableZoom";
 import TableZoom from "@/components/TableZoom";
 
 const InventoryTable = () => {
+  const theme = useTheme();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState([]);
   const { zoom, handleZoomChange, zoomStyle } = useTableZoom('inventory_table_zoom');
@@ -458,12 +460,12 @@ const InventoryTable = () => {
               <TableRow 
                 key={item.id}
                 hover
-                // sx={{
-                //   backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
-                //   '&:hover': {
-                //     backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
-                //   }
-                // }}
+                sx={{
+                  backgroundColor: index % 2 === 0 ? theme.palette.action.hover : 'inherit',
+                  '&:hover': {
+                    backgroundColor: theme.palette.action.selected + ' !important',
+                  }
+                }}
               >
                 <TableCell sx={{ minWidth: 80 }}>{(page * limit) + index + 1}</TableCell>
                 <TableCell sx={{ minWidth: 160 }}>{capitalizeName(item.name)}</TableCell>

@@ -31,7 +31,8 @@ import {
   Radio,
   RadioGroup,
   FormControlLabel,
-  FormLabel
+  FormLabel,
+  useTheme
 } from '@mui/material'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
@@ -40,6 +41,7 @@ import AddIcon from '@mui/icons-material/Add'
 import * as XLSX from 'xlsx'
 
 const PriceBookPage = ({ supplierId: propSupplierId }) => {
+  const theme = useTheme()
   const searchParams = useSearchParams()
   const supplierQueryId = searchParams.get('supplierId')
   const supplierId = propSupplierId || supplierQueryId
@@ -528,8 +530,17 @@ const PriceBookPage = ({ supplierId: propSupplierId }) => {
           </TableHead>
           <TableBody>
             {paginatedData.length > 0 ? (
-              paginatedData.map(row => (
-                <TableRow key={row.id}>
+              paginatedData.map((row, index) => (
+                <TableRow 
+                  key={row.id}
+                  hover
+                  sx={{
+                    backgroundColor: index % 2 === 0 ? theme.palette.action.hover : 'inherit',
+                    '&:hover': {
+                      backgroundColor: theme.palette.action.selected + ' !important',
+                    }
+                  }}
+                >
                   <TableCell>{row.id}</TableCell>
                   <TableCell>{row.name}</TableCell>
                   <TableCell>{row.variant}</TableCell>
@@ -758,8 +769,17 @@ const PriceBookPage = ({ supplierId: propSupplierId }) => {
                       historyVersionSelected === 'All'
                         ? historyData
                         : historyData.filter(h => h.version === historyVersionSelected)
-                    ).map(h => (
-                      <TableRow key={h.id}>
+                    ).map((h, index) => (
+                      <TableRow 
+                        key={h.id}
+                        hover
+                        sx={{
+                          backgroundColor: index % 2 === 0 ? theme.palette.action.hover : 'inherit',
+                          '&:hover': {
+                            backgroundColor: theme.palette.action.selected + ' !important',
+                          }
+                        }}
+                      >
                         <TableCell>{h.version}</TableCell>
                         <TableCell>{h.variant}</TableCell>
                         <TableCell>{renderDynamicValue(h.dynamic)}</TableCell>

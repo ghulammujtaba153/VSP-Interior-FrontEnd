@@ -15,6 +15,7 @@ import {
   Box,
   Button
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -26,6 +27,7 @@ import ViewPermissions from './ViewPermissions';
 import PermissionModal from './PermissionModal';
 
 const PermissionsTable = () => {
+  const theme = useTheme();
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState([]);
   const [selectedPermission, setSelectedPermission] = useState(null);
@@ -138,8 +140,16 @@ const PermissionsTable = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {data.map((perm) => (
-              <TableRow key={perm.id}>
+            {data.map((perm, index) => (
+              <TableRow 
+                key={perm.id}
+                sx={{
+                  backgroundColor: index % 2 === 0 ? theme.palette.action.hover : 'inherit',
+                  '&:hover': {
+                    backgroundColor: theme.palette.action.selected + ' !important',
+                  }
+                }}
+              >
                 <TableCell>{perm.id}</TableCell>
                 <TableCell> {capitalizeName(perm.resource)}</TableCell>
                 <TableCell>

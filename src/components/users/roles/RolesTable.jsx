@@ -9,6 +9,7 @@ import {
   Paper,
   Typography
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { DataGrid } from '@mui/x-data-grid';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
@@ -32,6 +33,7 @@ import TableZoom from '../../TableZoom';
 
 
 const RolesTable = () => {
+  const theme = useTheme();
   const [roles, setRoles] = useState([])
   const [modalOpen, setModalOpen] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -225,6 +227,20 @@ const RolesTable = () => {
           pageSize={5}
           rowsPerPageOptions={[5, 10, 20]}
           disableRowSelectionOnClick
+          getRowClassName={(params) =>
+            params.indexRelativeToCurrentPage % 2 === 0 ? 'even' : 'odd'
+          }
+          sx={{
+            '& .even': {
+              backgroundColor: theme.palette.action.hover,
+            },
+            '& .odd': {
+              backgroundColor: 'inherit',
+            },
+            '& .MuiDataGrid-row:hover': {
+              backgroundColor: theme.palette.action.selected + ' !important',
+            }
+          }}
         />
       </Box>
 

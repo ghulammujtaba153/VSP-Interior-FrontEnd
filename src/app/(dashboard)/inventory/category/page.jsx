@@ -27,12 +27,14 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  useTheme
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import Loader from "@/components/loader/Loader";
 
 const InventoryCategoryPage = () => {
+  const theme = useTheme();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -216,7 +218,16 @@ const InventoryCategoryPage = () => {
               <TableBody>
                 {paginatedCategories.length > 0 ? (
                   paginatedCategories.map((row, index) => (
-                    <TableRow key={row.id} hover>
+                    <TableRow 
+                      key={row.id} 
+                      hover
+                      sx={{
+                        backgroundColor: index % 2 === 0 ? theme.palette.action.hover : 'inherit',
+                        '&:hover': {
+                          backgroundColor: theme.palette.action.selected + ' !important',
+                        }
+                      }}
+                    >
                       <TableCell>{(page * rowsPerPage) + index + 1}</TableCell>
                       <TableCell>{row.name}</TableCell>
                       <TableCell>{row.status}</TableCell>

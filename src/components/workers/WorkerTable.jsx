@@ -27,6 +27,7 @@ import {
   IconButton,
   TextField,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 
 import WorkerModal from "./WorkerModal";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -35,6 +36,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ImportCSV from "./ImportCSV";
 
 const WorkerTable = () => {
+  const theme = useTheme();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
@@ -248,8 +250,16 @@ const WorkerTable = () => {
           </TableHead>
           <TableBody>
             {data.length > 0 ? (
-              data.map((worker) => (
-                <TableRow key={worker.id || worker._id}>
+              data.map((worker, index) => (
+                <TableRow 
+                  key={worker.id || worker._id}
+                  sx={{
+                    backgroundColor: index % 2 === 0 ? theme.palette.action.hover : 'inherit',
+                    '&:hover': {
+                      backgroundColor: theme.palette.action.selected + ' !important',
+                    }
+                  }}
+                >
                   <TableCell>{worker.name}</TableCell>
                   <TableCell>{worker.email}</TableCell>
                   <TableCell>{worker.phone}</TableCell>

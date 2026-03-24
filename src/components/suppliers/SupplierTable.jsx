@@ -24,6 +24,7 @@ import {
     Chip,
     TableSortLabel,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -56,6 +57,7 @@ import * as XLSX from "xlsx";
 import Link from "next/link";
 
 const SupplierTable = () => {
+    const theme = useTheme();
     const [suppliers, setSuppliers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [openModal, setOpenModal] = useState(false);
@@ -561,12 +563,12 @@ const SupplierTable = () => {
                                 <TableRow 
                                     key={contact.id} 
                                     hover
-                                    // sx={{
-                                    //     backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
-                                    //     '&:hover': {
-                                    //         backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
-                                    //     }
-                                    // }}
+                                    sx={{
+                                        backgroundColor: index % 2 === 0 ? theme.palette.action.hover : 'inherit',
+                                        '&:hover': {
+                                            backgroundColor: theme.palette.action.selected + ' !important',
+                                        }
+                                    }}
                                 >
                                     <TableCell>{index + 1}</TableCell>
                                     <TableCell>
@@ -829,12 +831,12 @@ const SupplierTable = () => {
                                     {/* Main supplier row */}
                                     <TableRow 
                                         hover
-                                        // sx={{
-                                        //     backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
-                                        //     '&:hover': {
-                                        //         backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
-                                        //     }
-                                        // }}
+                                        sx={{
+                                            backgroundColor: index % 2 === 0 ? theme.palette.action.hover : 'inherit',
+                                            '&:hover': {
+                                                backgroundColor: theme.palette.action.selected + ' !important',
+                                            }
+                                        }}
                                     >
                                         <TableCell>
                                             <IconButton

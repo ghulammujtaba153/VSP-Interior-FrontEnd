@@ -8,6 +8,7 @@ import {
   Button,
   IconButton,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -27,6 +28,7 @@ import TableZoom from '../../TableZoom';
 
 
 const ResourceTable = () => {
+  const theme = useTheme();
   const [loading, setLoading] = useState(false);
   const [resources, setResources] = useState([]);
   const [openModal, setOpenModal] = useState(false);
@@ -190,6 +192,20 @@ const ResourceTable = () => {
           pageSize={10}
           rowsPerPageOptions={[5, 10, 20]}
           disableRowSelectionOnClick
+          getRowClassName={(params) =>
+            params.indexRelativeToCurrentPage % 2 === 0 ? 'even' : 'odd'
+          }
+          sx={{
+            '& .even': {
+              backgroundColor: theme.palette.action.hover,
+            },
+            '& .odd': {
+              backgroundColor: 'inherit',
+            },
+            '& .MuiDataGrid-row:hover': {
+              backgroundColor: theme.palette.action.selected + ' !important',
+            }
+          }}
           />
         </Box>
       </Paper>

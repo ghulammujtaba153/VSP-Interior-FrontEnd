@@ -54,6 +54,7 @@ import TableZoom from '../TableZoom';
 import * as XLSX from "xlsx";
 
 const ClientsTable = () => {
+  const theme = useTheme();
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState(false);
@@ -95,7 +96,6 @@ const ClientsTable = () => {
   });
 
   const { user } = useAuth();
-  const theme = useTheme();
   useEffect(() => {
     console.log("=== THEME DEBUG ===");
     console.log("Theme mode:", theme.palette.mode);
@@ -609,16 +609,12 @@ const ClientsTable = () => {
                 <TableRow 
                   key={contact.id} 
                   hover
-                  // sx={{
-                  //   backgroundColor: theme.palette.mode === 'dark' 
-                  //     ? (index % 2 === 0 ? theme.palette.action.hover : 'transparent')
-                  //     : (index % 2 === 0 ? '#f9fafb' : theme.palette.background.paper),
-                  //   '&:hover': {
-                  //     backgroundColor: theme.palette.mode === 'dark' 
-                  //       ? theme.palette.action.selected
-                  //       : (index % 2 === 0 ? '#f3f4f6' : '#f9fafb'),
-                  //   }
-                  // }}
+                  sx={{
+                    backgroundColor: index % 2 === 0 ? theme.palette.action.hover : 'inherit',
+                    '&:hover': {
+                      backgroundColor: theme.palette.action.selected + ' !important',
+                    }
+                  }}
                 >
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>
@@ -885,16 +881,12 @@ const ClientsTable = () => {
                   {/* Main client row */}
                   <TableRow 
                     hover
-                    // sx={{
-                    //   backgroundColor: theme.palette.mode === 'dark' 
-                    //     ? (index % 2 === 0 ? theme.palette.action.hover : 'transparent')
-                    //     : (index % 2 === 0 ? '#f9fafb' : theme.palette.background.paper),
-                    //   '&:hover': {
-                    //     backgroundColor: theme.palette.mode === 'dark' 
-                    //       ? theme.palette.action.selected
-                    //       : (index % 2 === 0 ? '#f3f4f6' : '#f9fafb'),
-                    //   }
-                    // }}
+                    sx={{
+                      backgroundColor: index % 2 === 0 ? theme.palette.action.hover : 'inherit',
+                      '&:hover': {
+                        backgroundColor: theme.palette.action.selected + ' !important',
+                      }
+                    }}
                   >
                     <TableCell>
                       {/* Only show expand icon if isCompany is true */}
