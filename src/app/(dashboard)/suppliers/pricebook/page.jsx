@@ -308,7 +308,7 @@ const PriceBookPage = ({ supplierId: propSupplierId }) => {
       variant: '',
       dynamic: '',
       price: '',
-      supplierId: '',
+      supplierId: supplierId || '',
       status: 'Active'
     })
     setDynamicFields([{ key: '', value: '' }])
@@ -321,7 +321,7 @@ const PriceBookPage = ({ supplierId: propSupplierId }) => {
       variant: '',
       dynamic: '',
       price: '',
-      supplierId: '',
+      supplierId: supplierId || '',
       status: 'Active'
     })
     setDynamicFields([{ key: 'Unit', value: '' }]) // Start with a 'Unit' field as default
