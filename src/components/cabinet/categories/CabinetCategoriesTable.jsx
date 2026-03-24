@@ -26,6 +26,7 @@ import {
   TablePagination,
   TableSortLabel
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import { 
   Delete, 
   Edit, 
@@ -41,6 +42,7 @@ import useTableZoom from '@/hooks/useTableZoom';
 import TableZoom from '../../TableZoom';
 
 const CabinetCategoriesTable = () => {
+  const theme = useTheme();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -328,12 +330,12 @@ const CabinetCategoriesTable = () => {
                 <TableRow
                   key={category.id}
                   hover
-                  // sx={{
-                  //   backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
-                  //   '&:hover': {
-                  //     backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
-                  //   }
-                  // }}
+                  sx={{
+                    backgroundColor: index % 2 === 0 ? theme.palette.action.hover : 'inherit',
+                    '&:hover': {
+                      backgroundColor: theme.palette.action.selected + ' !important',
+                    }
+                  }}
                 >
                   <TableCell>{(page * rowsPerPage) + index + 1}</TableCell>
                   <TableCell>

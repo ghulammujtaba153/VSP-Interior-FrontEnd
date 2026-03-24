@@ -54,6 +54,7 @@ import TableZoom from '../TableZoom';
 import * as XLSX from "xlsx";
 
 const ClientsTable = () => {
+  const theme = useTheme();
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState(false);
@@ -79,8 +80,8 @@ const ClientsTable = () => {
   const [totalCount, setTotalCount] = useState(0);
 
   // Sorting state
-  const [orderBy, setOrderBy] = useState('companyName');
-  const [order, setOrder] = useState('asc');
+  const [orderBy, setOrderBy] = useState('id');
+  const [order, setOrder] = useState('desc');
 
   // Search state
   const [searchTerm, setSearchTerm] = useState('');
@@ -95,7 +96,6 @@ const ClientsTable = () => {
   });
 
   const { user } = useAuth();
-  const theme = useTheme();
   useEffect(() => {
     console.log("=== THEME DEBUG ===");
     console.log("Theme mode:", theme.palette.mode);
@@ -162,7 +162,7 @@ const ClientsTable = () => {
     if (!name) return 'N/A';
     return String(name)
       .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   };
 
@@ -442,9 +442,9 @@ const ClientsTable = () => {
   const handleResetSearch = () => {
     setSearchTerm('')
     setPage(0)
-    setOrderBy('companyName')
-    setOrder('asc')
-    fetchClients(0, rowsPerPage, '', 'companyName', 'asc') // Immediately fetch all results when clearing
+    setOrderBy('id')
+    setOrder('desc')
+    fetchClients(0, rowsPerPage, '', 'id', 'desc') // Immediately fetch all results when clearing
   }
 
   const handleSort = (property) => {
@@ -609,16 +609,12 @@ const ClientsTable = () => {
                 <TableRow 
                   key={contact.id} 
                   hover
-                  // sx={{
-                  //   backgroundColor: theme.palette.mode === 'dark' 
-                  //     ? (index % 2 === 0 ? theme.palette.action.hover : 'transparent')
-                  //     : (index % 2 === 0 ? '#f9fafb' : theme.palette.background.paper),
-                  //   '&:hover': {
-                  //     backgroundColor: theme.palette.mode === 'dark' 
-                  //       ? theme.palette.action.selected
-                  //       : (index % 2 === 0 ? '#f3f4f6' : '#f9fafb'),
-                  //   }
-                  // }}
+                  sx={{
+                    backgroundColor: index % 2 === 0 ? theme.palette.action.hover : 'inherit',
+                    '&:hover': {
+                      backgroundColor: theme.palette.action.selected + ' !important',
+                    }
+                  }}
                 >
                   <TableCell>{index + 1}</TableCell>
                   <TableCell>
@@ -810,12 +806,15 @@ const ClientsTable = () => {
               <TableRow>
                 <TableCell width="50px"></TableCell>
                 <TableCell sx={{ minWidth: 50 }}>
+                  <strong>#</strong>
+                </TableCell>
+                <TableCell sx={{ minWidth: 80 }}>
                   <TableSortLabel
                     active={orderBy === 'id'}
                     direction={orderBy === 'id' ? order : 'asc'}
                     onClick={() => handleSort('id')}
                   >
-                    <strong>#</strong>
+                    <strong>ID</strong>
                   </TableSortLabel>
                 </TableCell>
                 <TableCell sx={{ minWidth: 260, maxWidth: 290 }}>
@@ -882,16 +881,12 @@ const ClientsTable = () => {
                   {/* Main client row */}
                   <TableRow 
                     hover
-                    // sx={{
-                    //   backgroundColor: theme.palette.mode === 'dark' 
-                    //     ? (index % 2 === 0 ? theme.palette.action.hover : 'transparent')
-                    //     : (index % 2 === 0 ? '#f9fafb' : theme.palette.background.paper),
-                    //   '&:hover': {
-                    //     backgroundColor: theme.palette.mode === 'dark' 
-                    //       ? theme.palette.action.selected
-                    //       : (index % 2 === 0 ? '#f3f4f6' : '#f9fafb'),
-                    //   }
-                    // }}
+                    sx={{
+                      backgroundColor: index % 2 === 0 ? theme.palette.action.hover : 'inherit',
+                      '&:hover': {
+                        backgroundColor: theme.palette.action.selected + ' !important',
+                      }
+                    }}
                   >
                     <TableCell>
                       {/* Only show expand icon if isCompany is true */}
@@ -905,7 +900,8 @@ const ClientsTable = () => {
                         </IconButton>
                       ) : null}
                     </TableCell>
-                    <TableCell>C{(page * rowsPerPage) + index + 1}</TableCell>
+                    <TableCell>{(page * rowsPerPage) + index + 1}</TableCell>
+                    <TableCell>C{client.id}</TableCell>
                     <TableCell>
                       <Typography variant="body2" fontWeight="medium" noWrap color="inherit" sx={{ maxWidth: 260 }}>
                         {capitalizeName(client.companyName)}
@@ -989,7 +985,7 @@ const ClientsTable = () => {
                   {/* Expanded contacts row: only show if isCompany is true */}
                   {client.isCompany && (
                     <TableRow>
-                      <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={10}>
+                      <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={11}>
                         <Collapse in={expandedRows.has(client.id)} timeout="auto" unmountOnExit>
                           <ContactsTable contacts={client.contacts} clientId={client.id} />
                         </Collapse>

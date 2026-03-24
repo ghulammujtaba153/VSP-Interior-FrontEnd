@@ -100,24 +100,24 @@ const VerticalMenu = ({ scrollMenu }) => {
               Supplier List
             </MenuItem>
           </PermissionWrapper>
-
-          <PermissionWrapper resource='suppliers'> 
-
-          <MenuItem href='/suppliers/category'>
-            Price Book
-          </MenuItem>
-           </PermissionWrapper> 
-           
         </SubMenu> 
 
         
           
+        <SubMenu label="Inventory" icon={<i className='tabler-file-text' />}>
+          <PermissionWrapper resource='inventory'>
+            <MenuItem href='/inventory'>
+              Inventory
+            </MenuItem>
+          </PermissionWrapper>
 
-        <PermissionWrapper resource='inventory'>
-          <MenuItem href='/inventory' icon={<i className='tabler-file-text' />}>
-            Inventory
-          </MenuItem>
-        </PermissionWrapper>
+          <PermissionWrapper resource='inventory'>
+            <MenuItem href='/inventory/category'>
+              Category
+            </MenuItem>
+          </PermissionWrapper>
+
+        </SubMenu>
 
         <PermissionWrapper resource='cabinet'>
           <MenuItem href='/cabinet/categories' icon={<i className='tabler-door' />}>

@@ -17,6 +17,7 @@ import {
   TablePagination,
   Paper, // Only one Paper import needed
 } from "@mui/material";
+import { useTheme } from '@mui/material/styles';
 import ConstructionIcon from "@mui/icons-material/Construction";
 import Loader from "@/components/loader/Loader";
 import axios from "axios";
@@ -24,6 +25,7 @@ import { BASE_URL } from "@/configs/url";
 import Link from "next/link"
 
 const ProjectsTable = () => {
+  const theme = useTheme();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -97,8 +99,17 @@ const ProjectsTable = () => {
             </TableHead>
 
             <TableBody>
-              {paginatedProjects.map((job) => (
-                <TableRow key={job.id} hover>
+              {paginatedProjects.map((job, index) => (
+                <TableRow 
+                  key={job.id} 
+                  hover
+                  sx={{
+                    backgroundColor: index % 2 === 0 ? theme.palette.action.hover : 'inherit',
+                    '&:hover': {
+                      backgroundColor: theme.palette.action.selected + ' !important',
+                    }
+                  }}
+                >
                   <TableCell>{job.projectSetup?.projectName || "N/A"}</TableCell>
                   <TableCell>{job.projectSetup?.siteLocation || "N/A"}</TableCell>
                   <TableCell>{job.startDate?.slice(0, 10)}</TableCell>

@@ -25,7 +25,7 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
     name: "",
     description: "",
     supplierId: "",
-    category: "",
+    categoryId: "",
     costPrice: "",
     quantity: "",
     notes: "",
@@ -51,7 +51,7 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
         name: editData.name || "",
         description: editData.description || "",
         supplierId: editData.supplier?.id || editData.supplierId || "",
-        category: editData.categoryDetails?.id || editData.category || "",
+        categoryId: editData.inventoryCategory?.id || editData.categoryId || "",
         costPrice: editData.costPrice || "",
         quantity: editData.quantity || "",
         notes: editData.notes || "",
@@ -62,7 +62,7 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
         name: "",
         description: "",
         supplierId: "",
-        category: "",
+        categoryId: "",
         costPrice: "",
         quantity: "",
         notes: "",
@@ -88,8 +88,8 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
   const fetchCategories = async () => {
     setLoadingCategories(true);
     try {
-      const res = await axios.get(`${BASE_URL}/api/pricebook-categories/get?page=1&limit=10000`);
-      setSupplierCategories(res.data.priceBookCategories || []);
+      const res = await axios.get(`${BASE_URL}/api/inventory-category/get`);
+      setSupplierCategories(res.data || []);
     } catch (error) {
       console.error("Error fetching categories:", error);
       setSupplierCategories([]);
@@ -232,30 +232,6 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
                 placeholder="Enter item description..."
               />
 
-              {/* Category Field */}
-            <Grid item xs={12}>
-              <TextField
-                select
-                sx={{ width: '100%', mb:3 }}
-                label="Category"
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                required
-                variant="outlined"
-                SelectProps={{
-                  IconComponent: loadingCategories ? () => <CircularProgress size={20} /> : undefined
-                }}
-              >
-                <MenuItem value="">Select category</MenuItem>
-                {supplierCategories.map((cat) => (
-                  <MenuItem key={cat.id || cat._id} value={cat.id || cat._id}>
-                    {capitalizeName(cat.name)}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-
             {/* Supplier Field */}
             <Grid item xs={12}>
               <TextField
@@ -275,6 +251,30 @@ const InventoryModal = ({ open, setOpen, editData, onSuccess }) => {
                 {suppliers.map((supplier) => (
                   <MenuItem key={supplier.id} value={supplier.id}>
                     {capitalizeName(supplier.name)}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+
+             {/* Category Field */}
+            <Grid item xs={12}>
+              <TextField
+                select
+                sx={{ width: '100%', mb:3 }}
+                label="Category"
+                name="categoryId"
+                value={formData.categoryId}
+                onChange={handleChange}
+                required
+                variant="outlined"
+                SelectProps={{
+                  IconComponent: loadingCategories ? () => <CircularProgress size={20} /> : undefined
+                }}
+              >
+                <MenuItem value="">Select category</MenuItem>
+                {supplierCategories.map((cat) => (
+                  <MenuItem key={cat.id || cat._id} value={cat.id || cat._id}>
+                    {capitalizeName(cat.name)}
                   </MenuItem>
                 ))}
               </TextField>

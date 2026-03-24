@@ -20,22 +20,23 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  CircularProgress,
   Typography,
   TablePagination,
-  TableSortLabel
+  TableSortLabel,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  useTheme
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import Link from "next/link";
 import Loader from "@/components/loader/Loader";
-import useTableZoom from "@/hooks/useTableZoom";
-import TableZoom from "@/components/TableZoom";
 
-const PriceBookCategoriesTable = () => {
+const InventoryCategoryPage = () => {
+  const theme = useTheme();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { zoom, handleZoomChange, zoomStyle } = useTableZoom('pricebook_categories_zoom');
 
   // Pagination
   const [page, setPage] = useState(0);
@@ -49,18 +50,22 @@ const PriceBookCategoriesTable = () => {
   // Modal states
   const [open, setOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [categoryName, setCategoryName] = useState("");
+  const [formData, setFormData] = useState({
+    name: "",
+    status: "Active",
+  });
   const [search, setSearch] = useState("");
 
   // Fetch categories
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(
-        `${BASE_URL}/api/pricebook-categories/get?page=${page + 1}&limit=${rowsPerPage}&search=${search}&sortBy=${orderBy}&order=${order}`
-      );
-      setCategories(response.data.priceBookCategories || []);
-      setTotalCount(response.data.total || 0);
+      const response = await axios.get(`${BASE_URL}/api/inventory-category/get`);
+      // Since the backend doesn't implement pagination/search yet in the provided requirement,
+      // let's just handle it client-side or use the full list.
+      const data = response.data || [];
+      setCategories(data);
+      setTotalCount(data.length);
     } catch (error) {
       toast.error("Failed to fetch categories");
     } finally {
@@ -70,17 +75,7 @@ const PriceBookCategoriesTable = () => {
 
   useEffect(() => {
     fetchCategories();
-  }, [page, rowsPerPage, orderBy, order]);
-
-
-  // Capitalize name: "john more" → "John More"
-  const capitalizeName = (name) => {
-    if (!name) return 'N/A';
-    return String(name)
-      .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
-  };
+  }, []);
 
   const handleSort = (property) => {
     const isAsc = orderBy === property && order === 'asc';
@@ -89,11 +84,10 @@ const PriceBookCategoriesTable = () => {
   };
 
   const handleDelete = async (categoryId) => {
+    if (!window.confirm("Are you sure you want to delete this category?")) return;
     toast.loading("Please wait...");
     try {
-      await axios.delete(
-        `${BASE_URL}/api/pricebook-categories/delete/${categoryId}`
-      );
+      await axios.delete(`${BASE_URL}/api/inventory-category/delete/${categoryId}`);
       toast.dismiss();
       toast.success("Category deleted successfully");
       fetchCategories();
@@ -105,18 +99,24 @@ const PriceBookCategoriesTable = () => {
 
   const handleEdit = (category) => {
     setSelectedCategory(category);
-    setCategoryName(category.name);
+    setFormData({
+      name: category.name,
+      status: category.status,
+    });
     setOpen(true);
   };
 
   const handleAdd = () => {
     setSelectedCategory(null);
-    setCategoryName("");
+    setFormData({
+      name: "",
+      status: "Active",
+    });
     setOpen(true);
   };
 
   const handleSubmit = async () => {
-    if (!categoryName.trim()) {
+    if (!formData.name.trim()) {
       toast.error("Category name is required");
       return;
     }
@@ -125,22 +125,17 @@ const PriceBookCategoriesTable = () => {
     try {
       if (selectedCategory) {
         await axios.put(
-          `${BASE_URL}/api/pricebook-categories/update/${selectedCategory.id}`,
-          {
-            name: categoryName.trim(),
-          }
+          `${BASE_URL}/api/inventory-category/update/${selectedCategory.id}`,
+          formData
         );
         toast.success("Category updated successfully");
       } else {
-        await axios.post(`${BASE_URL}/api/pricebook-categories/create`, {
-          name: categoryName.trim(),
-        });
+        await axios.post(`${BASE_URL}/api/inventory-category/create`, formData);
         toast.success("Category added successfully");
       }
       toast.dismiss();
       setOpen(false);
       fetchCategories();
-      handleClose();
     } catch (error) {
       toast.dismiss();
       const errorMessage = error.response?.data?.error || "Operation failed";
@@ -148,92 +143,65 @@ const PriceBookCategoriesTable = () => {
     }
   };
 
-  const handleClearSearch = () => {
-    setSearch("");
-    setPage(0);
-  };
-
-  useEffect(() => {
-    const delayDebounce = setTimeout(() => {
-      fetchCategories();
-    }, 500); // 500ms debounce delay
-  
-    return () => clearTimeout(delayDebounce);
-  }, [search]);
-  
-
   const handleClose = () => {
     setOpen(false);
     setSelectedCategory(null);
-    setCategoryName("");
+    setFormData({ name: "", status: "Active" });
   };
 
-  // Pagination handlers
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
+
   const handleChangeRowsPerPage = (event) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
 
+  const filteredCategories = categories.filter(cat => 
+    cat.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const paginatedCategories = filteredCategories.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
   return (
-    <Box>
-      <Typography variant="h6" fontWeight="bold" mb={2}>
-        Price Book Categories
+    <Box p={4}>
+      <Typography variant="h5" fontWeight="bold" mb={3}>
+        Inventory Categories
       </Typography>
 
-      <Box display="flex" alignItems="center" gap={1}>
+      <Box display="flex" alignItems="center" gap={2} mb={3}>
         <TextField
-          label="Search"
+          label="Search Categories"
           variant="outlined"
           size="small"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          sx={{ width: 300 }}
         />
         <Button
           variant="contained"
-          color="primary"
-          onClick={handleClearSearch}
-        >
-          Clear
-        </Button>
-
-        <Button
-          variant="contained"
-          color="primary"
           onClick={handleAdd}
-          sx={{ mb: 2, ml: "auto" }}
+          sx={{ ml: "auto" }}
         >
           Add Category
         </Button>
-        <Box sx={{ mb: 2 }}>
-          <TableZoom zoom={zoom} onZoomChange={handleZoomChange} />
-        </Box>
-
       </Box>
 
-      <Box sx={{ overflowX: 'auto', width: '100%' }}>
-        <Box sx={zoomStyle}>
-          <TableContainer component={Paper}>
-            {loading ? (
-              <Box display="flex" justifyContent="center" p={3}>
-                <Loader />
-              </Box>
-            ) : (
-              <>
-                <Table>
-                  <TableHead>
+      <TableContainer component={Paper}>
+        {loading ? (
+          <Box display="flex" justifyContent="center" p={3}>
+            <Loader />
+          </Box>
+        ) : (
+          <>
+            <Table>
+              <TableHead sx={{ bgcolor: 'grey.100' }}>
                 <TableRow>
-                  <TableCell>
-                    <TableSortLabel
-                      active={orderBy === 'id'}
-                      direction={orderBy === 'id' ? order : 'asc'}
-                      onClick={() => handleSort('id')}
-                    >
-                      <b>#</b>
-                    </TableSortLabel>
-                  </TableCell>
+                  <TableCell><b>#</b></TableCell>
                   <TableCell>
                     <TableSortLabel
                       active={orderBy === 'name'}
@@ -243,15 +211,26 @@ const PriceBookCategoriesTable = () => {
                       <b>Name</b>
                     </TableSortLabel>
                   </TableCell>
+                  <TableCell><b>Status</b></TableCell>
                   <TableCell align="center"><b>Actions</b></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {categories.length > 0 ? (
-                  categories.map((row, index) => (
-                    <TableRow key={row.id}>
+                {paginatedCategories.length > 0 ? (
+                  paginatedCategories.map((row, index) => (
+                    <TableRow 
+                      key={row.id} 
+                      hover
+                      sx={{
+                        backgroundColor: index % 2 === 0 ? theme.palette.action.hover : 'inherit',
+                        '&:hover': {
+                          backgroundColor: theme.palette.action.selected + ' !important',
+                        }
+                      }}
+                    >
                       <TableCell>{(page * rowsPerPage) + index + 1}</TableCell>
-                      <TableCell>{capitalizeName(row.name)}</TableCell>
+                      <TableCell>{row.name}</TableCell>
+                      <TableCell>{row.status}</TableCell>
                       <TableCell align="center">
                         <IconButton
                           color="primary"
@@ -265,15 +244,12 @@ const PriceBookCategoriesTable = () => {
                         >
                           <DeleteIcon />
                         </IconButton>
-                        <Button component={Link} href={`/suppliers/category/${row.id}`} variant="outlined" color="primary" size="small"> 
-                          Manage Price Books
-                        </Button>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={3} align="center">
+                    <TableCell colSpan={4} align="center">
                       No categories found
                     </TableCell>
                   </TableRow>
@@ -282,46 +258,54 @@ const PriceBookCategoriesTable = () => {
             </Table>
             <TablePagination
               component="div"
-              count={totalCount}
+              count={filteredCategories.length}
               page={page}
               onPageChange={handleChangePage}
               rowsPerPage={rowsPerPage}
               onRowsPerPageChange={handleChangeRowsPerPage}
-              rowsPerPageOptions={[5, 10, 20, 50, 100]}
             />
           </>
         )}
       </TableContainer>
-      </Box>
 
       {/* Add/Edit Modal */}
-      <Dialog open={open} onClose={handleClose}>
+      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="xs">
         <DialogTitle>
-          {selectedCategory ? "Edit Category" : "Add Category"}
+          {selectedCategory ? "Edit Category" : "Add New Category"}
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ pt: 1 }}>
           <TextField
             autoFocus
             margin="dense"
             label="Category Name"
-            type="text"
             fullWidth
-            value={categoryName}
-            onChange={(e) => setCategoryName(e.target.value)}
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            sx={{ mb: 2 }}
           />
+          <FormControl fullWidth margin="dense">
+            <InputLabel>Status</InputLabel>
+            <Select
+              label="Status"
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+            >
+              <MenuItem value="Active">Active</MenuItem>
+              <MenuItem value="Inactive">Inactive</MenuItem>
+            </Select>
+          </FormControl>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: 2 }}>
           <Button onClick={handleClose} color="inherit">
             Cancel
           </Button>
           <Button onClick={handleSubmit} color="primary" variant="contained">
-            {selectedCategory ? "Update" : "Add"}
+            {selectedCategory ? "Update" : "Create"}
           </Button>
         </DialogActions>
       </Dialog>
-      </Box>
     </Box>
   );
 };
 
-export default PriceBookCategoriesTable;
+export default InventoryCategoryPage;

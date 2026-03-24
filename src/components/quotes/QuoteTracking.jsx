@@ -26,6 +26,7 @@ import {
   TablePagination,
   InputAdornment
 } from '@mui/material'
+import { useTheme } from '@mui/material/styles'
 
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
@@ -79,6 +80,7 @@ const getStatusIcon = status => {
 }
 
 export const QuoteTracking = () => {
+  const theme = useTheme()
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(0)
@@ -343,8 +345,17 @@ export const QuoteTracking = () => {
 
               <TableBody>
                 {data.length > 0 ? (
-                  data.map((item) => (
-                    <TableRow key={item.id} hover>
+                  data.map((item, index) => (
+                    <TableRow 
+                      key={item.id} 
+                      hover
+                      sx={{
+                        backgroundColor: index % 2 === 0 ? theme.palette.action.hover : 'inherit',
+                        '&:hover': {
+                          backgroundColor: theme.palette.action.selected + ' !important',
+                        }
+                      }}
+                    >
                       <TableCell>{item.id}</TableCell>
                       <TableCell>{item.client?.companyName || "-"}</TableCell>
                       <TableCell>{item.projectName}</TableCell>

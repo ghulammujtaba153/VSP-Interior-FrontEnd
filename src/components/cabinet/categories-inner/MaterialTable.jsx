@@ -21,7 +21,8 @@ import {
   TableRow,
   TablePagination,
   TableSortLabel,
-  MenuItem
+  MenuItem,
+  useTheme
 } from '@mui/material'
 import { Visibility, Edit, Delete, Add } from '@mui/icons-material'
 import ViewCabinet from '@/components/cabinet/categories-inner/ViewMaterial'
@@ -40,6 +41,7 @@ import useTableZoom from '@/hooks/useTableZoom'
 import TableZoom from '@/components/TableZoom'
 
 const MaterialTable = ({ id }) => {
+  const theme = useTheme()
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState([])
   const { zoom, handleZoomChange, zoomStyle } = useTableZoom('material_table_zoom')
@@ -504,12 +506,12 @@ const MaterialTable = ({ id }) => {
                     <TableRow
                       key={cabinet.id}
                       hover
-                      // sx={{
-                      //   backgroundColor: index % 2 === 0 ? '#f9fafb' : 'white',
-                      //   '&:hover': {
-                      //     backgroundColor: index % 2 === 0 ? '#f3f4f6' : '#f9fafb',
-                      //   }
-                      // }}
+                      sx={{
+                        backgroundColor: index % 2 === 0 ? theme.palette.action.hover : 'inherit',
+                        '&:hover': {
+                          backgroundColor: theme.palette.action.selected + ' !important',
+                        }
+                      }}
                     >
                       <TableCell>{(page * limit) + index + 1}</TableCell>
                       <TableCell>

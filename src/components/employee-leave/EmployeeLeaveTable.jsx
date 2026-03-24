@@ -9,6 +9,7 @@ import {
   Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, Button, IconButton, TextField, TablePagination
 } from "@mui/material";
+import { useTheme } from '@mui/material/styles';
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import EmployeeLeaveModal from './EmployeeLeaveModal';
@@ -17,6 +18,7 @@ import { toast } from 'react-toastify';
 const ROWS_PER_PAGE = 5;
 
 const EmployeeLeaveTable = () => {
+  const theme = useTheme();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState([]);
   const [open, setOpen] = useState(false);
@@ -127,8 +129,16 @@ const EmployeeLeaveTable = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {paginatedData.map((leave) => (
-              <TableRow key={leave.id}>
+            {paginatedData.map((leave, index) => (
+              <TableRow 
+                key={leave.id}
+                sx={{
+                  backgroundColor: index % 2 === 0 ? theme.palette.action.hover : 'inherit',
+                  '&:hover': {
+                    backgroundColor: theme.palette.action.selected + ' !important',
+                  }
+                }}
+              >
                 <TableCell>{leave.leaveType}</TableCell>
                 <TableCell>{leave.startDate}</TableCell>
                 <TableCell>{leave.endDate}</TableCell>
