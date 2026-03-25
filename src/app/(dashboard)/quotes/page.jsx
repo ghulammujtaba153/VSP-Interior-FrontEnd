@@ -6,6 +6,7 @@ import { QuoteDashboard } from "@/components/quotes/QuoteDashboard"
 import { CreateQuote } from "@/components/quotes/CreateQuote"
 import { QuoteTracking } from "@/components/quotes/QuoteTracking"
 import { QuoteReports } from "@/components/quotes/QuoteReports"
+import TestQuote from "@/components/quotes/TestQuote"
 
 // ✅ Correct TabPanel with value + index props
 function TabPanel({ children, value, index }) {
@@ -37,6 +38,7 @@ export default function Quotes() {
           <Tab label="Create Quote" id="tab-1" />
           <Tab label="Tracking" id="tab-2" />
           <Tab label="Reports" id="tab-3" />
+          <Tab label="Test Quote" id="tab-4" />
         </Tabs>
       </Box>
 
@@ -52,6 +54,9 @@ export default function Quotes() {
       </TabPanel>
       <TabPanel value={activeTab} index={3}>
         <QuoteReports />
+      </TabPanel>
+      <TabPanel value={activeTab} index={4}>
+        <TestQuote />
       </TabPanel>
     </Box>
   )
