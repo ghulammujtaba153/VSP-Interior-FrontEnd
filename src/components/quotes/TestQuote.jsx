@@ -53,6 +53,9 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { GenerateTenderTemplate } from "@/utils/GenerateTenderTemplate";
+import axios from "axios";
+import { BASE_URL } from "@/configs/url";
+import { toast } from "react-toastify";
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
 const STEPS = ["1. Internal Costing", "2. Pricing", "3. Quotation"];
@@ -445,6 +448,39 @@ const TestQuote = () => {
     // By passing projectData, GenerateTenderTemplate will skip the server fetch
     // and use this local data instead.
     await GenerateTenderTemplate(projectInfo.code, quoteData);
+  };
+
+  const handleSaveDraft = async () => {
+    try {
+      toast.info("Saving quote...");
+      const payload = {
+        quoteData: {
+          projectInfo,
+          clientInfo,
+          cabinetRows,
+          panelRows,
+          accessories,
+          pricingItems,
+          overheadPercentage,
+          profitMargin,
+          tenderText,
+          internalNotes,
+          generalNotes,
+          quoteNotes,
+          cabinetSummary
+        },
+        startDate: new Date(),
+        status: "Draft",
+      };
+      
+      const res = await axios.post(`${BASE_URL}/api/quotes`, payload);
+      if (res.data.success) {
+        toast.success("Quote saved successfully");
+      }
+    } catch (error) {
+      console.error("Error saving quote:", error);
+      toast.error("Failed to save quote");
+    }
   };
 
   // ─── ACCESSORY SECTIONS CONFIG ────────────────────────────────────────────
@@ -1181,7 +1217,7 @@ const TestQuote = () => {
           ← Back
         </Button>
         <Box>
-          <Button variant="outlined" startIcon={<SaveIcon />} sx={{ mr: 2 }} size="large">
+          <Button variant="outlined" startIcon={<SaveIcon />} sx={{ mr: 2 }} size="large" onClick={handleSaveDraft}>
             Save Draft
           </Button>
           {activeStep === STEPS.length - 1 ? (
