@@ -52,6 +52,7 @@ import PanelIcon from "@mui/icons-material/Straighten";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import { GenerateTenderTemplate } from "@/utils/GenerateTenderTemplate";
 
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
 const STEPS = ["1. Internal Costing", "2. Pricing", "3. Quotation"];
@@ -423,6 +424,28 @@ const TestQuote = () => {
     setActiveStep((s) => s + 1);
   };
   const handleBack = () => setActiveStep((s) => s - 1);
+
+  // ─── PDF GENERATION ───────────────────────────────────────────────────────
+  const handleGeneratePDF = async () => {
+    // Re-derive all calculated values at click time so they are fresh
+    const latestSheet1 = calcSheet1();
+    const latestAcc    = calcAccessories();
+    const latestDirect = pricingItems.reduce((s, i) => s + (i.costPrice || 0), 0);
+    const latestOH     = latestDirect * (overheadPercentage / 100);
+    const latestSub    = latestDirect + latestOH;
+    const latestFinal  = profitMargin < 100 ? latestSub / (1 - profitMargin / 100) : 0;
+
+    const quoteData = {
+      finalPrice:   latestFinal,
+      pricingItems: pricingItems,
+      projectData:  projectInfo,
+      clientInfo:   clientInfo,
+    };
+
+    // By passing projectData, GenerateTenderTemplate will skip the server fetch
+    // and use this local data instead.
+    await GenerateTenderTemplate(projectInfo.code, quoteData);
+  };
 
   // ─── ACCESSORY SECTIONS CONFIG ────────────────────────────────────────────
   const SECTION_CFG = [
@@ -1162,7 +1185,7 @@ const TestQuote = () => {
             Save Draft
           </Button>
           {activeStep === STEPS.length - 1 ? (
-            <Button variant="contained" color="success" startIcon={<PictureAsPdfIcon />} size="large" sx={{ borderRadius: 2, px: 4 }}>
+            <Button variant="contained" color="success" startIcon={<PictureAsPdfIcon />} size="large" sx={{ borderRadius: 2, px: 4 }} onClick={handleGeneratePDF}>
               Generate PDF Quote
             </Button>
           ) : (

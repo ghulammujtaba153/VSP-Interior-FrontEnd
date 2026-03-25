@@ -32,7 +32,7 @@ const loadImageAsDataURL = (imagePath) => {
  * @param {jsPDF} doc - The jsPDF document instance
  * @param {Object} project - Project data object
  */
-export const generateProjectOverviewPage = async (doc, project) => {
+export const generateProjectOverviewPage = async (doc, project, quoteData = null) => {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   
@@ -97,7 +97,8 @@ export const generateProjectOverviewPage = async (doc, project) => {
   doc.text('Tender Sum', 10, currentY);
   
   currentY += 5;
-  const tenderSumExclGst = project.totalSell || 0;
+  // Use quoteData.finalPrice when available, otherwise fall back to project.totalSell
+  const tenderSumExclGst = (quoteData && quoteData.finalPrice != null) ? quoteData.finalPrice : (project.totalSell || 0);
   const gst = tenderSumExclGst * 0.15;
   const totalSum = tenderSumExclGst + gst;
 
@@ -145,79 +146,118 @@ export const generateProjectOverviewPage = async (doc, project) => {
   doc.text('Tender Pricing Breakdown', 10, currentY);
   currentY += 5;
 
-  const drawPricingBlock = (areaData, y) => {
+  if (quoteData && quoteData.pricingItems && quoteData.pricingItems.length > 0) {
+    // ── Quote-driven breakdown: one row per pricing line item ──
     const blockRowH = 6;
     doc.setLineWidth(0.3);
-    
-    // Rows mapping
-    const rows = [
-      { label: 'Area of Works', value: areaData.areaOfWorks },
-      { label: 'Drawing Number, Revision, and Date', value: areaData.drawingInfo },
-      { label: 'Quantity', value: areaData.quantity }
-    ];
 
-    rows.forEach((row, idx) => {
-      doc.rect(10, y, col1W, blockRowH);
-      doc.rect(10 + col1W, y, col2W, blockRowH);
-      
+    // Header row
+    doc.setFillColor(...yellowHighlight);
+    doc.rect(10, currentY, col1W, blockRowH, 'F');
+    doc.rect(10 + col1W, currentY, col2W, blockRowH, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(...blackColor);
+    doc.text('Item Category', 12, currentY + 4.5);
+    doc.text('Amount (NZD excl. GST)', 10 + col1W + col2W - 2, currentY + 4.5, { align: 'right' });
+    currentY += blockRowH;
+
+    // Item rows — sell prices only (skip zero-value items)
+    const visibleItems = quoteData.pricingItems.filter(item => (item.sellPrice || 0) > 0);
+    visibleItems.forEach((item, idx) => {
+      doc.setDrawColor(...blackColor);
+      doc.rect(10, currentY, col1W, blockRowH);
+      doc.rect(10 + col1W, currentY, col2W, blockRowH);
+
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10);
-      
-      // Label with Highlight
-      const labelW = doc.getTextWidth(row.label);
+      doc.setFontSize(9);
+      doc.text(item.category || '', 12, currentY + 4.5);
+
+      const sellStr = (item.sellPrice || 0).toLocaleString('en-NZ', { style: 'currency', currency: 'NZD' }).replace('$', '$ ');
+      const sellW = doc.getTextWidth(sellStr);
       doc.setFillColor(...yellowHighlight);
-      doc.rect(12, y + 1, labelW, blockRowH - 2, 'F');
-      doc.text(row.label, 12, y + 4.5);
-      
-      // Value (Quantity is right aligned)
-      const isQty = row.label === 'Quantity';
-      const valText = String(row.value || '');
-      const valW = doc.getTextWidth(valText);
-      if (isQty) {
-        doc.setFillColor(...yellowHighlight);
-        doc.rect(10 + col1W + col2W - valW - 4, y + 1, valW + 2, blockRowH - 2, 'F');
-        doc.text(valText, 10 + col1W + col2W - 2, y + 4.5, { align: 'right' });
-      } else {
-        doc.setFillColor(...yellowHighlight);
-        doc.rect(10 + col1W + 2, y + 1, valW + 2, blockRowH - 2, 'F');
-        doc.text(valText, 10 + col1W + 4, y + 4.5);
-      }
-      y += blockRowH;
+      doc.rect(10 + col1W + col2W - sellW - 4, currentY + 1, sellW + 2, blockRowH - 2, 'F');
+      doc.text(sellStr, 10 + col1W + col2W - 2, currentY + 4.5, { align: 'right' });
+
+      currentY += blockRowH;
     });
 
-    // Large Description Box
-    const descBoxH = 50;
-    doc.rect(10, y, pageWidth - 20, descBoxH);
-    // Vertical line for Price column
-    doc.line(10 + col1W + 15, y, 10 + col1W + 15, y + descBoxH);
-    
-    // Description text
-    doc.setFont('helvetica', 'normal');
-    const descText = areaData.description || "";
-    const splitAreaDesc = doc.splitTextToSize(descText, col1W + 10);
-    doc.text(splitAreaDesc, 12, y + 5);
-
-    // Price with Highlight
-    const priceStr = areaData.price.toLocaleString('en-NZ', { style: 'currency', currency: 'NZD' }).replace('$', '$ ');
-    const priceW = doc.getTextWidth(priceStr);
+    // Total row
+    doc.setDrawColor(...blackColor);
+    doc.setLineWidth(0.5);
+    doc.rect(10, currentY, col1W, blockRowH);
+    doc.rect(10 + col1W, currentY, col2W, blockRowH);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('TOTAL (excl. GST)', 12, currentY + 4.5);
+    const totalStr = tenderSumExclGst.toLocaleString('en-NZ', { style: 'currency', currency: 'NZD' }).replace('$', '$ ');
+    const totalW = doc.getTextWidth(totalStr);
     doc.setFillColor(...yellowHighlight);
-    doc.rect(10 + tableWidth - priceW - 4, y + 1, priceW + 2, blockRowH - 2, 'F');
-    doc.text(priceStr, 10 + tableWidth - 2, y + 4.5, { align: 'right' });
+    doc.rect(10 + col1W + col2W - totalW - 4, currentY + 1, totalW + 2, blockRowH - 2, 'F');
+    doc.text(totalStr, 10 + col1W + col2W - 2, currentY + 4.5, { align: 'right' });
+    currentY += blockRowH + 5;
 
-    return y + descBoxH;
-  };
+  } else {
+    // ── Original project-data driven block ──
+    const drawPricingBlock = (areaData, y) => {
+      const blockRowH = 6;
+      doc.setLineWidth(0.3);
 
-  // Prepare area data from costingSheet
-  const cs = project.costingSheet || {};
-  const areaData = {
-    areaOfWorks: cs.unitName || '[Area of Works]',
-    drawingInfo: `${cs.drawingNo || 'N/A'} Revision ${cs.Revision || 'N/A'} Dated ${new Date(project.updatedAt).toLocaleDateString()}`,
-    quantity: cs.quantity || 0,
-    description: `Interior carcass allowed 16.3mm thick on MDF substrate with 18.3mm thick LPL for all exposed faces on MDF substrate. ${cs.cabinetLookUp?.[0]?.description || ""}\n\nHardware and Accessories\n${cs.hardwareLookUp?.[0]?.description || "Standard hardware... "}\n${cs.hinges?.[0]?.description || ""}`,
-    price: cs.totals?.materials?.sell || 0 // Or some other price field
-  };
+      const rows = [
+        { label: 'Area of Works', value: areaData.areaOfWorks },
+        { label: 'Drawing Number, Revision, and Date', value: areaData.drawingInfo },
+        { label: 'Quantity', value: areaData.quantity }
+      ];
 
-  currentY = drawPricingBlock(areaData, currentY);
+      rows.forEach((row) => {
+        doc.rect(10, y, col1W, blockRowH);
+        doc.rect(10 + col1W, y, col2W, blockRowH);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        const labelW = doc.getTextWidth(row.label);
+        doc.setFillColor(...yellowHighlight);
+        doc.rect(12, y + 1, labelW, blockRowH - 2, 'F');
+        doc.text(row.label, 12, y + 4.5);
+        const isQty = row.label === 'Quantity';
+        const valText = String(row.value || '');
+        const valW = doc.getTextWidth(valText);
+        if (isQty) {
+          doc.setFillColor(...yellowHighlight);
+          doc.rect(10 + col1W + col2W - valW - 4, y + 1, valW + 2, blockRowH - 2, 'F');
+          doc.text(valText, 10 + col1W + col2W - 2, y + 4.5, { align: 'right' });
+        } else {
+          doc.setFillColor(...yellowHighlight);
+          doc.rect(10 + col1W + 2, y + 1, valW + 2, blockRowH - 2, 'F');
+          doc.text(valText, 10 + col1W + 4, y + 4.5);
+        }
+        y += blockRowH;
+      });
+
+      const descBoxH = 50;
+      doc.rect(10, y, pageWidth - 20, descBoxH);
+      doc.line(10 + col1W + 15, y, 10 + col1W + 15, y + descBoxH);
+      doc.setFont('helvetica', 'normal');
+      const descText = areaData.description || '';
+      const splitAreaDesc = doc.splitTextToSize(descText, col1W + 10);
+      doc.text(splitAreaDesc, 12, y + 5);
+      const priceStr = areaData.price.toLocaleString('en-NZ', { style: 'currency', currency: 'NZD' }).replace('$', '$ ');
+      const priceW = doc.getTextWidth(priceStr);
+      doc.setFillColor(...yellowHighlight);
+      doc.rect(10 + tableWidth - priceW - 4, y + 1, priceW + 2, blockRowH - 2, 'F');
+      doc.text(priceStr, 10 + tableWidth - 2, y + 4.5, { align: 'right' });
+      return y + descBoxH;
+    };
+
+    const cs = project.costingSheet || {};
+    const areaData = {
+      areaOfWorks: cs.unitName || '[Area of Works]',
+      drawingInfo: `${cs.drawingNo || 'N/A'} Revision ${cs.Revision || 'N/A'} Dated ${new Date(project.updatedAt).toLocaleDateString()}`,
+      quantity: cs.quantity || 0,
+      description: `Interior carcass allowed 16.3mm thick on MDF substrate with 18.3mm thick LPL for all exposed faces on MDF substrate. ${cs.cabinetLookUp?.[0]?.description || ''}\n\nHardware and Accessories\n${cs.hardwareLookUp?.[0]?.description || 'Standard hardware... '}\n${cs.hinges?.[0]?.description || ''}`,
+      price: cs.totals?.materials?.sell || 0
+    };
+    currentY = drawPricingBlock(areaData, currentY);
+  }
 
   // If there are more areas, they could be added here in a loop if the data structure allowed it.
 
