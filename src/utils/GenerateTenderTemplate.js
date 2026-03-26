@@ -40,23 +40,41 @@ const loadImageAsDataURL = (imagePath) => {
  * Generates a Tender Submission PDF document
  * @param {number} projectId - Project ID to fetch project data
  */
-export const GenerateTenderTemplate = async (projectId) => {
-  if (!projectId) {
-    toast.error('Project ID is required');
-    return;
-  }
-
+export const GenerateTenderTemplate = async (projectId, quoteData = null) => {
   try {
     toast.loading('Generating tender template...');
 
-    // Fetch project data
-    const res = await axios.get(`${BASE_URL}/api/project-setup/get/${projectId}`);
-    const project = res.data.data;
+    let project;
 
-    if (!project) {
-      toast.dismiss();
-      toast.error('Project not found');
-      return;
+    if (quoteData && quoteData.projectData) {
+      // ── Local mode: build project from TestQuote state (no server fetch) ──
+      const pd = quoteData.projectData;
+      project = {
+        id:          pd.code,
+        projectName: pd.description,
+        siteLocation:pd.location,
+        revision:    pd.revision,
+        updatedAt:   new Date().toISOString(),
+        client: {
+          companyName: quoteData.clientInfo?.company || quoteData.clientInfo?.name || '[Client]',
+        },
+        costingSheet: {},  // not needed – page 3 uses quoteData directly
+        totalSell: quoteData.finalPrice || 0,
+      };
+    } else {
+      // ── Server mode: fetch project by ID ──
+      if (!projectId) {
+        toast.dismiss();
+        toast.error('Project ID is required');
+        return;
+      }
+      const res = await axios.get(`${BASE_URL}/api/project-setup/get/${projectId}`);
+      project = res.data.data;
+      if (!project) {
+        toast.dismiss();
+        toast.error('Project not found');
+        return;
+      }
     }
 
     const doc = new jsPDF('p', 'mm', 'a4');
@@ -275,7 +293,7 @@ export const GenerateTenderTemplate = async (projectId) => {
     doc.text('Web: www.vspinteriors.co.nz', pageWidth - 60, currentY + 8);
 
     // ==================== PAGE 3: PROJECT OVERVIEW, TENDER SUM & PRICING BREAKDOWN ====================
-    await generateProjectOverviewPage(doc, project);
+    await generateProjectOverviewPage(doc, project, quoteData);
 
     // ==================== PAGE 4: SCOPE OF WORKS ====================
     await generateScopeOfWorksPage(doc);

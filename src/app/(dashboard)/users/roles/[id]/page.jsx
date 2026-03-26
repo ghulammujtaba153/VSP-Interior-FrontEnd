@@ -17,6 +17,7 @@ import {
 import { BASE_URL } from "@/configs/url";
 import Loader from "@/components/loader/Loader";
 import { toast } from "react-toastify";
+import PermissionWrapper from "@/components/PermissionWrapper";
 
 // Individual Permission Card Component with its own isolated state
 const PermissionCard = ({ permission, roleId, onSaved }) => {
@@ -105,6 +106,7 @@ const PermissionCard = ({ permission, roleId, onSaved }) => {
       <FormGroup>
         <Grid container>
             <Grid item xs={6}>
+              <PermissionWrapper resource="roles" action="canEdit">
                  <FormControlLabel
                     control={
                         <Checkbox 
@@ -116,8 +118,10 @@ const PermissionCard = ({ permission, roleId, onSaved }) => {
                     }
                     label={<Typography variant="body2">Create</Typography>}
                 />
+                </PermissionWrapper>
             </Grid>
             <Grid item xs={6}>
+              <PermissionWrapper resource="roles" action="canEdit">
                 <FormControlLabel
                     control={
                         <Checkbox 
@@ -129,8 +133,10 @@ const PermissionCard = ({ permission, roleId, onSaved }) => {
                     }
                     label={<Typography variant="body2">View</Typography>}
                 />
+                </PermissionWrapper>
             </Grid>
             <Grid item xs={6}>
+              <PermissionWrapper resource="roles" action="canEdit">
                 <FormControlLabel
                     control={
                         <Checkbox 
@@ -142,8 +148,10 @@ const PermissionCard = ({ permission, roleId, onSaved }) => {
                     }
                     label={<Typography variant="body2">Edit</Typography>}
                 />
+                </PermissionWrapper>
             </Grid>
             <Grid item xs={6}>
+              <PermissionWrapper resource="roles" action="canEdit">
                  <FormControlLabel
                     control={
                         <Checkbox 
@@ -155,6 +163,7 @@ const PermissionCard = ({ permission, roleId, onSaved }) => {
                     }
                     label={<Typography variant="body2">Delete</Typography>}
                 />
+                </PermissionWrapper>
             </Grid>
         </Grid>
       </FormGroup>

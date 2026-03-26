@@ -39,6 +39,7 @@ import {
   DeleteOutline as DeleteIcon,
   Category as CategoryIcon,
 } from "@mui/icons-material";
+import PermissionWrapper from "@/components/PermissionWrapper";
 
 // ✅ Required fields for PriceBook (per schema); Variant optional
 const requiredFields = ["Name", "Dynamic", "Status"];
@@ -296,6 +297,7 @@ const PriceBookImport = () => {
       </Paper>
 
       {/* File Upload Section */}
+      <PermissionWrapper resource="suppliers" action="canCreate">
       <Paper
         sx={{
           p: 3,
@@ -322,6 +324,7 @@ const PriceBookImport = () => {
           {dragOver ? "Drop your PriceBook file here" : "Drag & drop PriceBook file or click to browse"}
         </Typography>
       </Paper>
+      </PermissionWrapper>
 
       {uploading && (
         <Box mb={2}>
@@ -414,6 +417,7 @@ const PriceBookImport = () => {
           <Button variant="outlined" onClick={downloadTemplate} startIcon={<DownloadIcon />} color="warning">
             Download Template
           </Button>
+          <PermissionWrapper resource="suppliers" action="canCreate">
           <Button
             onClick={handleConfirm}
             variant="contained"
@@ -425,6 +429,7 @@ const PriceBookImport = () => {
               ? `Fix ${Object.keys(errors).length} Errors First`
               : `Import ${rows.length} Items`}
           </Button>
+          </PermissionWrapper>
         </Stack>
       )}
 

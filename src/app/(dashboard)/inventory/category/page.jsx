@@ -32,6 +32,7 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import Loader from "@/components/loader/Loader";
+import PermissionWrapper from "@/components/PermissionWrapper";
 
 const InventoryCategoryPage = () => {
   const theme = useTheme();
@@ -182,6 +183,7 @@ const InventoryCategoryPage = () => {
           onChange={(e) => setSearch(e.target.value)}
           sx={{ width: 300 }}
         />
+        <PermissionWrapper resource="inventory" action="canCreate">
         <Button
           variant="contained"
           onClick={handleAdd}
@@ -189,6 +191,7 @@ const InventoryCategoryPage = () => {
         >
           Add Category
         </Button>
+        </PermissionWrapper>
       </Box>
 
       <TableContainer component={Paper}>
@@ -199,7 +202,7 @@ const InventoryCategoryPage = () => {
         ) : (
           <>
             <Table>
-              <TableHead sx={{ bgcolor: 'grey.100' }}>
+              <TableHead >
                 <TableRow>
                   <TableCell><b>#</b></TableCell>
                   <TableCell>
@@ -232,18 +235,23 @@ const InventoryCategoryPage = () => {
                       <TableCell>{row.name}</TableCell>
                       <TableCell>{row.status}</TableCell>
                       <TableCell align="center">
+                        <PermissionWrapper resource="inventory" action="canEdit">
                         <IconButton
                           color="primary"
                           onClick={() => handleEdit(row)}
                         >
                           <EditIcon />
                         </IconButton>
+                        </PermissionWrapper>
+
+                        <PermissionWrapper resource="inventory" action="canDelete">
                         <IconButton
                           color="error"
                           onClick={() => handleDelete(row.id)}
                         >
                           <DeleteIcon />
                         </IconButton>
+                        </PermissionWrapper>
                       </TableCell>
                     </TableRow>
                   ))
