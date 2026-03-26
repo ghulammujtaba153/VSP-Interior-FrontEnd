@@ -22,11 +22,30 @@ import {
   Tooltip,
   TablePagination,
   Box,
+  Container,
+  MenuItem,
+  CardHeader,
+  Grid,
+  Chip,
+  Stack,
+  TextField,
+  Avatar,
 } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import { 
+  Campaign, 
+  NotificationsActive, 
+  Event, 
+  Label,
+  Search,
+  Add,
+  CheckCircle
+} from "@mui/icons-material";
 
 const Notices = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState(false);
@@ -94,117 +113,166 @@ const Notices = () => {
     setPage(0);
   };
 
-  const paginatedData = data.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  // 🔍 Filter logic
+  const filteredData = data.filter((notice) => {
+    const matchesSearch = notice.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          notice.content?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = categoryFilter === "all" || notice.category === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
+
+  const paginatedData = filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+  // Stats
+  const stats = {
+    total: data.length,
+    active: data.filter(n => n.status === 'active').length,
+    urgent: data.filter(n => n.category === 'emergency').length,
+    holidays: data.filter(n => n.category === 'holiday').length
+  };
+
+  const getCategoryChip = (cat) => {
+    const configs = {
+      announcement: { color: "primary", label: "Announcement" },
+      hr_policy: { color: "info", label: "HR Policy" },
+      emergency: { color: "error", label: "Urgent" },
+      holiday: { color: "warning", label: "Holiday" },
+      event: { color: "secondary", label: "Event" }
+    };
+    const config = configs[cat] || { color: "default", label: cat };
+    return <Chip label={config.label} color={config.color} size="small" variant="outlined" />;
+  };
 
   if (loading) {
     return <Loader />;
   }
 
   return (
-    <div className="p-4">
-      <Card className="shadow-lg">
+    <Container maxWidth="xl" sx={{ py: 4 }}>
+      {/* Header */}
+      <Stack direction="row" justifyContent="space-between" alignItems="center" mb={4}>
+        <Box>
+          <Typography variant="h4" fontWeight="bold">Notice Board</Typography>
+          <Typography variant="body1" color="text.secondary">Corporate announcements and official updates</Typography>
+        </Box>
+        <Button variant="contained" startIcon={<Add />} size="large" onClick={() => setOpenModal(true)}>
+          Create Notice
+        </Button>
+      </Stack>
+
+      {/* Stats Summary Section */}
+      <Stack direction={{ xs: "column", md: "row" }} spacing={2} mb={4}>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Total Notices</Typography>
+                <Typography variant="h5" color="primary.main" fontWeight={600}>{stats.total}</Typography>
+              </Box>
+              <Campaign fontSize="large" color="primary" />
+            </Stack>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Active Feed</Typography>
+                <Typography variant="h5" color="success.main" fontWeight={600}>{stats.active}</Typography>
+              </Box>
+              <CheckCircle fontSize="large" color="success" />
+            </Stack>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Urgent Alerts</Typography>
+                <Typography variant="h5" color="error.main" fontWeight={600}>{stats.urgent}</Typography>
+              </Box>
+              <NotificationsActive fontSize="large" color="error" />
+            </Stack>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Holidays</Typography>
+                <Typography variant="h5" color="warning.main" fontWeight={600}>{stats.holidays}</Typography>
+              </Box>
+              <Event fontSize="large" color="warning" />
+            </Stack>
+          </CardContent>
+        </Card>
+      </Stack>
+
+      {/* Filters */}
+      <Card sx={{ mb: 4 }}>
         <CardContent>
-          <div className="flex justify-between items-center mb-4">
-            <Typography variant="h5" fontWeight="bold">
-              Notices
-            </Typography>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => setOpenModal(true)}
-            >
-              Add Notice
-            </Button>
-          </div>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={8}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Search notices by title or content..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <TextField
+                select
+                fullWidth
+                size="small"
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+              >
+                <MenuItem value="all">All Categories</MenuItem>
+                <MenuItem value="announcement">Announcements</MenuItem>
+                <MenuItem value="hr_policy">HR Policies</MenuItem>
+                <MenuItem value="emergency">Urgent Alerts</MenuItem>
+                <MenuItem value="holiday">Holidays</MenuItem>
+                <MenuItem value="event">Events</MenuItem>
+              </TextField>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader title="Live Notice Feed" />
+        <CardContent sx={{ p: 0 }}>
 
           <TableContainer component={Paper}>
             <Table>
               <TableHead>
-                <TableRow>
-                  <TableCell>#</TableCell>
-                  <TableCell>Title</TableCell>
-                  <TableCell>Content</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>File</TableCell>
-                  <TableCell>Actions</TableCell>
-                </TableRow>
+                <TableRow><TableCell>Date</TableCell><TableCell>Category</TableCell><TableCell>Title</TableCell><TableCell>Content</TableCell><TableCell>Status</TableCell><TableCell>Attachments</TableCell><TableCell align="center">Actions</TableCell></TableRow>
               </TableHead>
               <TableBody>
                 {paginatedData?.length > 0 ? (
-                  paginatedData.map((notice, index) => (
-                    <TableRow key={notice.id}>
-                      <TableCell>{page * rowsPerPage + index + 1}</TableCell>
-                      <TableCell>{notice.title}</TableCell>
-                      <TableCell>{notice.content}</TableCell>
-                      <TableCell>
-                        {notice.status === "active" ? (
-                          <span className="text-green-600 font-medium">
-                            Active
-                          </span>
-                        ) : (
-                          <span className="text-red-500 font-medium">
-                            Inactive
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {notice.fileUrl ? (
-                          <a
-                            href={`${BASE_URL}${notice.fileUrl}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 underline"
-                          >
-                            View PDF
-                          </a>
-                        ) : (
-                          "-"
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <Tooltip title="Edit">
-                            <IconButton
-                              size="small"
-                              color="primary"
-                              onClick={() => handleEdit(notice)}
-                            >
-                              <EditIcon />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Delete">
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() => handleDelete(notice.id)}
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
+                  paginatedData.map((notice) => (
+                    <TableRow key={notice.id} hover><TableCell>{new Date(notice.createdAt).toLocaleDateString()}</TableCell><TableCell>{getCategoryChip(notice.category)}</TableCell><TableCell sx={{ fontWeight: 600 }}>{notice.title}</TableCell><TableCell sx={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{notice.content}</TableCell><TableCell><Chip label={notice.status} color={notice.status === 'active' ? 'success' : 'default'} size="small" /></TableCell><TableCell>{notice.fileUrl ? (<a href={`${BASE_URL}${notice.fileUrl}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">View PDF</a>) : ("-")}</TableCell><TableCell><Box display="flex" alignItems="center" gap={1}><Tooltip title="Edit"><IconButton size="small" color="primary" onClick={() => handleEdit(notice)}><EditIcon /></IconButton></Tooltip><Tooltip title="Delete"><IconButton size="small" color="error" onClick={() => handleDelete(notice.id)}><DeleteIcon /></IconButton></Tooltip></Box></TableCell></TableRow>
                   ))
                 ) : (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center">
-                      No notices found
-                    </TableCell>
-                  </TableRow>
+                  <TableRow><TableCell colSpan={7} align="center">No notices found</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
           </TableContainer>
 
-          <TablePagination
+           <TablePagination
             component="div"
-            count={data.length}
+            count={filteredData.length}
             page={page}
             onPageChange={handleChangePage}
             rowsPerPage={rowsPerPage}
             onRowsPerPageChange={handleChangeRowsPerPage}
             rowsPerPageOptions={[5, 10, 25]}
-            sx={{ mt: 1 }}
           />
         </CardContent>
       </Card>
@@ -216,7 +284,7 @@ const Notices = () => {
         notice={selectedNotice}
         refresh={fetchNotices}
       />
-    </div>
+    </Container>
   );
 };
 

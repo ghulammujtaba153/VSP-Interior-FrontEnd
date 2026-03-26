@@ -20,14 +20,19 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  MenuItem,
 } from "@mui/material";
 import {
-  Search,
+  PersonOutline,
+  Block,
   Add,
-  Mail,
-  CalendarToday,
-  Delete,
+  Search,
+  CheckCircle,
+  TrendingUp,
   Edit,
+  Delete,
+  Mail,
+  CalendarToday
 } from "@mui/icons-material";
 import Loader from "../loader/Loader";
 import { BASE_URL } from "@/configs/url";
@@ -39,6 +44,9 @@ import Link from "next/link";
 
 const StaffProfiles = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [roles, setRoles] = useState([]);
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -70,8 +78,18 @@ const StaffProfiles = () => {
     }
   };
 
+  const fetchRoles = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/api/role/get`);
+      setRoles(res.data || []);
+    } catch (error) {
+      console.error("Error roles:", error);
+    }
+  };
+
   useEffect(() => {
     fetchStaff();
+    fetchRoles();
     // eslint-disable-next-line
   }, [page]);
 
@@ -159,11 +177,23 @@ const StaffProfiles = () => {
   };
 
   const filteredStaff = (Array.isArray(staff) ? staff : []).filter(
-    (member) =>
-      member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.Role?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    (member) => {
+      const matchesSearch =
+        member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        member.Role?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus =
+        statusFilter === "all" ||
+        member.status?.toLowerCase() === statusFilter.toLowerCase();
+
+      return matchesSearch && matchesStatus;
+    }
   );
+
+  const activeCount = (Array.isArray(staff) ? staff : []).filter(s => s.status === 'active').length;
+  const suspendedCount = (Array.isArray(staff) ? staff : []).filter(s => s.status === 'suspended').length;
+  const totalCount = (Array.isArray(staff) ? staff : []).length;
 
   if(loading) return <Loader/>
 
@@ -197,6 +227,43 @@ const StaffProfiles = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Quick Stats Summary */}
+      <Stack direction={{ xs: "column", md: "row" }} spacing={2} mb={4}>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Total Staff</Typography>
+                <Typography variant="h5" color="primary.main" fontWeight={600}>{totalCount}</Typography>
+              </Box>
+              <PersonOutline fontSize="large" color="primary" />
+            </Stack>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Active Members</Typography>
+                <Typography variant="h5" color="success.main" fontWeight={600}>{activeCount}</Typography>
+              </Box>
+              <TrendingUp fontSize="large" color="success" />
+            </Stack>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Suspended Account</Typography>
+                <Typography variant="h5" color="error.main" fontWeight={600}>{suspendedCount}</Typography>
+              </Box>
+              <Block fontSize="large" color="error" />
+            </Stack>
+          </CardContent>
+        </Card>
+      </Stack>
+
       {/* Header */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
@@ -207,31 +274,59 @@ const StaffProfiles = () => {
       >
         <Box>
           <Typography variant="h5" fontWeight="bold">
-            Staff Profiles
+            Staff Profiles Management
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Manage employee information and roles
+            Full directory of project teams and employee roles
           </Typography>
         </Box>
 
-        <Stack direction="row" spacing={2} width={{ xs: "100%", sm: "auto" }}>
-          <TextField
-            size="small"
-            placeholder="Search staff..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <Search sx={{ mr: 1, color: "text.secondary" }} />
-              ),
-            }}
-            sx={{ flex: 1, minWidth: 200 }}
-          />
+        <Stack direction={{ xs: "column", md: "row" }} spacing={2} width={{ xs: "100%", sm: "auto" }}>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <TextField
+              size="small"
+              placeholder="Search staff..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <Search sx={{ mr: 1, color: "text.secondary" }} />
+                ),
+              }}
+              sx={{ flex: 1, minWidth: 200 }}
+            />
+            <TextField
+              select
+              size="small"
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              sx={{ minWidth: 150 }}
+              label="Role"
+            >
+              <MenuItem value="all">All Roles</MenuItem>
+              {roles.map((r) => (
+                <MenuItem key={r.id} value={r.id}>{r.name}</MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              select
+              size="small"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              sx={{ minWidth: 120 }}
+              label="Status"
+            >
+              <MenuItem value="all">All Status</MenuItem>
+              <MenuItem value="active">Active</MenuItem>
+              <MenuItem value="suspended">Suspended</MenuItem>
+            </TextField>
+          </Box>
           <Button
             variant="contained"
             startIcon={<Add />}
             color="primary"
             onClick={() => handleOpenModal("create")}
+            sx={{ height: 40 }}
           >
             Add Staff
           </Button>

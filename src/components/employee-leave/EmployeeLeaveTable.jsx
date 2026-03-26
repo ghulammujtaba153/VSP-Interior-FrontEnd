@@ -7,11 +7,19 @@ import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import {
   Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, Button, IconButton, TextField, TablePagination
+  TableHead, TableRow, Paper, Button, IconButton, TextField, TablePagination,
+  Grid, Card, CardContent, Typography, Avatar, Box, Stack, Chip
 } from "@mui/material";
 import { useTheme } from '@mui/material/styles';
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
+import { 
+  Delete as DeleteIcon, 
+  Edit as EditIcon,
+  EventAvailable,
+  EventBusy,
+  PendingActions,
+  Search,
+  CheckCircle
+} from "@mui/icons-material";
 import EmployeeLeaveModal from './EmployeeLeaveModal';
 import { toast } from 'react-toastify';
 
@@ -87,91 +95,102 @@ const EmployeeLeaveTable = () => {
     return diffTime >= 0 ? Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1 : "";
   };
 
+  // Stats calculation
+  const stats = {
+    total: data.length,
+    approved: data.filter(l => l.status?.toLowerCase() === 'approved').length,
+    pending: data.filter(l => l.status?.toLowerCase() === 'pending').length,
+    usedDays: data.filter(l => l.status?.toLowerCase() === 'approved').reduce((acc, l) => acc + (getNumDays(l.startDate, l.endDate) || 0), 0)
+  };
+  const REMAINING_LIMIT = 20;
+  const balance = Math.max(0, REMAINING_LIMIT - stats.usedDays);
+
+  const getStatusChip = (status) => {
+    const s = status?.toLowerCase();
+    let color = "default";
+    if (s === "approved") color = "success";
+    if (s === "pending") color = "warning";
+    if (s === "rejected") color = "error";
+    return <Chip label={status} color={color} size="small" variant="soft" />;
+  };
+
   if (loading) return <Loader />;
 
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+    <Box>
+      <Stack direction={{ xs: "column", md: "row" }} spacing={2} mb={4}>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Total Requests</Typography>
+                <Typography variant="h5" color="primary.main" fontWeight={600}>{stats.total}</Typography>
+              </Box>
+              <PendingActions fontSize="large" color="primary" />
+            </Stack>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Days Used</Typography>
+                <Typography variant="h5" color="warning.main" fontWeight={600}>{stats.usedDays} / {REMAINING_LIMIT}</Typography>
+              </Box>
+              <EventAvailable fontSize="large" color="warning" />
+            </Stack>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Remaining Balance</Typography>
+                <Typography variant="h5" color="success.main" fontWeight={600}>{balance} Days</Typography>
+              </Box>
+              <CheckCircle fontSize="large" color="success" />
+            </Stack>
+          </CardContent>
+        </Card>
+      </Stack>
+
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Button
           variant="contained"
-          color="primary"
-          sx={{ mb: 2 }}
+          startIcon={<EditIcon />}
           onClick={() => {
             setEditLeave(null);
             setOpen(true);
           }}
+          sx={{ borderRadius: 2 }}
         >
           Request Leave
         </Button>
         <TextField
           size="small"
-          placeholder="Search leave..."
+          placeholder="Search requests..."
           value={search}
-          onChange={e => {
-            setSearch(e.target.value);
-            setPage(0);
-          }}
-          sx={{ minWidth: 220 }}
+          onChange={e => { setSearchTerm ? setSearchTerm(e.target.value) : setSearch(e.target.value); setPage(0); }}
+          InputProps={{ startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} /> }}
+          sx={{ minWidth: 260 }}
         />
-      </div>
+      </Box>
 
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Leave Type</TableCell>
-              <TableCell>Start Date</TableCell>
-              <TableCell>End Date</TableCell>
-              <TableCell>No. Days</TableCell> {/* Added column header */}
-              <TableCell>Status</TableCell>
-              <TableCell>Reason</TableCell>
-              <TableCell>Action</TableCell>
+              <TableCell>Leave Type</TableCell><TableCell>Start Date</TableCell><TableCell>End Date</TableCell><TableCell>No. Days</TableCell><TableCell>Status</TableCell><TableCell>Reason</TableCell><TableCell align="center">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {paginatedData.map((leave, index) => (
-              <TableRow 
-                key={leave.id}
-                sx={{
-                  backgroundColor: index % 2 === 0 ? theme.palette.action.hover : 'inherit',
-                  '&:hover': {
-                    backgroundColor: theme.palette.action.selected + ' !important',
-                  }
-                }}
-              >
-                <TableCell>{leave.leaveType}</TableCell>
-                <TableCell>{leave.startDate}</TableCell>
-                <TableCell>{leave.endDate}</TableCell>
-                <TableCell>
-                  {getNumDays(leave.startDate, leave.endDate)}
-                </TableCell>
-                <TableCell>{leave.status}</TableCell>
-                <TableCell>{leave.reason}</TableCell>
-                <TableCell>
-                  <IconButton
-                    color="primary"
-                    onClick={() => {
-                      setEditLeave(leave);
-                      setOpen(true);
-                    }}
-                  >
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton
-                    color="error"
-                    onClick={() => handleDelete(leave.id)}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </TableCell>
+            {paginatedData.map((leave) => (
+              <TableRow key={leave.id} hover>
+                <TableCell>{leave.leaveType}</TableCell><TableCell>{leave.startDate}</TableCell><TableCell>{leave.endDate}</TableCell><TableCell>{getNumDays(leave.startDate, leave.endDate)}</TableCell><TableCell>{getStatusChip(leave.status)}</TableCell><TableCell sx={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{leave.reason}</TableCell><TableCell align="center"><Stack direction="row" spacing={0.5} justifyContent="center"><IconButton size="small" color="primary" onClick={() => { setEditLeave(leave); setOpen(true); }}><EditIcon fontSize="small" /></IconButton><IconButton size="small" color="error" onClick={() => handleDelete(leave.id)}><DeleteIcon fontSize="small" /></IconButton></Stack></TableCell>
               </TableRow>
             ))}
             {paginatedData.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={7} align="center">
-                  No leave records found.
-                </TableCell>
-              </TableRow>
+              <TableRow><TableCell colSpan={7} align="center">No leave records found.</TableCell></TableRow>
             )}
           </TableBody>
         </Table>
@@ -195,7 +214,7 @@ const EmployeeLeaveTable = () => {
         onLeaveAdded={fetchData}
         editLeave={editLeave}
       />
-    </div>
+    </Box>
   );
 };
 

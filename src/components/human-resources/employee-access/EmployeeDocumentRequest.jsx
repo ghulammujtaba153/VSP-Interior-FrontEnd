@@ -22,10 +22,24 @@ import {
   Chip,
   Tooltip,
   CircularProgress,
+  Stack,
+  TextField,
+  Divider,
+  Grid,
+  Avatar,
 } from "@mui/material";
-import UploadFileIcon from "@mui/icons-material/UploadFile";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
+import { 
+  UploadFile as UploadFileIcon, 
+  Edit as EditIcon, 
+  Delete as DeleteIcon,
+  Description,
+  QueryBuilder,
+  TaskAlt,
+  Search,
+  Schedule as AccessTime,
+  CheckCircle,
+  AccountTree as CalendarToday
+} from "@mui/icons-material";
 import DocumentRequestModal from "@/components/human-resources/staff/DocumentRequestModal";
 import EmployeeDocumentUpload from "./EmployeeDocumentUpload";
 import { useParams } from "next/navigation";
@@ -54,6 +68,7 @@ const EmployeeDocumentRequest = () => {
 
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadRequest, setUploadRequest] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // fetch document requests for the resolved employeeId
   const fetchDocRequests = async (empId) => {
@@ -121,88 +136,106 @@ const EmployeeDocumentRequest = () => {
     fetchDocRequests(employeeId);
   };
 
-  // show loader until we have employeeId and initial fetch settled
-  if (loading || !employeeId) {
-    return (
-      <Box display="flex" justifyContent="center" py={6}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  const filtered = (docRequests || []).filter(r => 
+    r.documentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    r.documentType?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-  const paginated = docRequests.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  const paginated = filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+  const stats = {
+    total: docRequests.length,
+    pending: docRequests.filter(r => r.status === 'pending').length,
+    approved: docRequests.filter(r => r.status === 'approved').length,
+  };
+
+  if (loading || !employeeId) return <Box display="flex" justifyContent="center" py={10}><CircularProgress /></Box>;
 
   return (
-    <Card sx={{ boxShadow: 3 }}>
-      <CardContent>
- 
+    <Box>
+      <Stack direction={{ xs: "column", md: "row" }} spacing={2} mb={4}>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Total Requests</Typography>
+                <Typography variant="h5" color="primary.main" fontWeight={600}>{stats.total}</Typography>
+              </Box>
+              <Description fontSize="large" color="primary" />
+            </Stack>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Pending Actions</Typography>
+                <Typography variant="h5" color="warning.main" fontWeight={600}>{stats.pending}</Typography>
+              </Box>
+              <AccessTime fontSize="large" color="warning" />
+            </Stack>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Approved Docs</Typography>
+                <Typography variant="h5" color="success.main" fontWeight={600}>{stats.approved}</Typography>
+              </Box>
+              <CheckCircle fontSize="large" color="success" />
+            </Stack>
+          </CardContent>
+        </Card>
+      </Stack>
 
-        <TableContainer component={Paper}>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>#</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Name</TableCell>
-                <TableCell>Reason</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Requested At</TableCell>
-                <TableCell align="center">Actions</TableCell>
-              </TableRow>
-            </TableHead>
+      <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
+        <CardContent>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+            <Typography variant="h6" fontWeight="bold">My Document Requests</Typography>
+            <TextField
+              size="small"
+              placeholder="Search documents..."
+              value={searchTerm}
+              onChange={(e) => { setSearchTerm(e.target.value); setPage(0); }}
+              InputProps={{ startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} /> }}
+              sx={{ minWidth: 260 }}
+            />
+          </Box>
+          <Divider sx={{ mb: 2 }} />
 
-            <TableBody>
-              {paginated.length === 0 ? (
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
                 <TableRow>
-                  <TableCell colSpan={7} align="center">
-                    No document requests
-                  </TableCell>
+                  <TableCell>#</TableCell><TableCell>Type</TableCell><TableCell>Name</TableCell><TableCell>Reason</TableCell><TableCell>Status</TableCell><TableCell>Requested At</TableCell><TableCell align="center">Actions</TableCell>
                 </TableRow>
-              ) : (
-                paginated.map((r, idx) => (
-                  <TableRow key={r.id}>
-                    <TableCell>{page * rowsPerPage + idx + 1}</TableCell>
-                    <TableCell>{r.documentType}</TableCell>
-                    <TableCell>{r.documentName}</TableCell>
-                    <TableCell sx={{ whiteSpace: "pre-line", maxWidth: 300 }}>{r.reason}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={r.status}
-                        color={r.status === "approved" ? "success" : r.status === "pending" ? "warning" : "error"}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>{r.createdAt ? new Date(r.createdAt).toLocaleString() : "-"}</TableCell>
-                    <TableCell align="center">
-                      {r.status === "pending" && <Box display="flex" justifyContent="center" gap={1}>
-                        <Tooltip title="Upload Document">
-                          <IconButton size="small" color="primary" onClick={() => handleOpenUpload(r)}>
-                            <UploadFileIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {paginated.length === 0 ? (
+                  <TableRow><TableCell colSpan={7} align="center">No document requests found</TableCell></TableRow>
+                ) : (
+                  paginated.map((r, idx) => (
+                    <TableRow key={r.id} hover>
+                      <TableCell>{page * rowsPerPage + idx + 1}</TableCell><TableCell>{r.documentType}</TableCell><TableCell>{r.documentName}</TableCell><TableCell sx={{ whiteSpace: "pre-line", maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.reason}</TableCell><TableCell><Chip label={r.status} color={r.status === "approved" ? "success" : r.status === "pending" ? "warning" : "error"} size="small" /></TableCell><TableCell>{r.createdAt ? new Date(r.createdAt).toLocaleString() : "-"}</TableCell><TableCell align="center">{r.status === "pending" && <Tooltip title="Upload Document"><IconButton size="small" color="primary" onClick={() => handleOpenUpload(r)}><UploadFileIcon fontSize="small" /></IconButton></Tooltip>}</TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
 
-        <TablePagination
-          component="div"
-          count={docRequests.length}
-          page={page}
-          onPageChange={(e, newPage) => setPage(newPage)}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={(e) => {
-            setRowsPerPage(parseInt(e.target.value, 10));
-            setPage(0);
-          }}
-          rowsPerPageOptions={[5, 10, 25]}
-          sx={{ mt: 1 }}
-        />
-      </CardContent>
+          <TablePagination
+            component="div"
+            count={filtered.length}
+            page={page}
+            onPageChange={(e, p) => setPage(p)}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+            sx={{ mt: 1 }}
+          />
+        </CardContent>
+      </Card>
 
       {/* Modals */}
       <DocumentRequestModal
@@ -223,7 +256,7 @@ const EmployeeDocumentRequest = () => {
         employeeId={user?.id}
         onUploaded={handleUploadComplete}
       />
-    </Card>
+    </Box>
   );
 };
 
