@@ -41,6 +41,7 @@ import Link from "next/link";
 import useTableZoom from '@/hooks/useTableZoom';
 import TableZoom from '../../TableZoom';
 
+
 const CabinetCategoriesTable = () => {
   const theme = useTheme();
   const [data, setData] = useState([]);

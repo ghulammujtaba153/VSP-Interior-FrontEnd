@@ -36,6 +36,7 @@ import Loader from "../loader/Loader";
 import useTableZoom from "@/hooks/useTableZoom";
 import TableZoom from "@/components/TableZoom";
 
+
 const InventoryTable = () => {
   const theme = useTheme();
   const [loading, setLoading] = useState(true);
@@ -326,12 +327,15 @@ const InventoryTable = () => {
           </Button>
         </Box>
         <Box display="flex" gap={1}>
+          <PermissionWrapper resource="inventory" action="canCreate">
           <Button variant="outlined" color="primary" onClick={handleImportCSV}>
             Import Excel
           </Button>
+          </PermissionWrapper>
           <Button variant="outlined" color="success" onClick={handleExportExcel}>
             Export Excel
           </Button>
+          <PermissionWrapper resource="inventory" action="canCreate">
           <Button
             variant="contained"
             color="primary"
@@ -342,6 +346,7 @@ const InventoryTable = () => {
           >
             Add Item
           </Button>
+          </PermissionWrapper>
           <TableZoom zoom={zoom} onZoomChange={handleZoomChange} />
         </Box>
       </Box>
@@ -491,6 +496,7 @@ const InventoryTable = () => {
                 <TableCell sx={{ minWidth: 120 }}>{formatDate(item.createdAt)}</TableCell>
                 <TableCell sx={{ minWidth: 190 }}>
                   <Box>
+                    <PermissionWrapper resource="inventory" action="canView">
                     <IconButton
                       color="primary"
                       onClick={() => {
@@ -500,6 +506,9 @@ const InventoryTable = () => {
                     >
                       <Visibility />
                     </IconButton>
+                    </PermissionWrapper>
+                    
+                    <PermissionWrapper resource="inventory" action="canEdit">
                     <IconButton
                       color="secondary"
                       onClick={() => {
@@ -509,9 +518,13 @@ const InventoryTable = () => {
                     >
                       <Edit />
                     </IconButton>
+                    </PermissionWrapper>
+
+                    <PermissionWrapper resource="inventory" action="canDelete">
                     <IconButton color="error" onClick={() => handleDelete(item)}>
                       <Delete />
                     </IconButton>
+                    </PermissionWrapper>
                   </Box>
                 </TableCell>
               </TableRow>

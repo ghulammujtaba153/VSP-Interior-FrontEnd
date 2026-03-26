@@ -478,6 +478,7 @@ const SupplierTable = () => {
                         No contacts found for this supplier.
                     </Typography>
                     <Box sx={{ ...layout.buttonGroup, justifyContent: 'center', marginTop: 2 }}>
+                        <PermissionWrapper resource="suppliers" action="canCreate">
                         <Button
                             size="small"
                             variant="outlined"
@@ -487,6 +488,9 @@ const SupplierTable = () => {
                         >
                             Import Contacts
                         </Button>
+                        </PermissionWrapper>
+
+                        <PermissionWrapper resource="suppliers" action="canCreate">
                         <Button
                             size="small"
                             variant="outlined"
@@ -496,6 +500,7 @@ const SupplierTable = () => {
                         >
                             Add Contact
                         </Button>
+                        </PermissionWrapper>
                     </Box>
                     
                     {openContactsImportModal && (
@@ -517,6 +522,7 @@ const SupplierTable = () => {
                         Contacts ({contacts.length})
                     </Typography>
                     <Box sx={layout.buttonGroup}>
+                        <PermissionWrapper resource="suppliers" action="canCreate">
                         <Button
                             size="small"
                             variant="outlined"
@@ -526,6 +532,8 @@ const SupplierTable = () => {
                         >
                             Import Contacts
                         </Button>
+                        </PermissionWrapper>
+
                         <Button
                             size="small"
                             variant="outlined"
@@ -535,6 +543,8 @@ const SupplierTable = () => {
                         >
                             Export Contacts
                         </Button>
+
+                        <PermissionWrapper resource="suppliers" action="canCreate">
                         <Button
                             size="small"
                             variant="outlined"
@@ -543,6 +553,7 @@ const SupplierTable = () => {
                         >
                             Add Contact
                         </Button>
+                        </PermissionWrapper>
                     </Box>
                 </Box>
                 <TableContainer component={Paper} elevation={1}>
@@ -592,6 +603,7 @@ const SupplierTable = () => {
                                     <TableCell>
                                         <Box sx={table.actionButtons}>
                                             
+                                                <PermissionWrapper resource="suppliers" action="canEdit">
                                                 <Tooltip title="Edit Contact">
                                                     <IconButton
                                                         size="small"
@@ -601,7 +613,9 @@ const SupplierTable = () => {
                                                         <EditIcon />
                                                     </IconButton>
                                                 </Tooltip>
+                                                </PermissionWrapper>
                                             
+                                                <PermissionWrapper resource="suppliers" action="canDelete">
                                                 <Tooltip title="Delete Contact">
                                                     <IconButton
                                                         size="small"
@@ -611,6 +625,7 @@ const SupplierTable = () => {
                                                         <DeleteIcon />
                                                     </IconButton>
                                                 </Tooltip>
+                                                </PermissionWrapper>
                                             
                                         </Box>
                                     </TableCell>
@@ -640,15 +655,19 @@ const SupplierTable = () => {
             <Box sx={layout.header}>
                 <Typography variant="h5">Supplier List</Typography>
                 <Box sx={layout.buttonGroup}>
+                    <PermissionWrapper resource="suppliers" action="canCreate">
                     <Button variant="outlined" color="success" onClick={handleImportCSV}>
                         Import CSV
                     </Button>
+                    </PermissionWrapper>
                     <Button variant="outlined" color="success" onClick={handleExportExcel}>
                         Export Excel
                     </Button>
+                    <PermissionWrapper resource="suppliers" action="canCreate">
                     <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={handleAdd}>
                         Add Supplier
                     </Button>
+                    </PermissionWrapper>
                     <TableZoom zoom={zoom} onZoomChange={handleZoomChange} />
                 </Box>
             </Box>
@@ -880,27 +899,37 @@ const SupplierTable = () => {
                                         <TableCell>
                                             <Box display="flex" gap={0.5}>
                                                 
+                                                <PermissionWrapper resource="suppliers" action="canCreate">
                                                     <Tooltip title="Add Contact">
                                                         <IconButton size="small" color="success" onClick={() => handleAddContact(supplier)}>
                                                             <PersonAddAlt1Icon />
                                                         </IconButton>
                                                     </Tooltip>
-                                                
+                                                </PermissionWrapper>
+
+                                                <PermissionWrapper resource="suppliers" action="canView">
                                                 <Tooltip title="View">
                                                         <IconButton size="small" onClick={() => handleView(supplier)} color="info">
                                                             <VisibilityIcon />
                                                         </IconButton>
                                                 </Tooltip>
+                                                </PermissionWrapper>
+
+                                                <PermissionWrapper resource="suppliers" action="canEdit">
                                                 <Tooltip title="Edit">
                                                         <IconButton size="small" onClick={() => handleEdit(supplier)} color="primary">
                                                             <EditIcon />
                                                         </IconButton>
                                                 </Tooltip>
+                                                </PermissionWrapper>
+
+                                                <PermissionWrapper resource="suppliers" action="canDelete">
                                                 <Tooltip title="Delete">
                                                         <IconButton size="small" onClick={() => handleDelete(supplier)} color="error">
                                                             <DeleteIcon />
                                                         </IconButton>
                                                 </Tooltip>
+                                                </PermissionWrapper>
                                                 
                                                 <Tooltip title="Manage Price Book">
                                                         <IconButton 
