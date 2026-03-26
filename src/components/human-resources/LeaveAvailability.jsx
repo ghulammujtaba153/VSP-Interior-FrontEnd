@@ -263,7 +263,7 @@ const LeaveAvailability = () => {
           <TableContainer>
             <Table>
               <TableHead>
-                <TableRow sx={{ bgcolor: "grey.100" }}>
+                <TableRow >
                   <TableCell>Employee</TableCell>
                   <TableCell>Type</TableCell>
                   <TableCell>Start Date</TableCell>

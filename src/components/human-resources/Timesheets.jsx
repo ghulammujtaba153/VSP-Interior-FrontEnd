@@ -195,7 +195,7 @@ const Timesheets = () => {
           <TableContainer>
             <Table>
               <TableHead>
-                <TableRow sx={{ bgcolor: "grey.100" }}>
+                <TableRow>
                   <TableCell>Employee</TableCell>
                   <TableCell>Date</TableCell>
                   <TableCell>Start Time</TableCell>

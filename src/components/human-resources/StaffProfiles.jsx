@@ -61,8 +61,8 @@ const StaffProfiles = () => {
       const response = await axios.get(
         `${BASE_URL}/api/user/get?page=${page}&limit=${limit}`
       );
-      setStaff(response.data.data || response.data);
-      setTotalPages(response.data.totalPages || 1);
+      setStaff(response.data.users || response.data.data || (Array.isArray(response.data) ? response.data : []));
+      setTotalPages(response.data.total ? Math.ceil(response.data.total / limit) : response.data.totalPages || 1);
     } catch (error) {
       console.error("Error fetching staff:", error);
     } finally {
@@ -158,7 +158,7 @@ const StaffProfiles = () => {
     setUserToDelete(null);
   };
 
-  const filteredStaff = staff.filter(
+  const filteredStaff = (Array.isArray(staff) ? staff : []).filter(
     (member) =>
       member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       member.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -168,7 +168,7 @@ const StaffProfiles = () => {
   if(loading) return <Loader/>
 
   return (
-    <Container sx={{ py: 6 }}>
+    <Box sx={{ py: 2 }}>
       {/* User Modal for Add/Edit */}
       <UserModal
         open={modalOpen}
@@ -239,13 +239,13 @@ const StaffProfiles = () => {
       </Stack>
 
       {/* Staff Cards */}
-      <Grid container spacing={3}>
+      <Grid container spacing={4}>
         {filteredStaff.map((member) => (
-          <Grid item xs={12} md={6} lg={4} key={member.id}>
-            <Card>
+          <Grid item xs={12} sm={6} md={6} lg={6} key={member.id}>
+            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <CardHeader
                 avatar={
-                  <Avatar>
+                  <Avatar sx={{ bgcolor: 'primary.main', width: 48, height: 48 }}>
                     {member.name
                       ?.split(" ")
                       .map((n) => n[0])
@@ -254,68 +254,74 @@ const StaffProfiles = () => {
                   </Avatar>
                 }
                 action={
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    {/* Status Toggle */}
-                    <Typography variant="body2">
-                      {member.status === "active" ? "Active" : "Suspended"}
-                    </Typography>
-                    <Switch
-                      checked={member.status === "active"}
-                      onChange={() =>
-                        handleStatusToggle(member.id, member.status)
-                      }
-                      color="primary"
-                    />
-                    {/* Edit Button */}
-                    <IconButton
-                      color="primary"
-                      onClick={() => handleOpenModal("edit", member)}
-                    >
-                      <Edit />
-                    </IconButton>
-                    {/* Delete Button */}
-                    <IconButton
-                      color="error"
-                      onClick={() => handleDeleteUser(member)}
-                    >
-                      <Delete />
-                    </IconButton>
-                  </Stack>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                      <Typography variant="caption" sx={{ fontWeight: 'medium', color: member.status === 'active' ? 'success.main' : 'error.main' }}>
+                        {member.status === "active" ? "Active" : "Suspended"}
+                      </Typography>
+                      <Switch
+                        size="small"
+                        checked={member.status === "active"}
+                        onChange={() => handleStatusToggle(member.id, member.status)}
+                        color="primary"
+                      />
+                    </Stack>
+                    <Stack direction="row" spacing={0}>
+                      <IconButton
+                        size="small"
+                        color="primary"
+                        onClick={() => handleOpenModal("edit", member)}
+                      >
+                        <Edit fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => handleDeleteUser(member)}
+                      >
+                        <Delete fontSize="small" />
+                      </IconButton>
+                    </Stack>
+                  </Box>
                 }
-                title={<Typography variant="h6">{member.name}</Typography>}
+                title={
+                  <Typography variant="subtitle1" fontWeight="bold" noWrap sx={{ maxWidth: '200px' }}>
+                    {member.name}
+                  </Typography>
+                }
                 subheader={
                   <Typography variant="body2" color="text.secondary">
                     {member.Role?.name || "No Role"}
                   </Typography>
                 }
               />
-              <CardContent>
-                <Stack spacing={1}>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Mail fontSize="small" />
-                    <Typography variant="body2">{member.email}</Typography>
-                  </Stack>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <CalendarToday fontSize="small" />
-                    <Typography variant="body2">
-                      Joined{" "}
-                      {member.createdAt
-                        ? new Date(member.createdAt).toLocaleDateString("en-US")
-                        : ""}
+              <CardContent sx={{ flexGrow: 1, pt: 0 }}>
+                <Stack spacing={1.5}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Mail fontSize="small" color="action" />
+                    <Typography variant="body2" color="text.primary" noWrap>
+                      {member.email}
                     </Typography>
-                  </Stack>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <CalendarToday fontSize="small" color="action" />
+                    <Typography variant="body2" color="text.secondary">
+                      Joined {member.createdAt ? new Date(member.createdAt).toLocaleDateString("en-US", { month: 'short', day: 'numeric', year: 'numeric' }) : "N/A"}
+                    </Typography>
+                  </Box>
 
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Link href={`/human-resource/staff/${member.id}`} passHref>
+                  <Box sx={{ mt: 1 }}>
+                    <Link href={`/human-resource/staff/${member.id}`} passHref style={{ textDecoration: 'none' }}>
                       <Button
                         size="small"
                         variant="outlined"
-                        >View Profile
+                        fullWidth
+                        sx={{ borderRadius: 2 }}
+                      >
+                        View Full Profile
                       </Button>
                     </Link>
-                    </Stack>
-
-
+                  </Box>
                 </Stack>
               </CardContent>
             </Card>
@@ -343,7 +349,7 @@ const StaffProfiles = () => {
           />
         </Box>
       )}
-    </Container>
+    </Box>
   );
 };
 
