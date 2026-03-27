@@ -39,6 +39,7 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import AddIcon from '@mui/icons-material/Add'
 import * as XLSX from 'xlsx'
+import PermissionWrapper from '@/components/PermissionWrapper'
 
 const PriceBookPage = ({ supplierId: propSupplierId }) => {
   const theme = useTheme()
@@ -476,9 +477,11 @@ const PriceBookPage = ({ supplierId: propSupplierId }) => {
           <Button variant='contained' color='success' onClick={handleExport} sx={{ mr: 2 }}>
             Export XLS
           </Button>
-          <Button variant='contained' color='secondary' onClick={handleAddNew}>
-            Add Item
-          </Button>
+          <PermissionWrapper resource="suppliers" action="canCreate">
+            <Button variant='contained' color='secondary' onClick={handleAddNew}>
+              Add Item
+            </Button>
+          </PermissionWrapper>
         </Box>
       </Box>
 
@@ -551,15 +554,21 @@ const PriceBookPage = ({ supplierId: propSupplierId }) => {
                   <TableCell>{row.Supplier?.name || 'N/A'}</TableCell>
                   <TableCell>{row.status}</TableCell>
                   <TableCell align='center'>
+                    <PermissionWrapper resource="suppliers" action="canView">
                     <IconButton color='info' onClick={() => handleViewHistory(row)} title='History'>
                       <VisibilityIcon />
                     </IconButton>
+                    </PermissionWrapper>
+                    <PermissionWrapper resource="suppliers" action="canEdit">
                     <IconButton color='primary' onClick={() => handleEdit(row)}>
                       <EditIcon />
                     </IconButton>
+                    </PermissionWrapper>
+                    <PermissionWrapper resource="suppliers" action="canDelete">
                     <IconButton color='error' onClick={() => handleDelete(row.id)}>
                       <DeleteIcon />
                     </IconButton>
+                    </PermissionWrapper>
                   </TableCell>
                 </TableRow>
               ))

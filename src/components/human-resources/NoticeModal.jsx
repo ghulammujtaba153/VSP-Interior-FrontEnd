@@ -12,6 +12,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Box,
 } from "@mui/material";
 import { toast } from "react-toastify";
 import axios from "axios";
@@ -22,6 +23,7 @@ const NoticeModal = ({ open, onClose, notice, refresh }) => {
     title: "",
     content: "",
     status: "active",
+    category: "announcement",
     file: null,
   });
   const [loading, setLoading] = useState(false);
@@ -33,6 +35,7 @@ const NoticeModal = ({ open, onClose, notice, refresh }) => {
         title: notice.title || "",
         content: notice.content || "",
         status: notice.status || "active",
+        category: notice.category || "announcement",
         file: null,
       });
     } else {
@@ -40,6 +43,7 @@ const NoticeModal = ({ open, onClose, notice, refresh }) => {
         title: "",
         content: "",
         status: "active",
+        category: "announcement",
         file: null,
       });
     }
@@ -62,6 +66,7 @@ const NoticeModal = ({ open, onClose, notice, refresh }) => {
     form.append("title", formData.title);
     form.append("content", formData.content);
     form.append("status", formData.status || "active");
+    form.append("category", formData.category || "announcement");
     if (formData.file) {
       form.append("file", formData.file);
     }
@@ -112,18 +117,36 @@ const NoticeModal = ({ open, onClose, notice, refresh }) => {
           margin="normal"
         />
 
-        <FormControl fullWidth margin="normal">
-          <InputLabel>Status</InputLabel>
-          <Select
-            name="status"
-            value={formData.status}
-            onChange={handleChange}
-            label="Status"
-          >
-            <MenuItem value="active">Active</MenuItem>
-            <MenuItem value="inactive">Inactive</MenuItem>
-          </Select>
-        </FormControl>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Status</InputLabel>
+            <Select
+              name="status"
+              value={formData.status}
+              onChange={handleChange}
+              label="Status"
+            >
+              <MenuItem value="active">Active</MenuItem>
+              <MenuItem value="inactive">Inactive</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth margin="normal">
+            <InputLabel>Category</InputLabel>
+            <Select
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              label="Category"
+            >
+              <MenuItem value="announcement">Announcement</MenuItem>
+              <MenuItem value="hr_policy">HR Policy</MenuItem>
+              <MenuItem value="emergency">Emergency</MenuItem>
+              <MenuItem value="holiday">Holiday</MenuItem>
+              <MenuItem value="event">Event</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
 
         <Button variant="outlined" component="label" sx={{ mt: 2 }}>
           {formData.file ? formData.file.name : "Upload PDF"}

@@ -14,6 +14,7 @@ import {
   Card,
   CardContent,
   Typography,
+  Stack,
   Grid,
   Table,
   TableBody,
@@ -29,8 +30,10 @@ import {
   Button,
   IconButton,
   Tooltip,
+  MenuItem,
+  TextField,
 } from "@mui/material";
-import { Person, WorkHistory, EventNote } from "@mui/icons-material";
+import { Person, WorkHistory, EventNote, CheckCircle } from "@mui/icons-material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
@@ -55,6 +58,11 @@ const StaffProfilePage = () => {
   const [docLoading, setDocLoading] = useState(false);
   const [docModalOpen, setDocModalOpen] = useState(false);
   const [selectedDocRequest, setSelectedDocRequest] = useState(null);
+
+  // Filter states
+  const [timesheetFilter, setTimesheetFilter] = useState("all");
+  const [leaveFilter, setLeaveFilter] = useState("all");
+  const [docFilter, setDocFilter] = useState("all");
 
   const fetch = async () => {
     try {
@@ -97,6 +105,18 @@ const StaffProfilePage = () => {
   const totalLeaves = EmployeeLeaves?.length || 0;
   const approvedLeaves = EmployeeLeaves?.filter((l) => l.status.toLowerCase() === "approved").length || 0;
 
+  // New Upgrade: Calculated Leave Balance (Assuming 20 standard annual leaves)
+  const USED_LEAVES = EmployeeLeaves
+    .filter(l => l.status.toLowerCase() === "approved")
+    .reduce((acc, l) => {
+      const s = new Date(l.startDate);
+      const e = new Date(l.endDate);
+      const days = Math.floor((e - s) / (1000 * 60 * 60 * 24)) + 1;
+      return acc + days;
+    }, 0);
+  const LEAVE_LIMIT = 20; // This should ideally come from backend settings
+  const remainingLeaves = Math.max(0, LEAVE_LIMIT - USED_LEAVES);
+
   const openNewDocModal = () => {
     setSelectedDocRequest(null);
     setDocModalOpen(true);
@@ -132,6 +152,19 @@ const StaffProfilePage = () => {
     const url = `${BASE_URL}${doc.documentUrl}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
+
+  // 🔍 Filter Logic
+  const filteredTimeSheets = (EmployeeTimeSheets || []).filter(ts => 
+    timesheetFilter === "all" || ts.status === timesheetFilter
+  );
+
+  const filteredLeaves = (EmployeeLeaves || []).filter(l => 
+    leaveFilter === "all" || l.status.toLowerCase() === leaveFilter.toLowerCase()
+  );
+
+  const filteredDocRequests = (docRequests || []).filter(r => 
+    docFilter === "all" || r.status === docFilter
+  );
 
   return (
     <Box sx={{ p: 4 }}>
@@ -169,81 +202,89 @@ const StaffProfilePage = () => {
       </Card>
 
       {/* Stats Overview */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={4}>
-          <Card sx={{ p: 3, textAlign: "center", borderRadius: 3, boxShadow: 3 }}>
-            <WorkHistory color="primary" sx={{ fontSize: 40 }} />
-            <Typography variant="h6" mt={1}>
-              Total TimeSheets
-            </Typography>
-            <Typography variant="h4" fontWeight="bold">
-              {totalTimesheets}
-            </Typography>
-          </Card>
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <Card sx={{ p: 3, textAlign: "center", borderRadius: 3, boxShadow: 3 }}>
-            <EventNote color="secondary" sx={{ fontSize: 40 }} />
-            <Typography variant="h6" mt={1}>
-              Total Leaves
-            </Typography>
-            <Typography variant="h4" fontWeight="bold">
-              {totalLeaves}
-            </Typography>
-          </Card>
-        </Grid>
-        <Grid item xs={12} md={4}>
-          <Card sx={{ p: 3, textAlign: "center", borderRadius: 3, boxShadow: 3 }}>
-            <Person color="success" sx={{ fontSize: 40 }} />
-            <Typography variant="h6" mt={1}>
-              Approved Leaves
-            </Typography>
-            <Typography variant="h4" fontWeight="bold">
-              {approvedLeaves}
-            </Typography>
-          </Card>
-        </Grid>
-      </Grid>
+      <Stack direction={{ xs: "column", md: "row" }} spacing={2} mb={4}>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Attendance</Typography>
+                <Typography variant="h5" color="primary.main" fontWeight={600}>{totalTimesheets}</Typography>
+              </Box>
+              <WorkHistory fontSize="large" color="primary" />
+            </Stack>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Leaves Used</Typography>
+                <Typography variant="h5" color="secondary.main" fontWeight={600}>{USED_LEAVES}</Typography>
+              </Box>
+              <EventNote fontSize="large" color="secondary" />
+            </Stack>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Remaining Balance</Typography>
+                <Typography variant="h5" color="success.main" fontWeight={600}>{remainingLeaves}</Typography>
+              </Box>
+              <CheckCircle fontSize="large" color="success" />
+            </Stack>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Account Status</Typography>
+                <Typography variant="h5" color="info.main" fontWeight={600} sx={{ textTransform: 'capitalize' }}>{status}</Typography>
+              </Box>
+              <Person fontSize="large" color="info" />
+            </Stack>
+          </CardContent>
+        </Card>
+      </Stack>
 
       {/* TimeSheet Table */}
       <Card sx={{ mb: 4, borderRadius: 3, boxShadow: 3 }}>
         <CardContent>
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
-            Employee TimeSheets
-          </Typography>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+            <Typography variant="h6" fontWeight="bold">
+              Employee TimeSheets
+            </Typography>
+            <TextField
+              select
+              size="small"
+              value={timesheetFilter}
+              onChange={(e) => { setTimesheetFilter(e.target.value); setPageTimesheet(0); }}
+              sx={{ width: 150 }}
+              label="Status"
+            >
+              <MenuItem value="all">All</MenuItem>
+              <MenuItem value="approved">Approved</MenuItem>
+              <MenuItem value="pending">Pending</MenuItem>
+              <MenuItem value="rejected">Rejected</MenuItem>
+            </TextField>
+          </Box>
           <Divider sx={{ mb: 2 }} />
           <TableContainer component={Paper}>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Date</TableCell>
-                  <TableCell>Start</TableCell>
-                  <TableCell>End</TableCell>
-                  <TableCell>Break</TableCell>
-                  <TableCell>Overwork</TableCell>
-                  <TableCell>Status</TableCell>
+                  <TableCell>Date</TableCell><TableCell>Start</TableCell><TableCell>End</TableCell><TableCell>Break</TableCell><TableCell>Overwork</TableCell><TableCell>Status</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {EmployeeTimeSheets.slice(
+                {filteredTimeSheets.slice(
                   pageTimesheet * rowsPerPageTimesheet,
                   pageTimesheet * rowsPerPageTimesheet + rowsPerPageTimesheet
                 ).map((row) => (
                   <TableRow key={row.id}>
-                    <TableCell>{row.date}</TableCell>
-                    <TableCell>{row.startTime}</TableCell>
-                    <TableCell>{row.endTime}</TableCell>
-                    <TableCell>{row.breakTime}</TableCell>
-                    <TableCell>{row.overWork}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={row.status}
-                        color={
-                          row.status === "approved" ? "success" : row.status === "pending" ? "warning" : "error"
-                        }
-                        size="small"
-                      />
-                    </TableCell>
+                    <TableCell>{row.date}</TableCell><TableCell>{row.startTime}</TableCell><TableCell>{row.endTime}</TableCell><TableCell>{row.breakTime}</TableCell><TableCell>{row.overWork}</TableCell><TableCell><Chip label={row.status} color={row.status === "approved" ? "success" : row.status === "pending" ? "warning" : "error"} size="small" /></TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -252,7 +293,7 @@ const StaffProfilePage = () => {
 
           <TablePagination
             component="div"
-            count={EmployeeTimeSheets.length}
+            count={filteredTimeSheets.length}
             page={pageTimesheet}
             onPageChange={(e, newPage) => setPageTimesheet(newPage)}
             rowsPerPage={rowsPerPageTimesheet}
@@ -267,44 +308,39 @@ const StaffProfilePage = () => {
       {/* Leaves Table */}
       <Card sx={{ borderRadius: 3, boxShadow: 3, mb: 4 }}>
         <CardContent>
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
-            Employee Leaves
-          </Typography>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+            <Typography variant="h6" fontWeight="bold">
+              Employee Leaves
+            </Typography>
+            <TextField
+              select
+              size="small"
+              value={leaveFilter}
+              onChange={(e) => { setLeaveFilter(e.target.value); setPageLeave(0); }}
+              sx={{ width: 150 }}
+              label="Status"
+            >
+              <MenuItem value="all">All</MenuItem>
+              <MenuItem value="approved">Approved</MenuItem>
+              <MenuItem value="pending">Pending</MenuItem>
+              <MenuItem value="rejected">Rejected</MenuItem>
+            </TextField>
+          </Box>
           <Divider sx={{ mb: 2 }} />
           <TableContainer component={Paper}>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Type</TableCell>
-                  <TableCell>Start Date</TableCell>
-                  <TableCell>End Date</TableCell>
-                  <TableCell>Reason</TableCell>
-                  <TableCell>Status</TableCell>
+                  <TableCell>Type</TableCell><TableCell>Start Date</TableCell><TableCell>End Date</TableCell><TableCell>Reason</TableCell><TableCell>Status</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {EmployeeLeaves.slice(
+                {filteredLeaves.slice(
                   pageLeave * rowsPerPageLeave,
                   pageLeave * rowsPerPageLeave + rowsPerPageLeave
                 ).map((row) => (
                   <TableRow key={row.id}>
-                    <TableCell>{row.leaveType}</TableCell>
-                    <TableCell>{row.startDate}</TableCell>
-                    <TableCell>{row.endDate}</TableCell>
-                    <TableCell sx={{ whiteSpace: "pre-line" }}>{row.reason}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={row.status}
-                        color={
-                          row.status.toLowerCase() === "approved"
-                            ? "success"
-                            : row.status.toLowerCase() === "pending"
-                            ? "warning"
-                            : "error"
-                        }
-                        size="small"
-                      />
-                    </TableCell>
+                    <TableCell>{row.leaveType}</TableCell><TableCell>{row.startDate}</TableCell><TableCell>{row.endDate}</TableCell><TableCell sx={{ whiteSpace: "pre-line" }}>{row.reason}</TableCell><TableCell><Chip label={row.status} color={row.status.toLowerCase() === "approved" ? "success" : row.status.toLowerCase() === "pending" ? "warning" : "error"} size="small" /></TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -313,7 +349,7 @@ const StaffProfilePage = () => {
 
           <TablePagination
             component="div"
-            count={EmployeeLeaves.length}
+            count={filteredLeaves.length}
             page={pageLeave}
             onPageChange={(e, newPage) => setPageLeave(newPage)}
             rowsPerPage={rowsPerPageLeave}
@@ -332,75 +368,39 @@ const StaffProfilePage = () => {
             <Typography variant="h6" fontWeight="bold">
               Document Requests
             </Typography>
-            <Button variant="contained" color="primary" onClick={openNewDocModal}>
-              Request Document
-            </Button>
+            <Box display="flex" gap={2}>
+              <TextField
+                select
+                size="small"
+                value={docFilter}
+                onChange={(e) => { setDocFilter(e.target.value); setDocPage(0); }}
+                sx={{ width: 150 }}
+                label="Status"
+              >
+                <MenuItem value="all">All</MenuItem>
+                <MenuItem value="approved">Approved</MenuItem>
+                <MenuItem value="pending">Pending</MenuItem>
+                <MenuItem value="rejected">Rejected</MenuItem>
+              </TextField>
+              <Button variant="contained" color="primary" onClick={openNewDocModal}>
+                Request Document
+              </Button>
+            </Box>
           </Box>
 
           <TableContainer component={Paper}>
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>#</TableCell>
-                  <TableCell>Type</TableCell>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Reason</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Requested At</TableCell>
-                  <TableCell align="center">Actions</TableCell>
+                  <TableCell>#</TableCell><TableCell>Type</TableCell><TableCell>Name</TableCell><TableCell>Reason</TableCell><TableCell>Status</TableCell><TableCell>Requested At</TableCell><TableCell align="center">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {docRequests.slice(docPage * docRowsPerPage, docPage * docRowsPerPage + docRowsPerPage).map((r, idx) => (
-                  <TableRow key={r.id}>
-                    <TableCell>{docPage * docRowsPerPage + idx + 1}</TableCell>
-                    <TableCell>{r.documentType}</TableCell>
-                    <TableCell>{r.documentName}</TableCell>
-                    <TableCell sx={{ whiteSpace: "pre-line" }}>{r.reason}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={r.status}
-                        color={r.status === "approved" ? "success" : r.status === "pending" ? "warning" : "error"}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>{r.createdAt ? new Date(r.createdAt).toLocaleString() : "-"}</TableCell>
-                    <TableCell align="center">
-                      <Box display="flex" justifyContent="center" gap={1}>
-
-                        {/* If documents exist show download buttons, otherwise show edit */}
-                        {Array.isArray(r.documents) && r.documents.length > 0 ? (
-                          r.documents.map((doc) => (
-                            <Tooltip key={doc.id} title="Download Document">
-                              <IconButton
-                                size="small"
-                                color="primary"
-                                onClick={() => handleDownloadDocument(doc)}
-                              >
-                                <DownloadIcon />
-                              </IconButton>
-                            </Tooltip>
-                          ))
-                        ) : (
-                          <>
-                            <IconButton size="small" color="primary" onClick={() => handleEditDoc(r)}>
-                              <EditIcon />
-                            </IconButton>
-                            <IconButton size="small" color="error" onClick={() => handleDeleteDoc(r.id)}>
-                              <DeleteIcon />
-                            </IconButton>
-                          </>
-                        )}
-                      </Box>
-                    </TableCell>
-                  </TableRow>
+                {filteredDocRequests.slice(docPage * docRowsPerPage, docPage * docRowsPerPage + docRowsPerPage).map((r, idx) => (
+                  <TableRow key={r.id}><TableCell>{docPage * docRowsPerPage + idx + 1}</TableCell><TableCell>{r.documentType}</TableCell><TableCell>{r.documentName}</TableCell><TableCell sx={{ whiteSpace: "pre-line" }}>{r.reason}</TableCell><TableCell><Chip label={r.status} color={r.status === "approved" ? "success" : r.status === "pending" ? "warning" : "error"} size="small" /></TableCell><TableCell>{r.createdAt ? new Date(r.createdAt).toLocaleString() : "-"}</TableCell><TableCell align="center"><Box display="flex" justifyContent="center" gap={1}>{/* If documents exist show download buttons, otherwise show edit */}{Array.isArray(r.documents) && r.documents.length > 0 ? (r.documents.map((doc) => (<Tooltip key={doc.id} title="Download Document"><IconButton size="small" color="primary" onClick={() => handleDownloadDocument(doc)}><DownloadIcon /></IconButton></Tooltip>))) : (<><IconButton size="small" color="primary" onClick={() => handleEditDoc(r)}><EditIcon /></IconButton><IconButton size="small" color="error" onClick={() => handleDeleteDoc(r.id)}><DeleteIcon /></IconButton></>)}</Box></TableCell></TableRow>
                 ))}
-                {docRequests.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={7} align="center">
-                      No document requests
-                    </TableCell>
-                  </TableRow>
+                {filteredDocRequests.length === 0 && (
+                  <TableRow><TableCell colSpan={7} align="center">No document requests</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
@@ -408,7 +408,7 @@ const StaffProfilePage = () => {
 
           <TablePagination
             component="div"
-            count={docRequests.length}
+            count={filteredDocRequests.length}
             page={docPage}
             onPageChange={(e, newPage) => setDocPage(newPage)}
             rowsPerPage={docRowsPerPage}

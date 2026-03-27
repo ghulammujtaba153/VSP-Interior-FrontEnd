@@ -210,12 +210,14 @@ const RolesTable = () => {
             <Typography variant="h6">Roles Table</Typography>
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
               <TableZoom zoom={zoom} onZoomChange={handleZoomChange} />
-              <Button
-                variant="contained"
-                onClick={() => handleOpen('create')}
-              >
-                Add Role
-              </Button>
+              <PermissionWrapper resource="roles" action="canCreate">
+                <Button
+                  variant="contained"
+                  onClick={() => handleOpen('create')}
+                >
+                  Add Role
+                </Button>
+              </PermissionWrapper>
             </Box>
           </Box>
 

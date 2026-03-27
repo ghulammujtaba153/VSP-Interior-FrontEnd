@@ -514,7 +514,7 @@ const ClientsTable = () => {
             No contacts found for this client.
           </Typography>
           <Box display="flex" justifyContent="center" mt={2}>
-            <PermissionWrapper resource="clients" action="canEdit">
+            <PermissionWrapper resource="clients" action="canCreate">
               <Button
                 size="small"
                 variant="outlined"
@@ -525,7 +525,7 @@ const ClientsTable = () => {
                 Import Contacts
               </Button>
             </PermissionWrapper>
-            <PermissionWrapper resource="clients" action="canEdit">
+            <PermissionWrapper resource="clients" action="canCreate">
               <Button
                 size="small"
                 variant="outlined"
@@ -557,7 +557,7 @@ const ClientsTable = () => {
             Contacts ({contacts.length})
           </Typography>
           <Box display="flex" gap={1}>
-            <PermissionWrapper resource="clients" action="canEdit">
+            <PermissionWrapper resource="clients" action="canCreate">
               <Button
                 size="small"
                 variant="outlined"
@@ -568,7 +568,7 @@ const ClientsTable = () => {
                 Import Contacts
               </Button>
             </PermissionWrapper>
-            <PermissionWrapper resource="clients" action="canEdit">
+            <PermissionWrapper resource="clients" action="canView">
               <Button
                 size="small"
                 variant="outlined"
@@ -579,7 +579,7 @@ const ClientsTable = () => {
                 Export Contacts
               </Button>
             </PermissionWrapper>
-            <PermissionWrapper resource="clients" action="canEdit">
+            <PermissionWrapper resource="clients" action="canCreate">
               <Button
                 size="small"
                 variant="outlined"
@@ -689,16 +689,24 @@ const ClientsTable = () => {
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h5">Clients</Typography>
         <Box display="flex" gap={1} alignItems="center">
-          <Button variant="outlined" color="primary" onClick={handleImportModalOpen}>
-            Import Clients
-          </Button>
+
+          <PermissionWrapper resource="clients" action="canCreate">
+            <Button variant="outlined" color="primary" onClick={handleImportModalOpen}>
+              Import Clients
+            </Button>
+          </PermissionWrapper>
 
           <Button variant="outlined" color="primary" onClick={handleExportExcel}>
             Export Excel
           </Button>
-          <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={handleAdd}>
-            Add Client
-          </Button>
+          
+
+          <PermissionWrapper resource="clients" action="canCreate">
+            <Button variant="contained" color="primary" startIcon={<AddIcon />} onClick={handleAdd}>
+              Add Client
+            </Button>
+          </PermissionWrapper>
+
           <TableZoom zoom={zoom} onZoomChange={handleZoomChange} />
         </Box>
       </Box>
@@ -949,7 +957,7 @@ const ClientsTable = () => {
                       <Box display="flex" gap={0.5}>
                         {/* Only show Add Contact if isCompany is true */}
                         {client.isCompany && (
-                          <PermissionWrapper resource="clients" action="canView">
+                          <PermissionWrapper resource="clients" action="canCreate">
                             <Tooltip title="Add Contact">
                               <IconButton size="small" color="success" onClick={() => handleAddContact(client.id)}>
                                 <PersonAddAlt1Icon />
