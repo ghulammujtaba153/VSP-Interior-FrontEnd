@@ -21,6 +21,7 @@ const UserModal = ({ open, mode, userProfile, onClose, onSave }) => {
     email: '',
     roleId: '',   // ✅ use roleId instead of role name
     password: '',
+    salary: '',
   });
 
   const [roles, setRoles] = React.useState([]);
@@ -56,9 +57,10 @@ const UserModal = ({ open, mode, userProfile, onClose, onSave }) => {
         email: userProfile.email || '',
         roleId: userProfile.roleId || '', // ✅ use roleId from backend
         password: '',
+        salary: userProfile.salary || '',
       });
     } else {
-      setFormData({ id: null, name: '', email: '', roleId: '', password: '' });
+      setFormData({ id: null, name: '', email: '', roleId: '', password: '', salary: '' });
     }
   }, [userProfile, open]);
 
@@ -143,6 +145,16 @@ const UserModal = ({ open, mode, userProfile, onClose, onSave }) => {
             </MenuItem>
           ))}
         </TextField>
+        <TextField
+          fullWidth
+          label="Monthly Salary"
+          name="salary"
+          type="number"
+          value={formData.salary}
+          onChange={handleChange}
+          margin="normal"
+          disabled={isViewMode}
+        />
         {!isViewMode && (
           <TextField
             fullWidth
