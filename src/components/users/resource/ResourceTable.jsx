@@ -153,12 +153,12 @@ const ResourceTable = () => {
       filterable: false,
       renderCell: (params) => (
         <Box>
-          <PermissionWrapper resource="resources" action="canEdit">
+          <PermissionWrapper resource="users" action="canEdit">
             <IconButton color="secondary" onClick={() => handleEdit(params.row)}>
               <EditIcon />
             </IconButton>
           </PermissionWrapper>
-          <PermissionWrapper resource="resources" action="canDelete">
+          <PermissionWrapper resource="users" action="canDelete">
             <IconButton color="error" onClick={() => handleDelete(params.row)}>
               <DeleteIcon />
             </IconButton>
@@ -176,7 +176,9 @@ const ResourceTable = () => {
             </Typography>
             <Box display="flex" gap={1} alignItems="center">
               <TableZoom zoom={zoom} onZoomChange={handleZoomChange} />
-              <Button variant="contained" color="primary" onClick={handleAdd}>Add Resource</Button>
+              <PermissionWrapper resource="users" action="canCreate">
+                <Button variant="contained" color="primary" onClick={handleAdd}>Add Resource</Button>
+              </PermissionWrapper>
             </Box>
           </Box>
 

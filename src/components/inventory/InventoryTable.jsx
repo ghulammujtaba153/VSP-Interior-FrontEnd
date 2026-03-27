@@ -1,8 +1,8 @@
-"use client";
+'use client'
 
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { BASE_URL } from "@/configs/url";
+import React, { useState, useEffect } from 'react'
+import axios from 'axios'
+import { BASE_URL } from '@/configs/url'
 import {
   Box,
   Button,
@@ -21,351 +21,360 @@ import {
   Select,
   MenuItem,
   TableSortLabel
-} from "@mui/material";
-import { useTheme } from "@mui/material/styles";
-import { Visibility, Edit, Delete } from "@mui/icons-material";
-import InventoryModal from "./InventoryModal";
-import { toast } from "react-toastify";
-import ViewInventoryModal from "./ViewInventoryModal";
-import PermissionWrapper from "../PermissionWrapper";
-import { useAuth } from "@/context/authContext";
-import ImportCSV from "./ImportCSV";
-import ConfirmationDialog from "../ConfirmationDialog";
-import * as XLSX from "xlsx";
-import Loader from "../loader/Loader";
-import useTableZoom from "@/hooks/useTableZoom";
-import TableZoom from "@/components/TableZoom";
-
+} from '@mui/material'
+import { useTheme } from '@mui/material/styles'
+import { Visibility, Edit, Delete } from '@mui/icons-material'
+import InventoryModal from './InventoryModal'
+import { toast } from 'react-toastify'
+import ViewInventoryModal from './ViewInventoryModal'
+import PermissionWrapper from '../PermissionWrapper'
+import { useAuth } from '@/context/authContext'
+import ImportCSV from './ImportCSV'
+import ConfirmationDialog from '../ConfirmationDialog'
+import * as XLSX from 'xlsx'
+import Loader from '../loader/Loader'
+import useTableZoom from '@/hooks/useTableZoom'
+import TableZoom from '@/components/TableZoom'
 
 const InventoryTable = () => {
-  const theme = useTheme();
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState([]);
-  const { zoom, handleZoomChange, zoomStyle } = useTableZoom('inventory_table_zoom');
-  const [rowCount, setRowCount] = useState(0);
-  const [open, setOpen] = useState(false);
-  const [editData, setEditData] = useState(null);
-  const [viewOpen, setViewOpen] = useState(false);
-  const [viewData, setViewData] = useState(null);
-  const { user } = useAuth();
-  const [importCSV, setImportCSV] = useState(false);
-  const [suppliers, setSuppliers] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [selectedSupplier, setSelectedSupplier] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("");
+  const theme = useTheme()
+  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState([])
+  const { zoom, handleZoomChange, zoomStyle } = useTableZoom('inventory_table_zoom')
+  const [rowCount, setRowCount] = useState(0)
+  const [open, setOpen] = useState(false)
+  const [editData, setEditData] = useState(null)
+  const [viewOpen, setViewOpen] = useState(false)
+  const [viewData, setViewData] = useState(null)
+  const { user } = useAuth()
+  const [importCSV, setImportCSV] = useState(false)
+  const [suppliers, setSuppliers] = useState([])
+  const [categories, setCategories] = useState([])
+  const [selectedSupplier, setSelectedSupplier] = useState(null)
+  const [selectedCategory, setSelectedCategory] = useState('')
+  const [selectedStatus, setSelectedStatus] = useState('')
 
   // Pagination + search
-  const [page, setPage] = useState(0);
-  const [limit, setLimit] = useState(100);
-  const [search, setSearch] = useState("");
-  const [searchInput, setSearchInput] = useState("");
+  const [page, setPage] = useState(0)
+  const [limit, setLimit] = useState(100)
+  const [search, setSearch] = useState('')
+  const [searchInput, setSearchInput] = useState('')
 
   // Sorting
-  const [orderBy, setOrderBy] = useState('createdAt');
-  const [order, setOrder] = useState('desc');
+  const [orderBy, setOrderBy] = useState('createdAt')
+  const [order, setOrder] = useState('desc')
   // Confirmation dialog states
-  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [confirmationOpen, setConfirmationOpen] = useState(false)
   const [confirmationConfig, setConfirmationConfig] = useState({
-    title: "",
-    message: "",
+    title: '',
+    message: '',
     action: null,
-    severity: "warning",
-  });
+    severity: 'warning'
+  })
 
-  const showConfirmation = (config) => {
-    setConfirmationConfig(config);
-    setConfirmationOpen(true);
-  };
+  const showConfirmation = config => {
+    setConfirmationConfig(config)
+    setConfirmationOpen(true)
+  }
 
   const handleConfirmationClose = () => {
-    setConfirmationOpen(false);
+    setConfirmationOpen(false)
     setConfirmationConfig({
-      title: "",
-      message: "",
+      title: '',
+      message: '',
       action: null,
-      severity: "warning",
-    });
-  };
+      severity: 'warning'
+    })
+  }
 
   const handleImportCSV = () => {
     showConfirmation({
-      title: "Import Inventory",
+      title: 'Import Inventory',
       message:
-        "Are you sure you want to import inventory items from Excel? This will add new inventory records to your database.",
+        'Are you sure you want to import inventory items from Excel? This will add new inventory records to your database.',
       action: () => setImportCSV(true),
-      severity: "info",
-    });
-  };
+      severity: 'info'
+    })
+  }
 
   const fetchData = async (
-    currentPage = page, 
-    currentLimit = limit, 
+    currentPage = page,
+    currentLimit = limit,
     searchTerm = search,
     sortField = orderBy,
     sortOrder = order
   ) => {
-    setLoading(true);
+    setLoading(true)
     try {
       const params = [
         `page=${currentPage + 1}`,
         `limit=${currentLimit}`,
         `search=${searchTerm}`,
-        selectedSupplier ? `supplierId=${selectedSupplier}` : "",
-        selectedCategory ? `categoryId=${selectedCategory}` : "",
-        selectedStatus ? `status=${selectedStatus}` : "",
+        selectedSupplier ? `supplierId=${selectedSupplier}` : '',
+        selectedCategory ? `categoryId=${selectedCategory}` : '',
+        selectedStatus ? `status=${selectedStatus}` : ''
       ]
         .filter(Boolean)
-        .join("&");
+        .join('&')
 
-      const res = await axios.get(`${BASE_URL}/api/inventory/get?${params}&sortBy=${sortField}&order=${sortOrder}`);
-      setData(res.data.inventory || []);
-      setRowCount(res.data.total || 0);
+      const res = await axios.get(`${BASE_URL}/api/inventory/get?${params}&sortBy=${sortField}&order=${sortOrder}`)
+      setData(res.data.inventory || [])
+      setRowCount(res.data.total || 0)
     } catch (error) {
-      console.error("Error fetching inventory:", error);
+      console.error('Error fetching inventory:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   // Fetch suppliers
   const fetchSuppliers = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/api/suppliers/get?page=1&limit=10000`);
-      setSuppliers(res.data.data || []);
+      const res = await axios.get(`${BASE_URL}/api/suppliers/get?page=1&limit=10000`)
+      setSuppliers(res.data.data || [])
     } catch (error) {
-      console.error("Error fetching suppliers:", error);
+      console.error('Error fetching suppliers:', error)
     }
-  };
+  }
 
   // Fetch categories
   const fetchCategories = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/api/inventory-category/get`);
-      setCategories(res.data || []);
+      const res = await axios.get(`${BASE_URL}/api/inventory-category/get`)
+      setCategories(res.data || [])
     } catch (error) {
-      console.error("Error fetching categories:", error);
+      console.error('Error fetching categories:', error)
     }
-  };
+  }
 
   useEffect(() => {
-    fetchSuppliers();
-    fetchCategories();
+    fetchSuppliers()
+    fetchCategories()
     // eslint-disable-next-line
-  }, []);
+  }, [])
 
   // Refetch data when page, limit, supplier, search, or sorting changes
   useEffect(() => {
-    fetchData(page, limit, search, orderBy, order);
+    fetchData(page, limit, search, orderBy, order)
     // eslint-disable-next-line
-  }, [page, limit, selectedSupplier, search, orderBy, order]);
+  }, [page, limit, selectedSupplier, search, orderBy, order])
 
-  const handleDelete = (inventoryRow) => {
+  const handleDelete = inventoryRow => {
     showConfirmation({
-      title: "Delete Inventory Item",
+      title: 'Delete Inventory Item',
       message: `Are you sure you want to delete inventory item "${inventoryRow.name}"? This action cannot be undone and will remove all associated data.`,
       action: () => confirmDeleteInventory(inventoryRow.id),
-      severity: "error",
-    });
-  };
+      severity: 'error'
+    })
+  }
 
-  const confirmDeleteInventory = async (id) => {
+  const confirmDeleteInventory = async id => {
     try {
-      toast.loading("Deleting Inventory...");
+      toast.loading('Deleting Inventory...')
       await axios.delete(`${BASE_URL}/api/inventory/delete/${id}`, {
-        data: { userId: user.id },
-      });
-      toast.dismiss();
-      toast.success("Inventory deleted successfully");
-      fetchData();
+        data: { userId: user.id }
+      })
+      toast.dismiss()
+      toast.success('Inventory deleted successfully')
+      fetchData()
     } catch (error) {
-      console.error("Error deleting inventory:", error);
-      toast.dismiss();
-      toast.error("Error deleting inventory");
+      console.error('Error deleting inventory:', error)
+      toast.dismiss()
+      toast.error('Error deleting inventory')
     }
-  };
+  }
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toISOString().slice(0, 10);
-  };
-
+  const formatDate = dateString => {
+    return new Date(dateString).toISOString().slice(0, 10)
+  }
 
   // Capitalize name: "john more" → "John More"
-  const capitalizeName = (name) => {
-    if (!name) return 'N/A';
+  const capitalizeName = name => {
+    if (!name) return 'N/A'
     return String(name)
       .split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(' ');
-  };
+      .join(' ')
+  }
 
   // Export to Excel
   const handleExportExcel = () => {
     showConfirmation({
-      title: "Export Inventory to Excel",
+      title: 'Export Inventory to Excel',
       message: `Are you sure you want to export ${data.length} inventory items to Excel? This will download a file with all inventory data.`,
       action: () => confirmExportExcel(),
-      severity: "info",
-    });
-  };
+      severity: 'info'
+    })
+  }
 
   const confirmExportExcel = () => {
-    const exportData = data.map((item) => ({
+    const exportData = data.map(item => ({
       ID: item.id,
       Name: item.name,
       Description: item.description,
-      Category: item.inventoryCategory?.name || "N/A",
-      "Supplier Name": item.supplier?.name || item.supplier?.companyName || "N/A",
-      "Cost Price": item.costPrice,
+      Category: item.inventoryCategory?.name || 'N/A',
+      'Supplier Name': item.supplier?.name || item.supplier?.companyName || 'N/A',
+      'Cost Price': item.costPrice,
       Quantity: item.quantity,
       Status: item.status,
       Notes: item.notes,
-      SupplierEmail: item.supplier?.email || "N/A",
-      SupplierPhone: item.supplier?.phone || "N/A",
-      SupplierAddress: item.supplier?.address || "N/A",
-      Date: item.createdAt ? formatDate(item.createdAt) : "N/A",
-    }));
+      SupplierEmail: item.supplier?.email || 'N/A',
+      SupplierPhone: item.supplier?.phone || 'N/A',
+      SupplierAddress: item.supplier?.address || 'N/A',
+      Date: item.createdAt ? formatDate(item.createdAt) : 'N/A'
+    }))
 
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    
+    const worksheet = XLSX.utils.json_to_sheet(exportData)
+
     // Set column widths for better readability
-    const columnWidths = [];
+    const columnWidths = []
     if (exportData.length > 0) {
       // Get all column names from the first row
-      const columnNames = Object.keys(exportData[0]);
+      const columnNames = Object.keys(exportData[0])
       columnNames.forEach((col, index) => {
-        let maxLength = col.length; // Start with header length
+        let maxLength = col.length // Start with header length
         // Find max length in this column
         exportData.forEach(row => {
-          const cellValue = String(row[col] || '');
+          const cellValue = String(row[col] || '')
           if (cellValue.length > maxLength) {
-            maxLength = cellValue.length;
+            maxLength = cellValue.length
           }
-        });
+        })
         // Set width: min 12, max 50, or content width + 5 for padding
-        columnWidths[index] = { wch: Math.min(Math.max(maxLength + 5, 12), 50) };
-      });
+        columnWidths[index] = { wch: Math.min(Math.max(maxLength + 5, 12), 50) }
+      })
     } else {
       // Default widths if no data
-      const defaultColumns = ['ID', 'Name', 'Description', 'Category', 'Supplier Name', 'Cost Price', 'Quantity', 'Status', 'Notes', 'SupplierEmail', 'SupplierPhone', 'SupplierAddress', 'Date'];
+      const defaultColumns = [
+        'ID',
+        'Name',
+        'Description',
+        'Category',
+        'Supplier Name',
+        'Cost Price',
+        'Quantity',
+        'Status',
+        'Notes',
+        'SupplierEmail',
+        'SupplierPhone',
+        'SupplierAddress',
+        'Date'
+      ]
       defaultColumns.forEach(() => {
-        columnWidths.push({ wch: 15 });
-      });
+        columnWidths.push({ wch: 15 })
+      })
     }
-    
-    worksheet['!cols'] = columnWidths;
-    
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Inventory");
-    XLSX.writeFile(workbook, "Inventory VSP.xlsx");
-    toast.success("Inventory data exported successfully");
-  };
+
+    worksheet['!cols'] = columnWidths
+
+    const workbook = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Inventory')
+    XLSX.writeFile(workbook, 'Inventory VSP.xlsx')
+    toast.success('Inventory data exported successfully')
+  }
 
   const handleResetSearch = () => {
-    setSearchInput('');
-    setSearch('');
-    setPage(0);
-    fetchData(0, limit, '');
-  };
+    setSearchInput('')
+    setSearch('')
+    setPage(0)
+    fetchData(0, limit, '')
+  }
 
   // Search event handlers
-  const handleSearchChange = (event) => {
-    setSearchInput(event.target.value);
-  };
+  const handleSearchChange = event => {
+    setSearchInput(event.target.value)
+  }
 
   const handleSearchApply = () => {
-    setPage(0);
-    setSearch(searchInput);
-    fetchData(0, limit, searchInput);
-  };
+    setPage(0)
+    setSearch(searchInput)
+    fetchData(0, limit, searchInput)
+  }
 
-  const handleSearchKeyPress = (event) => {
+  const handleSearchKeyPress = event => {
     if (event.key === 'Enter') {
-      handleSearchApply();
+      handleSearchApply()
     }
-  };
+  }
 
-  const handleSort = (property) => {
-    const isAsc = orderBy === property && order === 'asc';
-    setOrder(isAsc ? 'desc' : 'asc');
-    setOrderBy(property);
-  };
+  const handleSort = property => {
+    const isAsc = orderBy === property && order === 'asc'
+    setOrder(isAsc ? 'desc' : 'asc')
+    setOrderBy(property)
+  }
 
   // Pagination logic for Table
-  const paginatedData = data;
+  const paginatedData = data
 
   if (loading && data.length === 0) {
-    return (
-      <Loader/>
-    );
+    return <Loader />
   }
 
   return (
-    <Paper sx={{ p: 4, fontSize: `${Math.round(zoom * 100)}%` }} className="zoom-67">
+    <Paper sx={{ p: 4, fontSize: `${Math.round(zoom * 100)}%` }} className='zoom-67'>
       {/* Header with Add + Export + Search */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h5" fontWeight="bold">
+      <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
+        <Typography variant='h5' fontWeight='bold'>
           Inventory Table
         </Typography>
-        <Box display="flex" gap={1}>
+        <Box display='flex' gap={1}>
           <TextField
-            size="small"
-            placeholder="Search inventory..."
+            size='small'
+            placeholder='Search inventory...'
             value={searchInput}
             onChange={handleSearchChange}
             onKeyPress={handleSearchKeyPress}
           />
-          <Button variant="contained" color="primary" onClick={handleSearchApply}>
+          <Button variant='contained' color='primary' onClick={handleSearchApply}>
             Apply
           </Button>
-          <Button
-            variant="outlined"
-            color="secondary"
-            onClick={handleResetSearch}
-          >
+          <Button variant='outlined' color='secondary' onClick={handleResetSearch}>
             Reset
           </Button>
         </Box>
-        <Box display="flex" gap={1}>
-          <PermissionWrapper resource="inventory" action="canCreate">
-          <Button variant="outlined" color="primary" onClick={handleImportCSV}>
-            Import Excel
-          </Button>
+        <Box display='flex' gap={1}>
+          <PermissionWrapper resource='inventory' action='canCreate'>
+            <Button variant='outlined' color='primary' onClick={handleImportCSV}>
+              Import Excel
+            </Button>
           </PermissionWrapper>
-          <Button variant="outlined" color="success" onClick={handleExportExcel}>
+
+          <Button variant='outlined' color='success' onClick={handleExportExcel}>
             Export Excel
           </Button>
-          <PermissionWrapper resource="inventory" action="canCreate">
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => {
-              setEditData(null);
-              setOpen(true);
-            }}
-          >
-            Add Item
-          </Button>
+
+          <PermissionWrapper resource='inventory' action='canCreate'>
+            <Button
+              variant='contained'
+              color='primary'
+              onClick={() => {
+                setEditData(null)
+                setOpen(true)
+              }}
+            >
+              Add Item
+            </Button>
           </PermissionWrapper>
+          
           <TableZoom zoom={zoom} onZoomChange={handleZoomChange} />
         </Box>
       </Box>
 
       {/* Filter Dropdowns */}
-      <Box display="flex" gap={2} mb={2}>
+      <Box display='flex' gap={2} mb={2}>
         <Select
           sx={{ minWidth: 180 }}
-          label="Supplier"
-          size="small"
-          value={selectedSupplier || ""}
-          onChange={(e) => {
-            setSelectedSupplier(e.target.value);
-            setPage(0);
+          label='Supplier'
+          size='small'
+          value={selectedSupplier || ''}
+          onChange={e => {
+            setSelectedSupplier(e.target.value)
+            setPage(0)
           }}
           displayEmpty
         >
-          <MenuItem value="">All Suppliers</MenuItem>
-          {suppliers.map((supplier) => (
+          <MenuItem value=''>All Suppliers</MenuItem>
+          {suppliers.map(supplier => (
             <MenuItem key={supplier.id} value={supplier.id}>
               {capitalizeName(supplier.name)}
             </MenuItem>
@@ -374,17 +383,17 @@ const InventoryTable = () => {
 
         <Select
           sx={{ minWidth: 180 }}
-          label="Category"
-          size="small"
-          value={selectedCategory || ""}
-          onChange={(e) => {
-            setSelectedCategory(e.target.value);
-            setPage(0);
+          label='Category'
+          size='small'
+          value={selectedCategory || ''}
+          onChange={e => {
+            setSelectedCategory(e.target.value)
+            setPage(0)
           }}
           displayEmpty
         >
-          <MenuItem value="">All Categories</MenuItem>
-          {categories.map((cat) => (
+          <MenuItem value=''>All Categories</MenuItem>
+          {categories.map(cat => (
             <MenuItem key={cat.id} value={cat.id}>
               {capitalizeName(cat.name)}
             </MenuItem>
@@ -393,161 +402,162 @@ const InventoryTable = () => {
       </Box>
 
       <Box sx={{ overflowX: 'auto', width: '100%' }}>
-      <Box sx={zoomStyle}>
-      {/* Inventory Table */}
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ minWidth: 80, fontWeight: 'bold' }}>
-                <TableSortLabel
-                  active={orderBy === 'id'}
-                  direction={orderBy === 'id' ? order : 'asc'}
-                  onClick={() => handleSort('id')}
-                >
-                  #
-                </TableSortLabel>
-              </TableCell>
-              <TableCell sx={{ minWidth: 160, fontWeight: 'bold' }}>
-                <TableSortLabel
-                  active={orderBy === 'name'}
-                  direction={orderBy === 'name' ? order : 'asc'}
-                  onClick={() => handleSort('name')}
-                >
-                  Name
-                </TableSortLabel>
-              </TableCell>
-              <TableCell sx={{ minWidth: 220, fontWeight: 'bold' }}>Description</TableCell>
-              <TableCell sx={{ minWidth: 120, fontWeight: 'bold' }}>Category</TableCell>
-              <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Supplier</TableCell>
-              <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>
-                <TableSortLabel
-                  active={orderBy === 'costPrice'}
-                  direction={orderBy === 'costPrice' ? order : 'asc'}
-                  onClick={() => handleSort('costPrice')}
-                >
-                  Purchase Price
-                </TableSortLabel>
-              </TableCell>
-              <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>
-                <TableSortLabel
-                  active={orderBy === 'quantity'}
-                  direction={orderBy === 'quantity' ? order : 'asc'}
-                  onClick={() => handleSort('quantity')}
-                >
-                  Quantity in Stock
-                </TableSortLabel>
-              </TableCell>
-              <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>
-                <TableSortLabel
-                  active={orderBy === 'status'}
-                  direction={orderBy === 'status' ? order : 'asc'}
-                  onClick={() => handleSort('status')}
-                >
-                  Status
-                </TableSortLabel>
-              </TableCell>
-              <TableCell sx={{ minWidth: 180, fontWeight: 'bold' }}>Notes</TableCell>
-              <TableCell sx={{ minWidth: 120, fontWeight: 'bold' }}>
-                <TableSortLabel
-                  active={orderBy === 'createdAt'}
-                  direction={orderBy === 'createdAt' ? order : 'asc'}
-                  onClick={() => handleSort('createdAt')}
-                >
-                  Date
-                </TableSortLabel>
-              </TableCell>
-              <TableCell sx={{ minWidth: 190, fontWeight: 'bold' }}>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {paginatedData.map((item, index) => (
-              <TableRow 
-                key={item.id}
-                hover
-                sx={{
-                  backgroundColor: index % 2 === 0 ? theme.palette.action.hover : 'inherit',
-                  '&:hover': {
-                    backgroundColor: theme.palette.action.selected + ' !important',
-                  }
-                }}
-              >
-                <TableCell sx={{ minWidth: 80 }}>{(page * limit) + index + 1}</TableCell>
-                <TableCell sx={{ minWidth: 160 }}>{capitalizeName(item.name)}</TableCell>
-                <TableCell sx={{ minWidth: 220 }}>{capitalizeName(item.description)}</TableCell>
-                <TableCell sx={{ minWidth: 120 }}>{capitalizeName(item.inventoryCategory?.name)}</TableCell>
-                <TableCell sx={{ minWidth: 100 }}>{capitalizeName(item.supplier?.name) || "N/A"}</TableCell>
-                {/* <TableCell sx={{ minWidth: 100 }}>{item.priceBooks?.unit || "N/A"}</TableCell> */}
-                <TableCell sx={{ minWidth: 100 }}>{item.costPrice}</TableCell>
-                <TableCell sx={{ minWidth: 100 }}>{item.quantity}</TableCell>
-                <TableCell sx={{ minWidth: 100 }}>
-                  <span style={{
-                    padding: "2px 8px",
-                    borderRadius: "12px",
-                    background: item.status === "active" ? "#e6f4ea" : "#f3f4f6",
-                    color: item.status === "active" ? "#15803d" : "#6b7280",
-                    fontWeight: 500,
-                    fontSize: "0.85em"
-                  }}>
-                    {item.status}
-                  </span>
-                </TableCell>
-                <TableCell sx={{ minWidth: 180 }}>{item.notes}</TableCell>
-                <TableCell sx={{ minWidth: 120 }}>{formatDate(item.createdAt)}</TableCell>
-                <TableCell sx={{ minWidth: 190 }}>
-                  <Box>
-                    <PermissionWrapper resource="inventory" action="canView">
-                    <IconButton
-                      color="primary"
-                      onClick={() => {
-                        setViewData(item);
-                        setViewOpen(true);
-                      }}
+        <Box sx={zoomStyle}>
+          {/* Inventory Table */}
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ minWidth: 80, fontWeight: 'bold' }}>
+                    <TableSortLabel
+                      active={orderBy === 'id'}
+                      direction={orderBy === 'id' ? order : 'asc'}
+                      onClick={() => handleSort('id')}
                     >
-                      <Visibility />
-                    </IconButton>
-                    </PermissionWrapper>
-                    
-                    <PermissionWrapper resource="inventory" action="canEdit">
-                    <IconButton
-                      color="secondary"
-                      onClick={() => {
-                        setEditData(item);
-                        setOpen(true);
-                      }}
+                      #
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell sx={{ minWidth: 160, fontWeight: 'bold' }}>
+                    <TableSortLabel
+                      active={orderBy === 'name'}
+                      direction={orderBy === 'name' ? order : 'asc'}
+                      onClick={() => handleSort('name')}
                     >
-                      <Edit />
-                    </IconButton>
-                    </PermissionWrapper>
+                      Name
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell sx={{ minWidth: 220, fontWeight: 'bold' }}>Description</TableCell>
+                  <TableCell sx={{ minWidth: 120, fontWeight: 'bold' }}>Category</TableCell>
+                  <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>Supplier</TableCell>
+                  <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>
+                    <TableSortLabel
+                      active={orderBy === 'costPrice'}
+                      direction={orderBy === 'costPrice' ? order : 'asc'}
+                      onClick={() => handleSort('costPrice')}
+                    >
+                      Purchase Price
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>
+                    <TableSortLabel
+                      active={orderBy === 'quantity'}
+                      direction={orderBy === 'quantity' ? order : 'asc'}
+                      onClick={() => handleSort('quantity')}
+                    >
+                      Quantity in Stock
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell sx={{ minWidth: 100, fontWeight: 'bold' }}>
+                    <TableSortLabel
+                      active={orderBy === 'status'}
+                      direction={orderBy === 'status' ? order : 'asc'}
+                      onClick={() => handleSort('status')}
+                    >
+                      Status
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell sx={{ minWidth: 180, fontWeight: 'bold' }}>Notes</TableCell>
+                  <TableCell sx={{ minWidth: 120, fontWeight: 'bold' }}>
+                    <TableSortLabel
+                      active={orderBy === 'createdAt'}
+                      direction={orderBy === 'createdAt' ? order : 'asc'}
+                      onClick={() => handleSort('createdAt')}
+                    >
+                      Date
+                    </TableSortLabel>
+                  </TableCell>
+                  <TableCell sx={{ minWidth: 190, fontWeight: 'bold' }}>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {paginatedData.map((item, index) => (
+                  <TableRow
+                    key={item.id}
+                    hover
+                    sx={{
+                      backgroundColor: index % 2 === 0 ? theme.palette.action.hover : 'inherit',
+                      '&:hover': {
+                        backgroundColor: theme.palette.action.selected + ' !important'
+                      }
+                    }}
+                  >
+                    <TableCell sx={{ minWidth: 80 }}>{page * limit + index + 1}</TableCell>
+                    <TableCell sx={{ minWidth: 160 }}>{capitalizeName(item.name)}</TableCell>
+                    <TableCell sx={{ minWidth: 220 }}>{capitalizeName(item.description)}</TableCell>
+                    <TableCell sx={{ minWidth: 120 }}>{capitalizeName(item.inventoryCategory?.name)}</TableCell>
+                    <TableCell sx={{ minWidth: 100 }}>{capitalizeName(item.supplier?.name) || 'N/A'}</TableCell>
+                    {/* <TableCell sx={{ minWidth: 100 }}>{item.priceBooks?.unit || "N/A"}</TableCell> */}
+                    <TableCell sx={{ minWidth: 100 }}>{item.costPrice}</TableCell>
+                    <TableCell sx={{ minWidth: 100 }}>{item.quantity}</TableCell>
+                    <TableCell sx={{ minWidth: 100 }}>
+                      <span
+                        style={{
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          background: item.status === 'active' ? '#e6f4ea' : '#f3f4f6',
+                          color: item.status === 'active' ? '#15803d' : '#6b7280',
+                          fontWeight: 500,
+                          fontSize: '0.85em'
+                        }}
+                      >
+                        {item.status}
+                      </span>
+                    </TableCell>
+                    <TableCell sx={{ minWidth: 180 }}>{item.notes}</TableCell>
+                    <TableCell sx={{ minWidth: 120 }}>{formatDate(item.createdAt)}</TableCell>
+                    <TableCell sx={{ minWidth: 190 }}>
+                      <Box>
+                        <PermissionWrapper resource='inventory' action='canView'>
+                          <IconButton
+                            color='primary'
+                            onClick={() => {
+                              setViewData(item)
+                              setViewOpen(true)
+                            }}
+                          >
+                            <Visibility />
+                          </IconButton>
+                        </PermissionWrapper>
 
-                    <PermissionWrapper resource="inventory" action="canDelete">
-                    <IconButton color="error" onClick={() => handleDelete(item)}>
-                      <Delete />
-                    </IconButton>
-                    </PermissionWrapper>
-                  </Box>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+                        <PermissionWrapper resource='inventory' action='canEdit'>
+                          <IconButton
+                            color='secondary'
+                            onClick={() => {
+                              setEditData(item)
+                              setOpen(true)
+                            }}
+                          >
+                            <Edit />
+                          </IconButton>
+                        </PermissionWrapper>
 
-      {/* Pagination Controls */}
-      <TablePagination
-        rowsPerPageOptions={[25, 50, 75, 100, 150]}
-        component="div"
-        count={rowCount}
-        rowsPerPage={limit}
-        page={page}
-        onPageChange={(event, newPage) => setPage(newPage)}
-        onRowsPerPageChange={(event) => {
-          setLimit(parseInt(event.target.value, 10));
-          setPage(0);
-        }}
-      />
-      </Box>
+                        <PermissionWrapper resource='inventory' action='canDelete'>
+                          <IconButton color='error' onClick={() => handleDelete(item)}>
+                            <Delete />
+                          </IconButton>
+                        </PermissionWrapper>
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
 
+          {/* Pagination Controls */}
+          <TablePagination
+            rowsPerPageOptions={[25, 50, 75, 100, 150]}
+            component='div'
+            count={rowCount}
+            rowsPerPage={limit}
+            page={page}
+            onPageChange={(event, newPage) => setPage(newPage)}
+            onRowsPerPageChange={event => {
+              setLimit(parseInt(event.target.value, 10))
+              setPage(0)
+            }}
+          />
+        </Box>
       </Box>
       <ImportCSV open={importCSV} onClose={() => setImportCSV(false)} fetchData={fetchData} />
 
@@ -568,11 +578,11 @@ const InventoryTable = () => {
         title={confirmationConfig.title}
         message={confirmationConfig.message}
         severity={confirmationConfig.severity}
-        confirmText={confirmationConfig.severity === "error" ? "Delete" : "Confirm"}
-        cancelText="Cancel"
+        confirmText={confirmationConfig.severity === 'error' ? 'Delete' : 'Confirm'}
+        cancelText='Cancel'
       />
     </Paper>
-  );
-};
+  )
+}
 
-export default InventoryTable;
+export default InventoryTable
