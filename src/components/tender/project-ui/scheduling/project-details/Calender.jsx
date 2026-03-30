@@ -4,13 +4,27 @@ import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
+  CardHeader,
   Typography,
   Grid,
   Chip,
   Box,
   CircularProgress,
   Avatar,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  alpha,
+  useTheme
 } from "@mui/material";
+import {
+  Event as EventIcon,
+  Schedule as ScheduleIcon,
+  Person as PersonIcon,
+  Assignment as AssignmentIcon,
+} from "@mui/icons-material";
 import { DateCalendar, LocalizationProvider, PickersDay } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { format, isWithinInterval, isSameDay } from "date-fns";
@@ -29,6 +43,7 @@ const processColumns = {
 // Custom Day component to highlight date ranges
 function CustomDay(props) {
   const { tasks, selectedDate, day, ...other } = props;
+  const theme = useTheme();
   
   const isInTaskRange = tasks.some(task => {
     const taskStartDate = new Date(task.startDate);
@@ -55,9 +70,9 @@ function CustomDay(props) {
       sx={{
         position: 'relative',
         ...(isInTaskRange && {
-          backgroundColor: 'primary.light',
+          backgroundColor: alpha(theme.palette.primary.main, 0.1),
           '&:hover': {
-            backgroundColor: 'primary.main',
+            backgroundColor: alpha(theme.palette.primary.main, 0.3),
           },
         }),
         ...(isTaskStart && {
@@ -84,11 +99,11 @@ function CustomDay(props) {
         selected={isSelected}
         sx={{
           ...(isInTaskRange && !isTaskStart && !isTaskEnd && {
-            backgroundColor: 'primary.light',
-            color: 'primary.dark',
+            backgroundColor: alpha(theme.palette.primary.main, 0.15),
+            color: 'primary.main',
             borderRadius: 0,
             '&:hover': {
-              backgroundColor: 'primary.main',
+              backgroundColor: alpha(theme.palette.primary.main, 0.4),
               color: 'white',
             },
           }),
@@ -116,6 +131,7 @@ function CustomDay(props) {
 }
 
 const Calender = ({ projectId, data }) => {
+  const theme = useTheme();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -229,7 +245,15 @@ const Calender = ({ projectId, data }) => {
     <Grid container spacing={3}>
       {/* Calendar Section */}
       <Grid item xs={12} md={4}>
-        <Card elevation={3}>
+        <Card elevation={3} sx={{ borderRadius: 2 }}>
+          <CardHeader 
+            title={
+              <Typography variant="h6" fontWeight="bold" color="primary.main">
+                Project Schedule
+              </Typography>
+            }
+            sx={{ borderBottom: 1, borderColor: "divider" }}
+          />
           <CardContent>
             <LocalizationProvider dateAdapter={AdapterDateFns}>
               <DateCalendar 
@@ -251,7 +275,13 @@ const Calender = ({ projectId, data }) => {
 
         {/* Selected Task Info */}
         {selectedTask && (
-          <Card sx={{ mt: 2, p: 2, bgcolor: 'primary.light' }}>
+          <Card sx={{ 
+            mt: 2, 
+            p: 2, 
+            bgcolor: alpha(theme.palette.primary.main, 0.08), 
+            border: `1px solid ${alpha(theme.palette.primary.main, 0.15)}`,
+            borderRadius: 2
+          }}>
             <Typography variant="subtitle2" gutterBottom>
               Selected Task:
             </Typography>
@@ -289,227 +319,230 @@ const Calender = ({ projectId, data }) => {
         )}
 
         {/* Task Summary by Stage */}
-        <Box mt={3}>
-          <Typography variant="h6" gutterBottom>
-            Tasks by Stage
-          </Typography>
-          {Object.keys(organizedColumns).map(columnId => {
-            const column = organizedColumns[columnId];
-            return (
-              <Card key={columnId} sx={{ mb: 1, p: 2 }}>
-                <Box display="flex" justifyContent="space-between" alignItems="center">
-                  <Typography variant="body2" fontWeight="medium">
-                    {column.stage}
-                  </Typography>
-                  <Chip 
-                    label={column.tasks.length} 
-                    size="small" 
-                    color={column.color}
-                  />
-                </Box>
-              </Card>
-            );
-          })}
-        </Box>
+        <Card sx={{ mt: 3, borderRadius: 2 }}>
+          <CardHeader
+            title={
+              <Typography variant="h6" sx={{ display: "flex", alignItems: "center" }}>
+                <AssignmentIcon sx={{ mr: 1 }} />
+                Tasks by Stage
+              </Typography>
+            }
+            sx={{ borderBottom: 1, borderColor: "divider" }}
+          />
+          <CardContent sx={{ p: 0 }}>
+            <List sx={{ p: 0 }}>
+              {Object.keys(organizedColumns).map((columnId, index, arr) => {
+                const column = organizedColumns[columnId];
+                return (
+                  <Box key={columnId}>
+                    <ListItem sx={{ py: 1.5, borderLeft: `4px solid`, borderColor: `${column.color}.main` }}>
+                      <ListItemText
+                        primary={
+                          <Box display="flex" justifyContent="space-between" alignItems="center">
+                            <Typography variant="body2" fontWeight="medium">
+                              {column.stage}
+                            </Typography>
+                            <Chip
+                              label={column.tasks.length}
+                              size="small"
+                              color={column.color}
+                            />
+                          </Box>
+                        }
+                      />
+                    </ListItem>
+                    {index < arr.length - 1 && <Divider />}
+                  </Box>
+                );
+              })}
+            </List>
+          </CardContent>
+        </Card>
       </Grid>
 
       {/* Tasks Section */}
       <Grid item xs={12} md={8}>
         <Box>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-            <Typography variant="h6" fontWeight="600">
-              Tasks for {format(selectedDate, "MMMM d, yyyy")}
-            </Typography>
-            <Box display="flex" gap={1}>
-              {selectedTask && (
-                <Chip 
-                  label="Viewing selected task" 
-                  color="primary" 
-                  onDelete={() => setSelectedTask(null)}
-                />
-              )}
-              <Chip 
-                label={`${tasksForSelectedDate.length} tasks`} 
-                color="primary" 
-                variant="outlined" 
-              />
-            </Box>
-          </Box>
-
-          {tasksForSelectedDate.length === 0 ? (
-            <Card sx={{ p: 5, textAlign: "center" }}>
-              <Typography color="text.secondary">
-                No tasks scheduled for this date.
-              </Typography>
-            </Card>
-          ) : (
-            <Box display="flex" flexDirection="column" gap={2}>
-              {tasksForSelectedDate.map((task) => (
-                <Card
-                  key={task.id}
-                  variant="outlined"
-                  onClick={() => handleTaskSelect(task)}
-                  sx={{ 
-                    p: 2.5, 
-                    "&:hover": { 
-                      boxShadow: 3,
-                      cursor: 'pointer',
-                      backgroundColor: selectedTask?.id === task.id ? 'action.hover' : 'background.paper'
-                    }, 
-                    transition: "all 0.2s ease",
-                    borderLeft: `4px solid ${
-                      processColumns[
-                        Object.keys(processColumns).find(key => 
-                          processColumns[key].stage === task.stage
-                        )
-                      ]?.color || 'grey'
-                    }`,
-                    backgroundColor: selectedTask?.id === task.id ? 'action.selected' : 'background.paper',
-                    border: selectedTask?.id === task.id ? '2px solid' : '1px solid',
-                    borderColor: selectedTask?.id === task.id ? 'primary.main' : 'divider'
-                  }}
-                >
-                  <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                    <Box flex={1}>
-                      <Box display="flex" alignItems="center" gap={1.5} mb={1}>
-                        <Typography variant="subtitle1" fontWeight="600">
-                          {task.title}
-                        </Typography>
-                        <Chip
-                          size="small"
-                          label={task.status}
-                          color={getStatusColor(task.status)}
-                          variant="outlined"
-                        />
-                        <Chip
-                          size="small"
-                          label={`Priority: ${task.priority}`}
-                          color={getPriorityColor(task.priority)}
-                        />
-                      </Box>
-                      
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        {task.description}
-                      </Typography>
-                      
-                      <Box display="flex" alignItems="center" gap={3} color="text.secondary" fontSize="0.875rem" flexWrap="wrap">
-                        <Typography variant="body2">
-                          📅 Start: {format(new Date(task.startDate), "MMM d, yyyy")}
-                        </Typography>
-                        <Typography variant="body2">
-                          📅 End: {format(new Date(task.endDate), "MMM d, yyyy")}
-                        </Typography>
-                        <Typography variant="body2">
-                          🏷️ Stage: {task.stage}
-                        </Typography>
-                      </Box>
-
-                      {/* Assigned Worker Information */}
-                      {task.assignedWorker && (
-                        <Box display="flex" alignItems="center" gap={1} mt={1.5}>
-                          <Avatar 
-                            sx={{ width: 28, height: 28, fontSize: '0.8rem' }}
-                          >
-                            {getInitials(task.assignedWorker.name)}
+          {/* Tasks for Selected Date */}
+          <Card sx={{ mb: 4, borderRadius: 2 }}>
+            <CardHeader
+              title={
+                <Typography variant="h6" sx={{ display: "flex", alignItems: "center" }}>
+                  <EventIcon sx={{ mr: 1 }} />
+                  Tasks for {format(selectedDate, "MMMM d, yyyy")}
+                </Typography>
+              }
+              subheader={`${tasksForSelectedDate.length} task${tasksForSelectedDate.length !== 1 ? 's' : ''} found`}
+              action={
+                <Box display="flex" gap={1} alignItems="center" mt={1}>
+                  {selectedTask && (
+                    <Chip
+                      label="Viewing selected task"
+                      color="primary"
+                      size="small"
+                      onDelete={() => setSelectedTask(null)}
+                    />
+                  )}
+                  <Chip
+                    label={`${tasksForSelectedDate.length} tasks`}
+                    color="primary"
+                    variant="outlined"
+                    size="small"
+                  />
+                </Box>
+              }
+              sx={{ borderBottom: 1, borderColor: "divider" }}
+            />
+            <CardContent sx={{ p: 0 }}>
+              {tasksForSelectedDate.length === 0 ? (
+                <Box sx={{ p: 4, textAlign: "center" }}>
+                  <EventIcon sx={{ fontSize: 48, color: "text.secondary", mb: 2 }} />
+                  <Typography variant="h6" color="text.secondary">No tasks scheduled for this date.</Typography>
+                </Box>
+              ) : (
+                <List sx={{ p: 0 }}>
+                  {tasksForSelectedDate.map((task, index) => (
+                    <Box key={task.id}>
+                      <ListItem
+                        alignItems="flex-start"
+                        onClick={() => handleTaskSelect(task)}
+                        sx={{
+                          py: 3,
+                          cursor: 'pointer',
+                          borderLeft: `4px solid`,
+                          borderColor: `${processColumns[Object.keys(processColumns).find(k => processColumns[k].stage === task.stage)]?.color || 'grey'}.main`,
+                          bgcolor: selectedTask?.id === task.id ? alpha(theme.palette.primary.main, 0.06) : 'transparent',
+                          transition: 'background 0.2s',
+                          '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.04) }
+                        }}
+                      >
+                        <ListItemIcon sx={{ minWidth: 48, mt: 0.5 }}>
+                          <Avatar sx={{ bgcolor: "primary.main" }}>
+                            <AssignmentIcon />
                           </Avatar>
-                          <Box>
-                            <Typography variant="body2" fontWeight="medium">
-                              {task.assignedWorker.name}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {task.assignedWorker.jobTitle} • {task.assignedWorker.email}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      )}
-                    </Box>
-                    
-                    <Box display="flex" flexDirection="column" gap={1} alignItems="flex-end">
-                      <Chip
-                        label={task.stage}
-                        color={
-                          processColumns[
-                            Object.keys(processColumns).find(key => 
-                              processColumns[key].stage === task.stage
-                            )
-                          ]?.color || 'default'
-                        }
-                        size="small"
-                      />
-                      {selectedTask?.id === task.id && (
-                        <Chip
-                          label="Selected"
-                          color="primary"
-                          size="small"
-                          variant="filled"
+                        </ListItemIcon>
+                        <ListItemText
+                          primary={
+                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1 }}>
+                              <Typography variant="h6">{task.title}</Typography>
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                <Chip size="small" label={task.status} color={getStatusColor(task.status)} variant="outlined" />
+                                <Chip size="small" label={`Priority: ${task.priority}`} color={getPriorityColor(task.priority)} />
+                                <Chip
+                                  label={task.stage}
+                                  color={processColumns[Object.keys(processColumns).find(k => processColumns[k].stage === task.stage)]?.color || 'default'}
+                                  size="small"
+                                />
+                              </Box>
+                            </Box>
+                          }
+                          secondary={
+                            <Box sx={{ mt: 1 }}>
+                              <Typography variant="body1" paragraph>{task.description}</Typography>
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap" }}>
+                                <Box sx={{ display: "flex", alignItems: "center" }}>
+                                  <ScheduleIcon sx={{ mr: 0.5, fontSize: 16, color: "text.secondary" }} />
+                                  <Typography variant="caption" color="text.secondary">
+                                    {format(new Date(task.startDate), "MMM d, yyyy")} → {format(new Date(task.endDate), "MMM d, yyyy")}
+                                  </Typography>
+                                </Box>
+                                {task.assignedWorker && (
+                                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                    <Avatar sx={{ width: 20, height: 20, fontSize: '0.65rem', bgcolor: 'secondary.main' }}>
+                                      {getInitials(task.assignedWorker.name)}
+                                    </Avatar>
+                                    <Typography variant="caption" color="text.secondary">
+                                      {task.assignedWorker.name} • {task.assignedWorker.jobTitle}
+                                    </Typography>
+                                  </Box>
+                                )}
+                              </Box>
+                            </Box>
+                          }
                         />
-                      )}
+                      </ListItem>
+                      {index < tasksForSelectedDate.length - 1 && <Divider variant="inset" component="li" />}
                     </Box>
-                  </Box>
-                </Card>
-              ))}
-            </Box>
-          )}
+                  ))}
+                </List>
+              )}
+            </CardContent>
+          </Card>
 
           {/* All Tasks Overview */}
-          <Box mt={4}>
-            <Typography variant="h6" gutterBottom>
-              All Tasks Overview
-            </Typography>
-            <Grid container spacing={2}>
-              {Object.keys(organizedColumns).map(columnId => {
-                const column = organizedColumns[columnId];
-                return (
-                  <Grid item xs={12} sm={6} key={columnId}>
-                    <Card sx={{ p: 2 }}>
-                      <Typography variant="subtitle2" gutterBottom color={column.color}>
-                        {column.stage} ({column.tasks.length})
-                      </Typography>
-                      <Box display="flex" flexDirection="column" gap={1}>
-                        {column.tasks.map(task => (
-                          <Box 
-                            key={task.id} 
-                            onClick={() => handleTaskSelect(task)}
-                            sx={{ 
-                              p: 1, 
-                              bgcolor: selectedTask?.id === task.id ? 'primary.light' : 'grey.50', 
-                              borderRadius: 1,
-                              borderLeft: `3px solid ${
-                                tasksForSelectedDate.some(t => t.id === task.id) ? 'primary.main' : 'transparent'
-                              }`,
-                              cursor: 'pointer',
-                              '&:hover': {
-                                bgcolor: 'action.hover',
-                              }
-                            }}
-                          >
-                            <Typography variant="body2" fontWeight="medium">
-                              {task.title}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {format(new Date(task.startDate), "MMM d")} - {format(new Date(task.endDate), "MMM d, yyyy")}
-                            </Typography>
-                            {task.assignedWorker && (
-                              <Box display="flex" alignItems="center" gap={0.5} mt={0.5}>
-                                <Avatar 
-                                  sx={{ width: 20, height: 20, fontSize: '0.6rem' }}
-                                >
-                                  {getInitials(task.assignedWorker.name)}
-                                </Avatar>
-                                <Typography variant="caption">
-                                  {task.assignedWorker.name}
-                                </Typography>
-                              </Box>
-                            )}
-                          </Box>
-                        ))}
-                      </Box>
-                    </Card>
-                  </Grid>
-                );
-              })}
-            </Grid>
-          </Box>
+          <Grid container spacing={2}>
+            {Object.keys(organizedColumns).map(columnId => {
+              const column = organizedColumns[columnId];
+              return (
+                <Grid item xs={12} sm={6} key={columnId}>
+                  <Card sx={{ borderRadius: 2, height: '100%' }}>
+                    <CardHeader
+                      title={
+                        <Typography variant="subtitle1" fontWeight="bold" color={`${column.color}.main`}>
+                          {column.stage}
+                        </Typography>
+                      }
+                      subheader={`${column.tasks.length} task${column.tasks.length !== 1 ? 's' : ''}`}
+                      sx={{ borderBottom: 1, borderColor: "divider", borderLeft: 4, borderLeftColor: `${column.color}.main` }}
+                    />
+                    <CardContent sx={{ p: 0 }}>
+                      {column.tasks.length === 0 ? (
+                        <Box sx={{ p: 2, textAlign: 'center' }}>
+                          <Typography variant="caption" color="text.secondary">No tasks</Typography>
+                        </Box>
+                      ) : (
+                        <List sx={{ p: 0 }}>
+                          {column.tasks.map((task, idx) => (
+                            <Box key={task.id}>
+                              <ListItem
+                                onClick={() => handleTaskSelect(task)}
+                                sx={{
+                                  py: 1.5,
+                                  cursor: 'pointer',
+                                  bgcolor: selectedTask?.id === task.id
+                                    ? alpha(theme.palette.primary.main, 0.08)
+                                    : tasksForSelectedDate.some(t => t.id === task.id)
+                                      ? alpha(theme.palette.success.main, 0.05)
+                                      : 'transparent',
+                                  borderLeft: tasksForSelectedDate.some(t => t.id === task.id)
+                                    ? `3px solid ${theme.palette.success.main}`
+                                    : '3px solid transparent',
+                                  '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.06) },
+                                  transition: 'background 0.2s'
+                                }}
+                              >
+                                <ListItemIcon sx={{ minWidth: 36 }}>
+                                  <Avatar sx={{ width: 28, height: 28, fontSize: '0.7rem', bgcolor: `${column.color}.main` }}>
+                                    {getInitials(task.assignedWorker?.name || task.title)}
+                                  </Avatar>
+                                </ListItemIcon>
+                                <ListItemText
+                                  primary={
+                                    <Typography variant="body2" fontWeight="medium" noWrap>
+                                      {task.title}
+                                    </Typography>
+                                  }
+                                  secondary={
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
+                                      <ScheduleIcon sx={{ fontSize: 12, color: 'text.secondary' }} />
+                                      <Typography variant="caption" color="text.secondary">
+                                        {format(new Date(task.startDate), "MMM d")} – {format(new Date(task.endDate), "MMM d")}
+                                      </Typography>
+                                    </Box>
+                                  }
+                                />
+                              </ListItem>
+                              {idx < column.tasks.length - 1 && <Divider variant="inset" component="li" />}
+                            </Box>
+                          ))}
+                        </List>
+                      )}
+                    </CardContent>
+                  </Card>
+                </Grid>
+              );
+            })}
+          </Grid>
         </Box>
       </Grid>
     </Grid>

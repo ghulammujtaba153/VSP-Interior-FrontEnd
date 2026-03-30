@@ -24,7 +24,7 @@ import axios from "axios";
 import { BASE_URL } from "@/configs/url";
 import Link from "next/link"
 
-const ProjectsTable = () => {
+const ProjectsTable = ({ projects: externalProjects, loading: externalLoading }) => {
   const theme = useTheme();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -34,6 +34,11 @@ const ProjectsTable = () => {
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
   const fetchProjects = async () => {
+    if (externalProjects) {
+      setProjects(externalProjects);
+      setLoading(externalLoading ?? false);
+      return;
+    }
     try {
       const res = await axios.get(`${BASE_URL}/api/job-scheduling/get`);
       setProjects(res.data.jobs || []);
@@ -46,7 +51,7 @@ const ProjectsTable = () => {
 
   useEffect(() => {
     fetchProjects();
-  }, []);
+  }, [externalProjects, externalLoading]);
 
   // 🔹 Pagination handlers
   const handleChangePage = (event, newPage) => {
