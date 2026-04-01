@@ -7,6 +7,8 @@ import { toast } from "react-toastify";
 import { BASE_URL } from "@/configs/url";
 import Loader from "@/components/loader/Loader";
 import DocumentRequestModal from "@/components/human-resources/staff/DocumentRequestModal";
+import SalaryRecord from "@/components/human-resources/staff/SalaryRecord";
+
 
 // MUI imports
 import {
@@ -33,7 +35,7 @@ import {
   MenuItem,
   TextField,
 } from "@mui/material";
-import { Person, WorkHistory, EventNote, CheckCircle } from "@mui/icons-material";
+import { Person, WorkHistory, EventNote, CheckCircle, AttachMoney, AccountBalanceWallet, Savings, Payment } from "@mui/icons-material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
@@ -64,6 +66,9 @@ const StaffProfilePage = () => {
   const [leaveFilter, setLeaveFilter] = useState("all");
   const [docFilter, setDocFilter] = useState("all");
 
+  const [payrollRecords, setPayrollRecords] = useState([]);
+  const [payrollLoading, setPayrollLoading] = useState(false);
+
   const fetch = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/api/user/staff/${id}`);
@@ -90,9 +95,22 @@ const StaffProfilePage = () => {
     }
   };
 
+  const fetchPayroll = async () => {
+    setPayrollLoading(true);
+    try {
+      const res = await axios.get(`${BASE_URL}/api/payroll/get?userId=${id}`);
+      setPayrollRecords(Array.isArray(res.data) ? res.data : res.data?.data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setPayrollLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetch();
     fetchDocRequests();
+    fetchPayroll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -116,6 +134,12 @@ const StaffProfilePage = () => {
     }, 0);
   const LEAVE_LIMIT = 20; // This should ideally come from backend settings
   const remainingLeaves = Math.max(0, LEAVE_LIMIT - USED_LEAVES);
+
+  // Payroll Stats
+  const totalPaid = payrollRecords.filter((r) => r.status === "paid").reduce((sum, r) => sum + Number(r.netSalary || 0), 0);
+  const totalPending = payrollRecords.filter((r) => r.status === "pending").reduce((sum, r) => sum + Number(r.netSalary || 0), 0);
+  const avgNet = payrollRecords.length > 0 ? payrollRecords.reduce((sum, r) => sum + Number(r.netSalary || 0), 0) / payrollRecords.length : 0;
+  const fmt = (n) => Number(n || 0).toLocaleString("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 });
 
   const openNewDocModal = () => {
     setSelectedDocRequest(null);
@@ -249,6 +273,62 @@ const StaffProfilePage = () => {
         </Card>
       </Stack>
 
+      {/* <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>Salary Overview</Typography> */}
+      <Stack direction={{ xs: "column", md: "row" }} spacing={2} mb={4}>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Base Salary</Typography>
+                <Typography variant="h5" color="primary.main" fontWeight={600}>
+                  {data?.salary ? `$${Number(data.salary).toLocaleString()}` : "—"}
+                </Typography>
+              </Box>
+              <AttachMoney fontSize="large" color="primary" />
+            </Stack>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Total Paid</Typography>
+                <Typography variant="h5" color="success.main" fontWeight={600}>
+                  {fmt(totalPaid)}
+                </Typography>
+              </Box>
+              <Payment fontSize="large" color="success" />
+            </Stack>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Pending Payroll</Typography>
+                <Typography variant="h5" color="warning.main" fontWeight={600}>
+                  {fmt(totalPending)}
+                </Typography>
+              </Box>
+              <AccountBalanceWallet fontSize="large" color="warning" />
+            </Stack>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Avg. Net Salary</Typography>
+                <Typography variant="h5" color="info.main" fontWeight={600}>
+                  {fmt(avgNet)}
+                </Typography>
+              </Box>
+              <Savings fontSize="large" color="info" />
+            </Stack>
+          </CardContent>
+        </Card>
+      </Stack>
+
       {/* TimeSheet Table */}
       <Card sx={{ mb: 4, borderRadius: 3, boxShadow: 3 }}>
         <CardContent>
@@ -360,6 +440,9 @@ const StaffProfilePage = () => {
           />
         </CardContent>
       </Card>
+
+      {/* Salary Records Section */}
+      <SalaryRecord employeeId={id} baseSalary={data?.salary} records={payrollRecords} loading={payrollLoading} onRefresh={fetchPayroll} />
 
       {/* Document Requests Section */}
       <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
