@@ -342,7 +342,7 @@ const ProjectOverview = ({ data }) => {
 
             <TableContainer component={Paper} sx={{ boxShadow: 1 }}>
               <Table>
-                <TableHead sx={{ bgcolor: 'grey.50' }}>
+                <TableHead>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 'bold' }}>Worker</TableCell>
                     <TableCell sx={{ fontWeight: 'bold' }}>Contact</TableCell>

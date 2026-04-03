@@ -43,8 +43,17 @@ import { toast } from "react-toastify";
 const Timesheets = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+
+  const getTodayDate = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const [startDate, setStartDate] = useState(getTodayDate());
+  const [endDate, setEndDate] = useState(getTodayDate());
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -62,14 +71,24 @@ const Timesheets = () => {
   });
 
   // ✅ Helper to calculate Total Hours
-  const calculateNetHours = (start, end, breakTime) => {
+  const calculateNetHours = (start, end, breakTimeStr) => {
     if (!start || !end) return 0;
     try {
       const s = new Date(`1970-01-01T${start}`);
       const e = new Date(`1970-01-01T${end}`);
       let diff = (e - s) / (1000 * 60 * 60); // diff in hours
-      const b = parseFloat(breakTime) || 0;
-      return Math.max(0, diff - b);
+      if (diff < 0) diff += 24; // Handle overnight shifts
+
+      let breakAmount = 0;
+      if (breakTimeStr) {
+        if (typeof breakTimeStr === 'string' && breakTimeStr.includes(':')) {
+           const parts = breakTimeStr.split(':');
+           breakAmount = (parseInt(parts[0], 10) || 0) + ((parseInt(parts[1], 10) || 0) / 60);
+        } else {
+           breakAmount = parseFloat(breakTimeStr) || 0;
+        }
+      }
+      return Math.max(0, diff - breakAmount);
     } catch (err) { return 0; }
   };
 
@@ -177,6 +196,42 @@ const Timesheets = () => {
       default:
         return <Typography variant="body2">{status}</Typography>;
     }
+  };
+
+  // ✅ Helper to format 24h time to 12h AM/PM
+  const formatTimeTo12Hour = (timeStr) => {
+    if (!timeStr) return "N/A";
+    const [hourStr, minuteStr] = timeStr.split(":");
+    let hour = parseInt(hourStr, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12;
+    hour = hour ? hour : 12; // the hour '0' should be '12'
+    return `${hour}:${minuteStr} ${ampm}`;
+  };
+
+  // ✅ Helper to convert HH:MM(:SS) to decimal hours
+  const timeToDecimal = (timeStr) => {
+    if (!timeStr) return 0;
+    const parts = timeStr.split(":");
+    const hours = parseInt(parts[0], 10) || 0;
+    const minutes = parseInt(parts[1], 10) || 0;
+    return Number((hours + minutes / 60).toFixed(2));
+  };
+
+  const formatBreakTime = (timeStr) => {
+    if (!timeStr) return "0m";
+    if (typeof timeStr === 'number') {
+      const h = Math.floor(timeStr);
+      const m = Math.round((timeStr - h) * 60);
+      if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
+      return m > 0 ? `${m}m` : "0m";
+    }
+    const parts = timeStr.split(":");
+    if (parts.length < 2) return "0m";
+    const h = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
+    return m > 0 ? `${m}m` : "0m";
   };
 
   if (loading) return <Loader />;
@@ -356,16 +411,16 @@ const Timesheets = () => {
                       <TableCell>
                         {new Date(ts.date).toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' })}
                       </TableCell>
-                      <TableCell>{ts.startTime}</TableCell>
-                      <TableCell>{ts.endTime}</TableCell>
-                      <TableCell>{ts.breakTime}h</TableCell>
+                      <TableCell>{formatTimeTo12Hour(ts.startTime)}</TableCell>
+                      <TableCell>{formatTimeTo12Hour(ts.endTime)}</TableCell>
+                      <TableCell>{formatBreakTime(ts.breakTime)}</TableCell>
                       <TableCell sx={{ fontWeight: 'bold' }}>
                         <Stack direction="row" spacing={0.5} alignItems="center">
                           <Timer sx={{ fontSize: 16, color: 'primary.main' }} />
                           <Typography variant="body2">{netHours.toFixed(2)}h</Typography>
                         </Stack>
                       </TableCell>
-                      <TableCell color="primary">+{ts.overWork}h</TableCell>
+                      <TableCell color="primary">+{timeToDecimal(ts.overWork)}h</TableCell>
                       <TableCell>{getStatusBadge(ts.status)}</TableCell>
 
                       {/* ✅ Actions */}

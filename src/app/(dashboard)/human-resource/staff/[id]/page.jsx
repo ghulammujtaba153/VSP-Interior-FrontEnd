@@ -177,6 +177,43 @@ const StaffProfilePage = () => {
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
+  // ✅ Time formatting helpers
+  const formatTimeTo12Hour = (timeStr) => {
+    if (!timeStr) return "N/A";
+    const [hourStr, minuteStr] = timeStr.split(":");
+    let hour = parseInt(hourStr, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12;
+    hour = hour ? hour : 12;
+    return `${hour}:${minuteStr} ${ampm}`;
+  };
+
+  const timeToDecimal = (timeStr) => {
+    if (!timeStr) return 0;
+    if (typeof timeStr === 'number') return timeStr;
+    const parts = timeStr.split(":");
+    if (parts.length < 2) return parseFloat(timeStr) || 0;
+    const hours = parseInt(parts[0], 10) || 0;
+    const minutes = parseInt(parts[1], 10) || 0;
+    return Number((hours + minutes / 60).toFixed(2));
+  };
+
+  const formatBreakTime = (timeStr) => {
+    if (!timeStr) return "0m";
+    if (typeof timeStr === 'number') {
+      const h = Math.floor(timeStr);
+      const m = Math.round((timeStr - h) * 60);
+      if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
+      return m > 0 ? `${m}m` : "0m";
+    }
+    const parts = timeStr.split(":");
+    if (parts.length < 2) return "0m";
+    const h = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
+    return m > 0 ? `${m}m` : "0m";
+  };
+
   // 🔍 Filter Logic
   const filteredTimeSheets = (EmployeeTimeSheets || []).filter(ts => 
     timesheetFilter === "all" || ts.status === timesheetFilter
@@ -355,7 +392,13 @@ const StaffProfilePage = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Date</TableCell><TableCell>Start</TableCell><TableCell>End</TableCell><TableCell>Break</TableCell><TableCell>Overwork</TableCell><TableCell>Status</TableCell>
+                  <TableCell>Date</TableCell>
+                  <TableCell>Start</TableCell>
+                  <TableCell>End</TableCell>
+                  <TableCell>Break</TableCell>
+                  <TableCell>Net Hours</TableCell>
+                  <TableCell>Overwork</TableCell>
+                  <TableCell>Status</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -364,7 +407,17 @@ const StaffProfilePage = () => {
                   pageTimesheet * rowsPerPageTimesheet + rowsPerPageTimesheet
                 ).map((row) => (
                   <TableRow key={row.id}>
-                    <TableCell>{row.date}</TableCell><TableCell>{row.startTime}</TableCell><TableCell>{row.endTime}</TableCell><TableCell>{row.breakTime}</TableCell><TableCell>{row.overWork}</TableCell><TableCell><Chip label={row.status} color={row.status === "approved" ? "success" : row.status === "pending" ? "warning" : "error"} size="small" /></TableCell>
+                    <TableCell>
+                      {new Date(row.date).toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </TableCell>
+                    <TableCell>{formatTimeTo12Hour(row.startTime)}</TableCell>
+                    <TableCell>{formatTimeTo12Hour(row.endTime)}</TableCell>
+                    <TableCell>{formatBreakTime(row.breakTime)}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>{row.netHours?.toFixed(2)}h</TableCell>
+                    <TableCell color="primary">+{timeToDecimal(row.overWork)}h</TableCell>
+                    <TableCell>
+                      <Chip label={row.status} color={row.status === "approved" ? "success" : row.status === "pending" ? "warning" : "error"} size="small" />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

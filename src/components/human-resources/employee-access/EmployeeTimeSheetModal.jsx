@@ -20,15 +20,43 @@ const EmployeeTimeSheetModal = ({ open, onClose, fetchData, editData }) => {
   const { user } = useAuth();
   const edit = Boolean(editData);
 
+  const getTodayDate = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
   const [formData, setFormData] = useState({
     employeeId: user?.id || "",
-    date: "",
+    date: getTodayDate(),
     startTime: "",
     endTime: "",
     breakTime: "",
-    overWork: "00:00:00",
+    overWork: "",
     status: "pending",
   });
+
+  // helper to convert HH:MM(:SS) to decimal hours
+  const timeToDecimal = (timeStr) => {
+    if (!timeStr) return "";
+    const parts = timeStr.split(":");
+    const hours = parseInt(parts[0], 10) || 0;
+    const minutes = parseInt(parts[1], 10) || 0;
+    return Number((hours + minutes / 60).toFixed(2));
+  };
+
+  // helper to convert decimal hours to HH:MM:00
+  const decimalToTime = (decimalHours) => {
+    if (!decimalHours || isNaN(decimalHours)) return "00:00:00";
+    const num = Number(decimalHours);
+    const hours = Math.floor(Math.abs(num));
+    const minutes = Math.round((Math.abs(num) - hours) * 60);
+    const hh = String(hours).padStart(2, "0");
+    const mm = String(minutes).padStart(2, "0");
+    return `${hh}:${mm}:00`;
+  };
 
   useEffect(() => {
     if (editData) {
@@ -38,7 +66,7 @@ const EmployeeTimeSheetModal = ({ open, onClose, fetchData, editData }) => {
         startTime: editData.startTime,
         endTime: editData.endTime,
         breakTime: editData.breakTime,
-        overWork: editData.overWork,
+        overWork: timeToDecimal(editData.overWork) || "",
         status: editData.status,
       });
     }
@@ -51,15 +79,20 @@ const EmployeeTimeSheetModal = ({ open, onClose, fetchData, editData }) => {
   const handleSubmit = async () => {
     try {
       toast.loading(edit ? "Updating..." : "Creating...");
+      const payload = {
+        ...formData,
+        overWork: decimalToTime(formData.overWork)
+      };
+
       if (edit) {
         await axios.put(
           `${BASE_URL}/api/employee-timesheet/update/${editData.id}`,
-          formData
+          payload
         );
         toast.dismiss();
         toast.success("Record updated successfully");
       } else {
-        await axios.post(`${BASE_URL}/api/employee-timesheet/create`, formData);
+        await axios.post(`${BASE_URL}/api/employee-timesheet/create`, payload);
         toast.dismiss();
         toast.success("Record created successfully");
       }
@@ -108,7 +141,7 @@ const EmployeeTimeSheetModal = ({ open, onClose, fetchData, editData }) => {
             InputLabelProps={{ shrink: true }}
           />
           <TextField
-            label="Break Time"
+            label="Break Time (HH:mm)"
             name="breakTime"
             type="time"
             value={formData.breakTime}
@@ -117,13 +150,15 @@ const EmployeeTimeSheetModal = ({ open, onClose, fetchData, editData }) => {
             InputLabelProps={{ shrink: true }}
           />
           <TextField
-            label="Over Work"
+            label="Overtime (Total Hours)"
             name="overWork"
-            type="time"
+            type="number"
+            inputProps={{ step: "0.1", min: "0" }}
             value={formData.overWork}
             onChange={handleChange}
             fullWidth
             InputLabelProps={{ shrink: true }}
+            placeholder="e.g. 2.5"
           />
           {/* <TextField
             select
