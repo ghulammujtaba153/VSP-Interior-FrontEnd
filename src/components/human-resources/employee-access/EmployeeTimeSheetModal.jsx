@@ -33,7 +33,6 @@ const EmployeeTimeSheetModal = ({ open, onClose, fetchData, editData }) => {
     date: getTodayDate(),
     startTime: "",
     endTime: "",
-    breakTime: "",
     overWork: "",
     status: "pending",
   });
@@ -65,7 +64,6 @@ const EmployeeTimeSheetModal = ({ open, onClose, fetchData, editData }) => {
         date: editData.date,
         startTime: editData.startTime,
         endTime: editData.endTime,
-        breakTime: editData.breakTime,
         overWork: timeToDecimal(editData.overWork) || "",
         status: editData.status,
       });
@@ -136,15 +134,6 @@ const EmployeeTimeSheetModal = ({ open, onClose, fetchData, editData }) => {
             name="endTime"
             type="time"
             value={formData.endTime}
-            onChange={handleChange}
-            fullWidth
-            InputLabelProps={{ shrink: true }}
-          />
-          <TextField
-            label="Break Time (HH:mm)"
-            name="breakTime"
-            type="time"
-            value={formData.breakTime}
             onChange={handleChange}
             fullWidth
             InputLabelProps={{ shrink: true }}

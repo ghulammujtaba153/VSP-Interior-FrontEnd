@@ -33,22 +33,21 @@ import {
 } from "@mui/icons-material";
 import axios from "axios";
 import { toast } from "react-toastify";
-import Loader from "@/components/loader/Loader";
+import Loader from "../../loader/Loader";
 import { BASE_URL } from "@/configs/url";
-import EmployeeTimeSheetModal from "./EmployeeTimeSheetModal";
 import { useAuth } from "@/context/authContext";
+import TimeSheetHeatMap from "../TimeSheetHeatMap";
+import EmployeeTimeSheetModal from "./EmployeeTimeSheetModal";
 
 const EmployeeTimeSheetTable = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [selected, setSelected] = useState(null);
-  const {user} = useAuth()
+  const {user} = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
-
- 
 
   const fetchData = async () => {
     setLoading(true);
@@ -73,63 +72,94 @@ const EmployeeTimeSheetTable = () => {
 
   const paginatedData = filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
+  // Helper for Net Hours (same logic as main dashboard)
+  const calculateNetHours = (start, end) => {
+    if (!start || !end) return 0;
+    try {
+      const s = new Date(`1970-01-01T${start}`);
+      const e = new Date(`1970-01-01T${end}`);
+      let diff = (e - s) / (1000 * 60 * 60);
+      if (diff < 0) diff += 24;
+      return diff;
+    } catch (err) { return 0; }
+  };
+
   const stats = {
     total: data.length,
-    overwork: data.filter(d => d.overWork && d.overWork !== "0").length,
-    avgBreak: 30 // placeholder or calculate
+    approvedHours: data
+      .filter(d => d.status === 'approved')
+      .reduce((acc, d) => acc + calculateNetHours(d.startTime, d.endTime), 0),
+    overworkDays: data.filter(d => d.overWork && d.overWork !== "00:00:00").length,
   };
 
   if (loading) return <Loader />;
 
   return (
     <Box>
+      <Box mb={4}>
+        <Typography variant="h4" fontWeight="700" color="text.primary" gutterBottom>
+          My Timesheets
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Track your daily activities and logged work hours
+        </Typography>
+      </Box>
+
+      {/* 🟢 Personal Activity Heatmap */}
+      <Box mb={4}>
+        <TimeSheetHeatMap data={data} />
+      </Box>
+
       <Stack direction={{ xs: "column", md: "row" }} spacing={2} mb={4}>
-        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1, borderLeft: '4px solid', borderColor: 'primary.main' }}>
           <CardContent>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography variant="body2" color="text.secondary">Total Entries</Typography>
-                <Typography variant="h5" color="primary.main" fontWeight={600}>{stats.total}</Typography>
+                <Typography variant="body2" color="text.secondary" fontWeight={500}>Total Submissions</Typography>
+                <Typography variant="h5" color="primary.main" fontWeight={700}>{stats.total}</Typography>
               </Box>
-              <AssignmentTurnedIn fontSize="large" color="primary" />
+              <AssignmentTurnedIn fontSize="large" color="primary" sx={{ opacity: 0.8 }} />
             </Stack>
           </CardContent>
         </Card>
-        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1, borderLeft: '4px solid', borderColor: 'success.main' }}>
           <CardContent>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography variant="body2" color="text.secondary">Overwork Logged</Typography>
-                <Typography variant="h5" color="warning.main" fontWeight={600}>{stats.overwork} Days</Typography>
+                <Typography variant="body2" color="text.secondary" fontWeight={500}>Total Approved Hours</Typography>
+                <Typography variant="h5" color="success.main" fontWeight={700}>{stats.approvedHours.toFixed(1)}h</Typography>
               </Box>
-              <TrendingUp fontSize="large" color="warning" />
+              <Timer fontSize="large" color="success" sx={{ opacity: 0.8 }} />
             </Stack>
           </CardContent>
         </Card>
-        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1, borderLeft: '4px solid', borderColor: 'warning.main' }}>
           <CardContent>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography variant="body2" color="text.secondary">Attendance Rate</Typography>
-                <Typography variant="h5" color="success.main" fontWeight={600}>98%</Typography>
+                <Typography variant="body2" color="text.secondary" fontWeight={500}>Overtime Logs</Typography>
+                <Typography variant="h5" color="warning.main" fontWeight={700}>{stats.overworkDays} Days</Typography>
               </Box>
-              <Timer fontSize="large" color="success" />
+              <TrendingUp fontSize="large" color="warning" sx={{ opacity: 0.8 }} />
             </Stack>
           </CardContent>
         </Card>
       </Stack>
 
       <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
-        <CardContent>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-            <Typography variant="h6" fontWeight="bold">Time Sheet Records</Typography>
+        <CardContent sx={{ p: 0 }}>
+          <Box display="flex" justifyContent="space-between" alignItems="center" p={3}>
+            <Typography variant="h6" fontWeight="700">Detailed Logs</Typography>
             <Stack direction="row" spacing={2}>
               <TextField
                 size="small"
-                placeholder="Search date..."
+                placeholder="Search date or status..."
                 value={searchTerm}
                 onChange={(e) => { setSearchTerm(e.target.value); setPage(0); }}
-                InputProps={{ startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} /> }}
+                InputProps={{ 
+                  startAdornment: <Search sx={{ mr: 1, color: 'text.secondary', fontSize: 20 }} />,
+                  sx: { borderRadius: 2 }
+                }}
               />
               <Button
                 variant="contained"
@@ -138,29 +168,30 @@ const EmployeeTimeSheetTable = () => {
                   setSelected(null);
                   setModalOpen(true);
                 }}
+                sx={{ borderRadius: 2, px: 3 }}
               >
-                Add Time Sheet
+                Log Entry
               </Button>
             </Stack>
           </Box>
-          <Divider sx={{ mb: 2 }} />
+          <Divider />
 
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>Date</TableCell><TableCell>Start Time</TableCell><TableCell>End Time</TableCell><TableCell>Break</TableCell><TableCell>Over Work</TableCell><TableCell align="center">Actions</TableCell>
+              <TableCell>Date</TableCell><TableCell>Start Time</TableCell><TableCell>End Time</TableCell><TableCell>Over Work</TableCell><TableCell align="center">Actions</TableCell>
             </TableRow>
           </TableHead>
 
           <TableBody>
             {paginatedData.map((row) => (
               <TableRow key={row.id} hover>
-                <TableCell>{row.date}</TableCell><TableCell>{row.startTime}</TableCell><TableCell>{row.endTime}</TableCell><TableCell>{row.breakTime}</TableCell><TableCell>{row.overWork}</TableCell><TableCell align="center"><IconButton size="small" color="primary" onClick={() => { setSelected(row); setModalOpen(true); }}><EditIcon fontSize="small" /></IconButton></TableCell>
+                <TableCell>{row.date}</TableCell><TableCell>{row.startTime}</TableCell><TableCell>{row.endTime}</TableCell><TableCell>{row.overWork}</TableCell><TableCell align="center"><IconButton size="small" color="primary" onClick={() => { setSelected(row); setModalOpen(true); }}><EditIcon fontSize="small" /></IconButton></TableCell>
               </TableRow>
             ))}
             {paginatedData.length === 0 && (
-              <TableRow><TableCell colSpan={6} align="center">No timesheets found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={5} align="center">No timesheets found</TableCell></TableRow>
             )}
           </TableBody>
         </Table>

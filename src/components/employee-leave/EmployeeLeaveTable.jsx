@@ -25,8 +25,11 @@ import { toast } from 'react-toastify';
 
 const ROWS_PER_PAGE = 5;
 
+import EmployeeLeaveCharts from './EmployeeLeaveCharts';
+
 const EmployeeLeaveTable = () => {
   const theme = useTheme();
+  // ... state ...
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState([]);
   const [open, setOpen] = useState(false);
@@ -38,7 +41,7 @@ const EmployeeLeaveTable = () => {
   const fetchData = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/api/employee-leave/get/${user.id}`);
-      setData(res.data.employeeLeave || res.data); // depends on API response
+      setData(res.data.employeeLeave || res.data || []);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -47,17 +50,18 @@ const EmployeeLeaveTable = () => {
   };
 
   const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this leave request?")) return;
     toast.loading("Please wait...");
     try {
       await axios.post(`${BASE_URL}/api/employee-leave/delete`, {
         id, userId: user.id
       });
-        toast.dismiss();
-        toast.success("Leave deleted successfully");
+      toast.dismiss();
+      toast.success("Leave deleted successfully");
       fetchData();
     } catch (error) {
-        toast.dismiss();
-        toast.error("Error deleting leave");
+      toast.dismiss();
+      toast.error("Error deleting leave");
       console.error("Error deleting leave:", error);
     }
   };
@@ -67,8 +71,10 @@ const EmployeeLeaveTable = () => {
     // eslint-disable-next-line
   }, []);
 
+  const ROWS_PER_PAGE = 5;
+
   // Filtered data for search
-  const filteredData = data.filter(
+  const filteredData = (data || []).filter(
     (leave) =>
       leave.leaveType?.toLowerCase().includes(search.toLowerCase()) ||
       leave.status?.toLowerCase().includes(search.toLowerCase()) ||
@@ -87,12 +93,11 @@ const EmployeeLeaveTable = () => {
 
   // Helper to calculate number of days between two dates (inclusive)
   const getNumDays = (start, end) => {
-    if (!start || !end) return "";
+    if (!start || !end) return 0;
     const startDate = new Date(start);
     const endDate = new Date(end);
-    // Calculate difference in milliseconds and convert to days, add 1 for inclusive
     const diffTime = endDate - startDate;
-    return diffTime >= 0 ? Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1 : "";
+    return diffTime >= 0 ? Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1 : 0;
   };
 
   // Stats calculation
@@ -111,19 +116,23 @@ const EmployeeLeaveTable = () => {
     if (s === "approved") color = "success";
     if (s === "pending") color = "warning";
     if (s === "rejected") color = "error";
-    return <Chip label={status} color={color} size="small" variant="soft" />;
+    return <Chip label={status} color={color} size="small" sx={{ fontWeight: 600, borderRadius: '6px' }} />;
   };
 
   if (loading) return <Loader />;
 
   return (
     <Box>
+      <Box mb={4}>
+         <EmployeeLeaveCharts data={data} />
+      </Box>
+
       <Stack direction={{ xs: "column", md: "row" }} spacing={2} mb={4}>
         <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
           <CardContent>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography variant="body2" color="text.secondary">Total Requests</Typography>
+                <Typography variant="body2" color="text.secondary">Request History</Typography>
                 <Typography variant="h5" color="primary.main" fontWeight={600}>{stats.total}</Typography>
               </Box>
               <PendingActions fontSize="large" color="primary" />
@@ -134,8 +143,8 @@ const EmployeeLeaveTable = () => {
           <CardContent>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography variant="body2" color="text.secondary">Days Used</Typography>
-                <Typography variant="h5" color="warning.main" fontWeight={600}>{stats.usedDays} / {REMAINING_LIMIT}</Typography>
+                <Typography variant="body2" color="text.secondary">Allowance Spent</Typography>
+                <Typography variant="h5" color="warning.main" fontWeight={600}>{stats.usedDays} Days</Typography>
               </Box>
               <EventAvailable fontSize="large" color="warning" />
             </Stack>
@@ -145,7 +154,7 @@ const EmployeeLeaveTable = () => {
           <CardContent>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography variant="body2" color="text.secondary">Remaining Balance</Typography>
+                <Typography variant="body2" color="text.secondary">Available Balance</Typography>
                 <Typography variant="h5" color="success.main" fontWeight={600}>{balance} Days</Typography>
               </Box>
               <CheckCircle fontSize="large" color="success" />
@@ -168,9 +177,9 @@ const EmployeeLeaveTable = () => {
         </Button>
         <TextField
           size="small"
-          placeholder="Search requests..."
+          placeholder="Filter leave records..."
           value={search}
-          onChange={e => { setSearchTerm ? setSearchTerm(e.target.value) : setSearch(e.target.value); setPage(0); }}
+          onChange={e => { setSearch(e.target.value); setPage(0); }}
           InputProps={{ startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} /> }}
           sx={{ minWidth: 260 }}
         />

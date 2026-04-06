@@ -8,6 +8,7 @@ import { BASE_URL } from "@/configs/url";
 import Loader from "@/components/loader/Loader";
 import DocumentRequestModal from "@/components/human-resources/staff/DocumentRequestModal";
 import SalaryRecord from "@/components/human-resources/staff/SalaryRecord";
+import StaffProfileCharts from "@/components/human-resources/staff/StaffProfileCharts";
 
 
 // MUI imports
@@ -310,7 +311,6 @@ const StaffProfilePage = () => {
         </Card>
       </Stack>
 
-      {/* <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>Salary Overview</Typography> */}
       <Stack direction={{ xs: "column", md: "row" }} spacing={2} mb={4}>
         <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
           <CardContent>
@@ -365,6 +365,9 @@ const StaffProfilePage = () => {
           </CardContent>
         </Card>
       </Stack>
+
+      {/* 📊 Personnel Data Analytics */}
+      <StaffProfileCharts timesheets={EmployeeTimeSheets} leaves={EmployeeLeaves} payroll={payrollRecords} />
 
       {/* TimeSheet Table */}
       <Card sx={{ mb: 4, borderRadius: 3, boxShadow: 3 }}>

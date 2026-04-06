@@ -1,19 +1,15 @@
 "use client"
 
-
-import EmployeeLeaveMain from '@/components/employee-leave/EmployeeLeaveMain'
-import EmployeeLeaveTable from '@/components/employee-leave/EmployeeLeaveTable'
 import React from 'react'
+import EmployeeLeaveMain from '@/components/employee-leave/EmployeeLeaveMain'
+import { Stack } from '@mui/material'
 
-const page = () => {
-    
-
+const Page = () => {
   return (
-    <div>
-      {/* <EmployeeLeaveTable/> */}
-      <EmployeeLeaveMain/>
-    </div>
+    <Stack sx={{ width: "100%", p: 0 }}>
+      <EmployeeLeaveMain />
+    </Stack>
   )
 }
 
-export default page
+export default Page
