@@ -179,13 +179,17 @@ const VerticalMenu = ({ scrollMenu }) => {
         
 
         <SubMenu label='HR & Documentation' icon={<i className='tabler-file-text' />}>
-          <MenuItem href='/human-resource'>
-            HR & Documentation
-          </MenuItem>
+          <PermissionWrapper resource='human resource'>
+            <MenuItem href='/human-resource'>
+              HR & Documentation
+            </MenuItem>
+          </PermissionWrapper>
 
-          <MenuItem href='/employee-leave'>
-            Employee Access
-          </MenuItem>
+          
+            <MenuItem href='/employee-leave'>
+              Employee Section
+            </MenuItem>
+          
         
         </SubMenu> 
 

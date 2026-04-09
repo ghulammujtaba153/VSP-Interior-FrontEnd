@@ -65,7 +65,28 @@ const EmployeeTimeSheetTable = () => {
     fetchData();
   }, [user.id]);
 
-  const filteredData = (data || []).filter(item => 
+  const getTodayDate = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayEntry = (data || []).find(item => item.date === getTodayDate());
+  const hasCheckedIn = !!todayEntry;
+  const hasCheckedOut = !!todayEntry?.endTime;
+
+  const sortedData = React.useMemo(() => {
+    return [...(data || [])].sort((a, b) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      if (dateB - dateA !== 0) return dateB - dateA;
+      return (b.id || 0) - (a.id || 0);
+    });
+  }, [data]);
+
+  const filteredData = sortedData.filter(item => 
     item.date?.includes(searchTerm) || 
     item.status?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -96,13 +117,53 @@ const EmployeeTimeSheetTable = () => {
 
   return (
     <Box>
-      <Box mb={4}>
-        <Typography variant="h4" fontWeight="700" color="text.primary" gutterBottom>
-          My Timesheets
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Track your daily activities and logged work hours
-        </Typography>
+      <Box mb={4} display="flex" justifyContent="space-between" alignItems="flex-end">
+        <Box>
+          <Typography variant="h4" fontWeight="700" color="text.primary" gutterBottom>
+            My Timesheets
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Today is <b>{new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</b>
+          </Typography>
+        </Box>
+        
+        <Box>
+          {!hasCheckedIn ? (
+            <Button
+              variant="contained"
+              size="large"
+              startIcon={<AddIcon />}
+              onClick={() => {
+                setSelected(null);
+                setModalOpen(true);
+              }}
+              sx={{ borderRadius: 2, px: 4, height: 56, fontSize: '1.1rem', fontWeight: 600 }}
+            >
+              Check In
+            </Button>
+          ) : !hasCheckedOut ? (
+            <Button
+              variant="contained"
+              size="large"
+              color="warning"
+              startIcon={<Timer />}
+              onClick={() => {
+                setSelected(todayEntry);
+                setModalOpen(true);
+              }}
+              sx={{ borderRadius: 2, px: 4, height: 56, fontSize: '1.1rem', fontWeight: 600 }}
+            >
+              Check Out
+            </Button>
+          ) : (
+            <Chip 
+              label="Completed for Today" 
+              color="success" 
+              variant="filled" 
+              sx={{ height: 48, px: 2, fontSize: '1rem', fontWeight: 600, borderRadius: 2 }}
+            />
+          )}
+        </Box>
       </Box>
 
       {/* 🟢 Personal Activity Heatmap */}
@@ -162,13 +223,13 @@ const EmployeeTimeSheetTable = () => {
                 }}
               />
               <Button
-                variant="contained"
+                variant="outlined"
                 startIcon={<AddIcon />}
                 onClick={() => {
                   setSelected(null);
                   setModalOpen(true);
                 }}
-                sx={{ borderRadius: 2, px: 3 }}
+                sx={{ borderRadius: 2 }}
               >
                 Log Entry
               </Button>
@@ -176,22 +237,105 @@ const EmployeeTimeSheetTable = () => {
           </Box>
           <Divider />
 
-      <TableContainer component={Paper}>
+      <TableContainer>
         <Table>
-          <TableHead>
+          <TableHead sx={{ bgcolor: 'action.hover' }}>
             <TableRow>
-              <TableCell>Date</TableCell><TableCell>Start Time</TableCell><TableCell>End Time</TableCell><TableCell>Over Work</TableCell><TableCell align="center">Actions</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Shift Time</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Duration</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Overtime</TableCell>
+              <TableCell sx={{ fontWeight: 600 }} align="center">Actions</TableCell>
             </TableRow>
           </TableHead>
 
           <TableBody>
-            {paginatedData.map((row) => (
-              <TableRow key={row.id} hover>
-                <TableCell>{row.date}</TableCell><TableCell>{row.startTime}</TableCell><TableCell>{row.endTime}</TableCell><TableCell>{row.overWork}</TableCell><TableCell align="center"><IconButton size="small" color="primary" onClick={() => { setSelected(row); setModalOpen(true); }}><EditIcon fontSize="small" /></IconButton></TableCell>
-              </TableRow>
-            ))}
+            {paginatedData.map((row) => {
+              const duration = calculateNetHours(row.startTime, row.endTime);
+              const isActive = row.date === getTodayDate() && !row.endTime;
+              
+              return (
+                <TableRow 
+                  key={row.id} 
+                  hover 
+                  sx={{ 
+                    ...(isActive && { 
+                      bgcolor: 'rgba(25, 118, 210, 0.08)',
+                      borderLeft: '4px solid',
+                      borderColor: 'primary.main',
+                      '&:hover': { bgcolor: 'rgba(25, 118, 210, 0.12)' }
+                    })
+                  }}
+                >
+                  <TableCell>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      {row.date}
+                      {isActive && (
+                        <Chip 
+                          label="LIVE" 
+                          size="small" 
+                          color="primary" 
+                          sx={{ 
+                            height: 18, 
+                            fontSize: '0.65rem', 
+                            fontWeight: 900,
+                            animation: 'pulse 2s infinite',
+                            '@keyframes pulse': {
+                              '0%': { opacity: 1 },
+                              '50%': { opacity: 0.5 },
+                              '100%': { opacity: 1 }
+                            }
+                          }} 
+                        />
+                      )}
+                    </Stack>
+                  </TableCell>
+                  <TableCell>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <Typography variant="body2" fontWeight={600} color="primary.main">{row.startTime || "--:--"}</Typography>
+                      <Typography variant="caption" color="text.secondary">to</Typography>
+                      {isActive ? (
+                        <Typography variant="body2" fontWeight={700} color="success.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          Active <Box sx={{ width: 6, height: 6, bgcolor: 'success.main', borderRadius: '50%' }} />
+                        </Typography>
+                      ) : (
+                        <Typography variant="body2" fontWeight={600}>{row.endTime}</Typography>
+                      )}
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Chip 
+                      label={isActive ? "Calculating..." : `${duration.toFixed(1)}h`} 
+                      size="small" 
+                      color={isActive ? "success" : "primary"} 
+                      variant={isActive ? "filled" : "outlined"} 
+                      sx={{ fontWeight: 600 }}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    {row.overWork && row.overWork !== "00:00:00" ? (
+                      <Chip label={row.overWork} size="small" color="warning" variant="tonal" />
+                    ) : (
+                      <Typography variant="caption" color="text.disabled">--</Typography>
+                    )}
+                  </TableCell>
+                  <TableCell align="center">
+                    <IconButton 
+                      size="small" 
+                      color={isActive ? "warning" : "primary"} 
+                      onClick={() => { setSelected(row); setModalOpen(true); }}
+                      title={isActive ? "Check Out" : "Edit"}
+                    >
+                      {isActive ? <Timer fontSize="small" /> : <EditIcon fontSize="small" />}
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
             {paginatedData.length === 0 && (
-              <TableRow><TableCell colSpan={5} align="center">No timesheets found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={5} align="center" sx={{ py: 6 }}>
+                <Typography variant="body2" color="text.secondary">No timesheets found for the selected criteria.</Typography>
+              </TableCell></TableRow>
             )}
           </TableBody>
         </Table>
