@@ -173,9 +173,9 @@ const CalendarView = ({ projectId, data }) => {
   if (loading) return <Loader />;
 
   return (
-    <Box className="bg-white p-4 rounded shadow">
+    <Box className=" p-4 rounded shadow">
       <Typography variant="h5" gutterBottom className="flex items-center gap-2">
-        📅 Project Calendar
+        Project Calendar
       </Typography>
       
       <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>

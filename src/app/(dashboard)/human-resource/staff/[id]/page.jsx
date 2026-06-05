@@ -7,6 +7,9 @@ import { toast } from "react-toastify";
 import { BASE_URL } from "@/configs/url";
 import Loader from "@/components/loader/Loader";
 import DocumentRequestModal from "@/components/human-resources/staff/DocumentRequestModal";
+import SalaryRecord from "@/components/human-resources/staff/SalaryRecord";
+import StaffProfileCharts from "@/components/human-resources/staff/StaffProfileCharts";
+
 
 // MUI imports
 import {
@@ -33,7 +36,7 @@ import {
   MenuItem,
   TextField,
 } from "@mui/material";
-import { Person, WorkHistory, EventNote, CheckCircle } from "@mui/icons-material";
+import { Person, WorkHistory, EventNote, CheckCircle, AttachMoney, AccountBalanceWallet, Savings, Payment } from "@mui/icons-material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
@@ -64,6 +67,9 @@ const StaffProfilePage = () => {
   const [leaveFilter, setLeaveFilter] = useState("all");
   const [docFilter, setDocFilter] = useState("all");
 
+  const [payrollRecords, setPayrollRecords] = useState([]);
+  const [payrollLoading, setPayrollLoading] = useState(false);
+
   const fetch = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/api/user/staff/${id}`);
@@ -90,9 +96,22 @@ const StaffProfilePage = () => {
     }
   };
 
+  const fetchPayroll = async () => {
+    setPayrollLoading(true);
+    try {
+      const res = await axios.get(`${BASE_URL}/api/payroll/get?userId=${id}`);
+      setPayrollRecords(Array.isArray(res.data) ? res.data : res.data?.data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setPayrollLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetch();
     fetchDocRequests();
+    fetchPayroll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -116,6 +135,12 @@ const StaffProfilePage = () => {
     }, 0);
   const LEAVE_LIMIT = 20; // This should ideally come from backend settings
   const remainingLeaves = Math.max(0, LEAVE_LIMIT - USED_LEAVES);
+
+  // Payroll Stats
+  const totalPaid = payrollRecords.filter((r) => r.status === "paid").reduce((sum, r) => sum + Number(r.netSalary || 0), 0);
+  const totalPending = payrollRecords.filter((r) => r.status === "pending").reduce((sum, r) => sum + Number(r.netSalary || 0), 0);
+  const avgNet = payrollRecords.length > 0 ? payrollRecords.reduce((sum, r) => sum + Number(r.netSalary || 0), 0) / payrollRecords.length : 0;
+  const fmt = (n) => Number(n || 0).toLocaleString("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 });
 
   const openNewDocModal = () => {
     setSelectedDocRequest(null);
@@ -151,6 +176,43 @@ const StaffProfilePage = () => {
     // open file in new tab / trigger browser download
     const url = `${BASE_URL}${doc.documentUrl}`;
     window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  // ✅ Time formatting helpers
+  const formatTimeTo12Hour = (timeStr) => {
+    if (!timeStr) return "N/A";
+    const [hourStr, minuteStr] = timeStr.split(":");
+    let hour = parseInt(hourStr, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12;
+    hour = hour ? hour : 12;
+    return `${hour}:${minuteStr} ${ampm}`;
+  };
+
+  const timeToDecimal = (timeStr) => {
+    if (!timeStr) return 0;
+    if (typeof timeStr === 'number') return timeStr;
+    const parts = timeStr.split(":");
+    if (parts.length < 2) return parseFloat(timeStr) || 0;
+    const hours = parseInt(parts[0], 10) || 0;
+    const minutes = parseInt(parts[1], 10) || 0;
+    return Number((hours + minutes / 60).toFixed(2));
+  };
+
+  const formatBreakTime = (timeStr) => {
+    if (!timeStr) return "0m";
+    if (typeof timeStr === 'number') {
+      const h = Math.floor(timeStr);
+      const m = Math.round((timeStr - h) * 60);
+      if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
+      return m > 0 ? `${m}m` : "0m";
+    }
+    const parts = timeStr.split(":");
+    if (parts.length < 2) return "0m";
+    const h = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
+    return m > 0 ? `${m}m` : "0m";
   };
 
   // 🔍 Filter Logic
@@ -249,6 +311,64 @@ const StaffProfilePage = () => {
         </Card>
       </Stack>
 
+      <Stack direction={{ xs: "column", md: "row" }} spacing={2} mb={4}>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Base Salary</Typography>
+                <Typography variant="h5" color="primary.main" fontWeight={600}>
+                  {data?.salary ? `$${Number(data.salary).toLocaleString()}` : "—"}
+                </Typography>
+              </Box>
+              <AttachMoney fontSize="large" color="primary" />
+            </Stack>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Total Paid</Typography>
+                <Typography variant="h5" color="success.main" fontWeight={600}>
+                  {fmt(totalPaid)}
+                </Typography>
+              </Box>
+              <Payment fontSize="large" color="success" />
+            </Stack>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Pending Payroll</Typography>
+                <Typography variant="h5" color="warning.main" fontWeight={600}>
+                  {fmt(totalPending)}
+                </Typography>
+              </Box>
+              <AccountBalanceWallet fontSize="large" color="warning" />
+            </Stack>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+          <CardContent>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Box>
+                <Typography variant="body2" color="text.secondary">Avg. Net Salary</Typography>
+                <Typography variant="h5" color="info.main" fontWeight={600}>
+                  {fmt(avgNet)}
+                </Typography>
+              </Box>
+              <Savings fontSize="large" color="info" />
+            </Stack>
+          </CardContent>
+        </Card>
+      </Stack>
+
+      {/* 📊 Personnel Data Analytics */}
+      <StaffProfileCharts timesheets={EmployeeTimeSheets} leaves={EmployeeLeaves} payroll={payrollRecords} />
+
       {/* TimeSheet Table */}
       <Card sx={{ mb: 4, borderRadius: 3, boxShadow: 3 }}>
         <CardContent>
@@ -275,7 +395,13 @@ const StaffProfilePage = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Date</TableCell><TableCell>Start</TableCell><TableCell>End</TableCell><TableCell>Break</TableCell><TableCell>Overwork</TableCell><TableCell>Status</TableCell>
+                  <TableCell>Date</TableCell>
+                  <TableCell>Start</TableCell>
+                  <TableCell>End</TableCell>
+                  <TableCell>Break</TableCell>
+                  <TableCell>Net Hours</TableCell>
+                  <TableCell>Overwork</TableCell>
+                  <TableCell>Status</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -284,7 +410,17 @@ const StaffProfilePage = () => {
                   pageTimesheet * rowsPerPageTimesheet + rowsPerPageTimesheet
                 ).map((row) => (
                   <TableRow key={row.id}>
-                    <TableCell>{row.date}</TableCell><TableCell>{row.startTime}</TableCell><TableCell>{row.endTime}</TableCell><TableCell>{row.breakTime}</TableCell><TableCell>{row.overWork}</TableCell><TableCell><Chip label={row.status} color={row.status === "approved" ? "success" : row.status === "pending" ? "warning" : "error"} size="small" /></TableCell>
+                    <TableCell>
+                      {new Date(row.date).toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </TableCell>
+                    <TableCell>{formatTimeTo12Hour(row.startTime)}</TableCell>
+                    <TableCell>{formatTimeTo12Hour(row.endTime)}</TableCell>
+                    <TableCell>{formatBreakTime(row.breakTime)}</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>{row.netHours?.toFixed(2)}h</TableCell>
+                    <TableCell color="primary">+{timeToDecimal(row.overWork)}h</TableCell>
+                    <TableCell>
+                      <Chip label={row.status} color={row.status === "approved" ? "success" : row.status === "pending" ? "warning" : "error"} size="small" />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -360,6 +496,9 @@ const StaffProfilePage = () => {
           />
         </CardContent>
       </Card>
+
+      {/* Salary Records Section */}
+      <SalaryRecord employeeId={id} baseSalary={data?.salary} records={payrollRecords} loading={payrollLoading} onRefresh={fetchPayroll} />
 
       {/* Document Requests Section */}
       <Card sx={{ borderRadius: 3, boxShadow: 3 }}>

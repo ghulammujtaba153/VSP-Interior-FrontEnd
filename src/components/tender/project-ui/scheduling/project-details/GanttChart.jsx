@@ -528,14 +528,14 @@ export default function GanttChart({ projectId, data }) {
   }
 
   return (
-    <div className="bg-white p-4 rounded shadow">
+    <div className="p-4 rounded shadow">
       {/* Header with Controls */}
       <div className="flex justify-between items-center mb-4">
         <div className="flex gap-2">
           <button
             onClick={() => setViewMode(ViewMode.Day)}
             className={`px-3 py-1 rounded ${
-              viewMode === ViewMode.Day ? "bg-blue-600 text-white" : "bg-gray-200"
+              viewMode === ViewMode.Day ? "bg-blue-600 text-white" : "bg-gray-200 text-black"
             }`}
           >
             Day
@@ -543,7 +543,7 @@ export default function GanttChart({ projectId, data }) {
           <button
             onClick={() => setViewMode(ViewMode.Week)}
             className={`px-3 py-1 rounded ${
-              viewMode === ViewMode.Week ? "bg-blue-600 text-white" : "bg-gray-200"
+              viewMode === ViewMode.Week ? "bg-blue-600 text-white" : "bg-gray-200 text-black"
             }`}
           >
             Week
@@ -553,7 +553,7 @@ export default function GanttChart({ projectId, data }) {
             className={`px-3 py-1 rounded ${
               viewMode === ViewMode.Month
                 ? "bg-blue-600 text-white"
-                : "bg-gray-200"
+                : "bg-gray-200 text-black"
             }`}
           >
             Month

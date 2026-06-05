@@ -39,12 +39,23 @@ import Loader from "../loader/Loader";
 import axios from "axios";
 import { BASE_URL } from "@/configs/url";
 import { toast } from "react-toastify";
+import TimeSheetHeatMap from "./TimeSheetHeatMap";
+import TimeSheetCharts from "./TimeSheetCharts";
 
 const Timesheets = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+
+  const getTodayDate = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const [startDate, setStartDate] = useState(getTodayDate());
+  const [endDate, setEndDate] = useState(getTodayDate());
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -53,27 +64,30 @@ const Timesheets = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
 
-  // Stats for the "Rect" section
-  const [stats, setStats] = useState({
+  // Global data for stats & charts
+  const [globalData, setGlobalData] = useState([]);
+  const [globalStats, setGlobalStats] = useState({
     total: 0,
     pending: 0,
     approvedTotal: 0,
     avgWorkload: 0
   });
 
-  // ✅ Helper to calculate Total Hours
-  const calculateNetHours = (start, end, breakTime) => {
+  // Stats for the "Rect" section (Now decoupled from filters) - UNUSED anymore, using globalStats
+
+  // ✅ Simplified Helper: Just Start to End
+  const calculateNetHours = (start, end) => {
     if (!start || !end) return 0;
     try {
       const s = new Date(`1970-01-01T${start}`);
       const e = new Date(`1970-01-01T${end}`);
       let diff = (e - s) / (1000 * 60 * 60); // diff in hours
-      const b = parseFloat(breakTime) || 0;
-      return Math.max(0, diff - b);
+      if (diff < 0) diff += 24; // Handle overnight shifts
+      return diff;
     } catch (err) { return 0; }
   };
 
-  // ✅ Fetch timesheets with pagination & filters
+  // ✅ Fetch timesheets for table (with pagination & filters)
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -87,28 +101,41 @@ const Timesheets = () => {
       }).toString();
 
       const res = await axios.get(`${BASE_URL}/api/employee-timesheet/get?${query}`);
-      
       const timesheets = res.data.data || res.data.timesheets || [];
-      const globalStats = res.data.stats || {};
-
       setData(timesheets);
-      setTotalCount(res.data.total || globalStats.total || timesheets.length);
-      
-      const approvedItems = timesheets.filter(t => t.status === 'approved');
-      const approvedTotal = approvedItems.reduce((acc, t) => acc + calculateNetHours(t.startTime, t.endTime, t.breakTime), 0);
-      
-      setStats({
-        total: globalStats.total || res.data.total || timesheets.length,
-        pending: globalStats.pendingCount || 0,
-        approvedTotal: approvedTotal,
-        avgWorkload: approvedItems.length > 0 ? (approvedTotal / approvedItems.length) : 0
-      });
+      setTotalCount(res.data.total || timesheets.length);
     } catch (error) {
-      toast.error("Failed to fetch employee timesheets");
+      toast.error("Failed to fetch filtered timesheets");
     } finally {
       setLoading(false);
     }
   };
+
+  // ✅ Fetch global stats (unfiltered)
+  const fetchGlobalStats = async () => {
+    try {
+      // Get records for charts (up to 1000 for visualization)
+      const res = await axios.get(`${BASE_URL}/api/employee-timesheet/get?limit=1000`);
+      const allRecords = res.data.data || [];
+      const statsObj = res.data.stats || {};
+      
+      setGlobalData(allRecords);
+      
+      // Use pre-calculated stats from backend for the Summary Cards
+      setGlobalStats({
+        total: statsObj.total || 0,
+        pending: statsObj.pendingCount || 0,
+        approvedTotal: statsObj.approvedTotal || 0,
+        avgWorkload: statsObj.avgWorkload || 0
+      });
+    } catch (error) {
+      console.error("Failed to fetch global stats:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchGlobalStats();
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -179,10 +206,46 @@ const Timesheets = () => {
     }
   };
 
+  // ✅ Helper to format 24h time to 12h AM/PM
+  const formatTimeTo12Hour = (timeStr) => {
+    if (!timeStr) return "N/A";
+    const [hourStr, minuteStr] = timeStr.split(":");
+    let hour = parseInt(hourStr, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12;
+    hour = hour ? hour : 12; // the hour '0' should be '12'
+    return `${hour}:${minuteStr} ${ampm}`;
+  };
+
+  // ✅ Helper to convert HH:MM(:SS) to decimal hours
+  const timeToDecimal = (timeStr) => {
+    if (!timeStr) return 0;
+    const parts = timeStr.split(":");
+    const hours = parseInt(parts[0], 10) || 0;
+    const minutes = parseInt(parts[1], 10) || 0;
+    return Number((hours + minutes / 60).toFixed(2));
+  };
+
+  const formatBreakTime = (timeStr) => {
+    if (!timeStr) return "0m";
+    if (typeof timeStr === 'number') {
+      const h = Math.floor(timeStr);
+      const m = Math.round((timeStr - h) * 60);
+      if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
+      return m > 0 ? `${m}m` : "0m";
+    }
+    const parts = timeStr.split(":");
+    if (parts.length < 2) return "0m";
+    const h = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
+    return m > 0 ? `${m}m` : "0m";
+  };
+
   if (loading) return <Loader />;
 
   return (
-    <Container sx={{ py: 6 }}>
+    <Container maxWidth={false} sx={{ py: 6 }}>
       {/* Header */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
@@ -214,14 +277,14 @@ const Timesheets = () => {
         </Stack>
       </Stack>
 
-      {/* Summary Stats (Rect Section) */}
+      {/* Summary Stats (Rect Section) - Global Data */}
       <Stack direction={{ xs: "column", md: "row" }} spacing={2} mb={4}>
         <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
           <CardContent>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography variant="body2" color="text.secondary">Total Logs</Typography>
-                <Typography variant="h5" color="primary.main" fontWeight={600}>{totalCount}</Typography>
+                <Typography variant="body2" color="text.secondary">Total Logs (Overall)</Typography>
+                <Typography variant="h5" color="primary.main" fontWeight={600}>{globalStats.total}</Typography>
               </Box>
               <History fontSize="large" color="primary" />
             </Stack>
@@ -232,7 +295,7 @@ const Timesheets = () => {
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
                 <Typography variant="body2" color="text.secondary">Pending Reviews</Typography>
-                <Typography variant="h5" color="warning.main" fontWeight={600}>{stats.pending}</Typography>
+                <Typography variant="h5" color="warning.main" fontWeight={600}>{globalStats.pending}</Typography>
               </Box>
               <PendingActions fontSize="large" color="warning" />
             </Stack>
@@ -242,8 +305,8 @@ const Timesheets = () => {
           <CardContent>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography variant="body2" color="text.secondary">Net Approved</Typography>
-                <Typography variant="h5" color="success.main" fontWeight={600}>{stats.approvedTotal?.toFixed(1) || 0}h</Typography>
+                <Typography variant="body2" color="text.secondary">Net Approved Hours</Typography>
+                <Typography variant="h5" color="success.main" fontWeight={600}>{globalStats.approvedTotal?.toFixed(1) || 0}h</Typography>
               </Box>
               <Timer fontSize="large" color="success" />
             </Stack>
@@ -254,7 +317,7 @@ const Timesheets = () => {
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
                 <Typography variant="body2" color="text.secondary">Avg. Workload</Typography>
-                <Typography variant="h5" color="secondary.main" fontWeight={600}>{stats.avgWorkload?.toFixed(1) || 0}h</Typography>
+                <Typography variant="h5" color="secondary.main" fontWeight={600}>{globalStats.avgWorkload?.toFixed(1) || 0}h</Typography>
               </Box>
               <TrendingUp fontSize="large" color="secondary" />
             </Stack>
@@ -262,8 +325,21 @@ const Timesheets = () => {
         </Card>
       </Stack>
 
+      {/* Activity Visualization (Heat Map) */}
+      <Box mb={4}>
+        <TimeSheetHeatMap data={globalData} />
+      </Box>
+
+      {/* Analytics Charts */}
+      <TimeSheetCharts data={globalData} />
+
       {/* Filters */}
-      <Card sx={{ mb: 4 }}>
+      <Card sx={{ mb: 4, bgcolor: 'background.default', border: '1px solid', borderColor: 'divider' }}>
+        <CardHeader 
+          title="Table Filters" 
+          titleTypographyProps={{ variant: 'subtitle1', fontWeight: 600 }}
+          sx={{ pb: 0 }}
+        />
         <CardContent>
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} md={4}>
@@ -333,7 +409,6 @@ const Timesheets = () => {
                   <TableCell>Date</TableCell>
                   <TableCell>Start Time</TableCell>
                   <TableCell>End Time</TableCell>
-                  <TableCell>Break</TableCell>
                   <TableCell>Net Hours</TableCell>
                   <TableCell>Overwork</TableCell>
                   <TableCell>Status</TableCell>
@@ -343,7 +418,7 @@ const Timesheets = () => {
 
               <TableBody>
                 {filteredTimesheets.map((ts) => {
-                  const netHours = calculateNetHours(ts.startTime, ts.endTime, ts.breakTime);
+                  const netHours = calculateNetHours(ts.startTime, ts.endTime);
 
                   return (
                     <TableRow key={ts.id} hover>
@@ -356,16 +431,15 @@ const Timesheets = () => {
                       <TableCell>
                         {new Date(ts.date).toLocaleDateString("en-GB", { day: '2-digit', month: 'short', year: 'numeric' })}
                       </TableCell>
-                      <TableCell>{ts.startTime}</TableCell>
-                      <TableCell>{ts.endTime}</TableCell>
-                      <TableCell>{ts.breakTime}h</TableCell>
+                      <TableCell>{formatTimeTo12Hour(ts.startTime)}</TableCell>
+                      <TableCell>{formatTimeTo12Hour(ts.endTime)}</TableCell>
                       <TableCell sx={{ fontWeight: 'bold' }}>
                         <Stack direction="row" spacing={0.5} alignItems="center">
                           <Timer sx={{ fontSize: 16, color: 'primary.main' }} />
                           <Typography variant="body2">{netHours.toFixed(2)}h</Typography>
                         </Stack>
                       </TableCell>
-                      <TableCell color="primary">+{ts.overWork}h</TableCell>
+                      <TableCell color="primary">+{timeToDecimal(ts.overWork)}h</TableCell>
                       <TableCell>{getStatusBadge(ts.status)}</TableCell>
 
                       {/* ✅ Actions */}
@@ -396,9 +470,24 @@ const Timesheets = () => {
                     </TableRow>
                   );
                 })}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                  {/* Final Total Row for Filtered Data */}
+                  {filteredTimesheets.length > 0 && (
+                    <TableRow sx={{ bgcolor: 'action.hover' }}>
+                      <TableCell colSpan={4} align="right" sx={{ fontWeight: 'bold' }}>Total Filtered Hours:</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>
+                        <Stack direction="row" spacing={0.5} alignItems="center">
+                          <TrendingUp sx={{ fontSize: 16, color: 'success.main' }} />
+                          <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                            {filteredTimesheets.reduce((acc, ts) => acc + calculateNetHours(ts.startTime, ts.endTime), 0).toFixed(2)}h
+                          </Typography>
+                        </Stack>
+                      </TableCell>
+                      <TableCell colSpan={3} />
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
 
           <TablePagination
             component="div"

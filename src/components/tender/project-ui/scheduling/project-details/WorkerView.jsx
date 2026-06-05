@@ -68,7 +68,7 @@ const WorkerView = ({ projectId, data }) => {
           sx={{ 
             mt: 4, 
             p: 3, 
-            bgcolor: 'grey.50', 
+             
             borderRadius: 2,
             display: 'flex',
             justifyContent: 'space-around',

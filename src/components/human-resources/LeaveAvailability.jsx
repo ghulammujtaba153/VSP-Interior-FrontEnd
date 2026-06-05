@@ -31,6 +31,7 @@ import {
   Groups,
   EventBusy,
   FactCheck,
+  History,
 } from "@mui/icons-material";
 import Loader from "../loader/Loader";
 import axios from "axios";
@@ -38,6 +39,8 @@ import { BASE_URL } from "@/configs/url";
 import ViewRequestModal from "./ViewRequestModal";
 import { useAuth } from "@/context/authContext";
 import Link from "next/link";
+
+import LeaveCharts from "./LeaveCharts";
 
 const LeaveAvailability = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -89,19 +92,6 @@ const LeaveAvailability = () => {
       leave.endDate >= todayStr
   ).length;
 
-  const allEmployeeIds = Array.from(new Set(data.map((leave) => leave.employeeId)));
-  const employeeIdsOnLeaveToday = new Set(
-    data
-      .filter(
-        (leave) =>
-          leave.status?.toLowerCase() === "approved" &&
-          leave.startDate <= todayStr &&
-          leave.endDate >= todayStr
-      )
-      .map((leave) => leave.employeeId)
-  );
-  
-
   // --- Chips ---
   const getStatusChip = (status) => {
     switch (status?.toLowerCase()) {
@@ -146,6 +136,15 @@ const LeaveAvailability = () => {
     }
   };
 
+  const handleAction = async (id, status) => {
+    try {
+      await axios.put(`${BASE_URL}/api/employee-leave/update/${id}`, { status });
+      fetch();
+    } catch (error) {
+      console.error("Error updating leave status:", error);
+    }
+  };
+
   // Handler to open view modal
   const handleView = (request) => {
     setSelectedRequest(request);
@@ -153,72 +152,74 @@ const LeaveAvailability = () => {
   };
 
   return (
-    <Container sx={{ py: 6 }}>
+    <Container maxWidth={false} sx={{ py: 6 }}>
       {/* Header */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
         spacing={2}
         justifyContent="space-between"
         alignItems={{ xs: "flex-start", sm: "center" }}
-        mb={4}
+        mb={5}
       >
         <Box>
-          <Typography variant="h5" fontWeight="bold">
+          <Typography variant="h4" fontWeight="700" color="text.primary">
             Leave & Availability
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Manage leave requests and staff availability
+            Insights and management for staff leave and presence
           </Typography>
         </Box>
         <Stack direction="row" spacing={2}>
-          <Link href="/human-resource/calendar">
-            <Button variant="outlined" startIcon={<CalendarToday />}>
-              View Calendar
+           <Button variant="outlined" startIcon={<History />} onClick={() => fetch()} sx={{ borderRadius: 2 }}>
+            Refresh
+          </Button>
+          <Link href="/human-resource/calendar" style={{ textDecoration: 'none' }}>
+            <Button variant="contained" startIcon={<CalendarToday />} sx={{ borderRadius: 2 }}>
+              Organization Planner
             </Button>
           </Link>
-          
-          {/* <Button variant="contained" startIcon={<Add />}>
-            New Request
-          </Button> */}
         </Stack>
       </Stack>
 
       {/* Overview Cards (Rect Section) */}
       <Stack direction={{ xs: "column", md: "row" }} spacing={2} mb={4}>
-        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1, borderTop: '4px solid', borderColor: 'warning.main' }}>
           <CardContent>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography variant="body2" color="text.secondary">Pending Requests</Typography>
-                <Typography variant="h5" color="warning.main" fontWeight={600}>{pendingRequests}</Typography>
+                <Typography variant="body2" color="text.secondary" fontWeight={500}>Pending Requests</Typography>
+                <Typography variant="h5" color="warning.main" fontWeight={700}>{pendingRequests}</Typography>
               </Box>
               <FactCheck fontSize="large" color="warning" />
             </Stack>
           </CardContent>
         </Card>
-        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1, borderTop: '4px solid', borderColor: 'error.main' }}>
           <CardContent>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography variant="body2" color="text.secondary">On Leave Today</Typography>
-                <Typography variant="h5" color="error.main" fontWeight={600}>{staffOnLeaveToday}</Typography>
+                <Typography variant="body2" color="text.secondary" fontWeight={500}>On Leave Today</Typography>
+                <Typography variant="h5" color="error.main" fontWeight={700}>{staffOnLeaveToday}</Typography>
               </Box>
               <EventBusy fontSize="large" color="error" />
             </Stack>
           </CardContent>
         </Card>
-        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
+        <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1, borderTop: '4px solid', borderColor: 'success.main' }}>
           <CardContent>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography variant="body2" color="text.secondary">Available Team</Typography>
-                <Typography variant="h5" color="success.main" fontWeight={600}>{availableStaff}</Typography>
+                <Typography variant="body2" color="text.secondary" fontWeight={500}>Available Team</Typography>
+                <Typography variant="h5" color="success.main" fontWeight={700}>{availableStaff}</Typography>
               </Box>
               <Groups fontSize="large" color="success" />
             </Stack>
           </CardContent>
         </Card>
       </Stack>
+
+      {/* 📊 Data Visualization */}
+      <LeaveCharts data={data} />
 
       {/* Search & Actions */}
       <Card sx={{ mb: 4 }}>

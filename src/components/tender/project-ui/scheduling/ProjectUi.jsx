@@ -25,7 +25,7 @@ const ProjectUi = () => {
 
   useEffect(() => {
     if (user && user.Role && user.Role.name) {
-      setUserRole(user.Role.name);
+      // setUserRole(user.Role.name);
     }
   }, [user]);
 
