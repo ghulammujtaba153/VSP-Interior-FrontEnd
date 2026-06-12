@@ -58,7 +58,7 @@ const AppMenuContent = ({ MenuItem, SubMenu }) => (
       </MenuItem>
     </PermissionWrapper>
 
-    <MenuItem href='/project' icon={<i className='tabler-briefcase' />}>
+    {/* <MenuItem href='/project' icon={<i className='tabler-briefcase' />}>
       Project Setup
     </MenuItem>
 
@@ -99,7 +99,7 @@ const AppMenuContent = ({ MenuItem, SubMenu }) => (
       <MenuItem href='/profile' icon={<i className='tabler-user' />}>
         My Profile
       </MenuItem>
-    </SubMenu>
+    </SubMenu> */}
   </>
 )
 
