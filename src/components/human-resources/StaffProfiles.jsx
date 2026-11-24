@@ -35,8 +35,8 @@ import {
   CalendarToday
 } from "@mui/icons-material";
 import Loader from "../loader/Loader";
+import apiClient from "@/lib/axios";
 import { BASE_URL } from "@/configs/url";
-import axios from "axios";
 import UserModal from "../users/UserModal";
 import { toast } from "react-toastify";
 import { useAuth } from '@/context/authContext';
@@ -52,6 +52,7 @@ const StaffProfiles = () => {
   const [page, setPage] = useState(1);
   const [limit] = useState(6); // cards per page
   const [totalPages, setTotalPages] = useState(1);
+  const [orgStats, setOrgStats] = useState({ total: 0, active: 0, suspended: 0 });
   const { user } = useAuth();
 
   // UserModal state
@@ -63,11 +64,20 @@ const StaffProfiles = () => {
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
 
+  const fetchOrgStats = async () => {
+    try {
+      const res = await apiClient.get('/api/hr/staff-stats');
+      setOrgStats(res.data.data || { total: 0, active: 0, suspended: 0 });
+    } catch (error) {
+      console.error('Error fetching org stats:', error);
+    }
+  };
+
   const fetchStaff = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(
-        `${BASE_URL}/api/user/get?page=${page}&limit=${limit}`
+      const response = await apiClient.get(
+        `/api/user/get?page=${page}&limit=${limit}`
       );
       setStaff(response.data.users || response.data.data || (Array.isArray(response.data) ? response.data : []));
       setTotalPages(response.data.total ? Math.ceil(response.data.total / limit) : response.data.totalPages || 1);
@@ -80,7 +90,7 @@ const StaffProfiles = () => {
 
   const fetchRoles = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/api/role/get`);
+      const res = await apiClient.get(`/api/role/get`);
       setRoles(res.data || []);
     } catch (error) {
       console.error("Error roles:", error);
@@ -90,6 +100,7 @@ const StaffProfiles = () => {
   useEffect(() => {
     fetchStaff();
     fetchRoles();
+    fetchOrgStats();
     // eslint-disable-next-line
   }, [page]);
 
@@ -97,7 +108,7 @@ const StaffProfiles = () => {
     const newStatus = currentStatus === "active" ? "suspended" : "active";
     toast.loading("Updating status...");
     try {
-      await axios.put(`${BASE_URL}/api/user/update-status/${id}`, {
+      await apiClient.put(`/api/user/update-status/${id}`, {
         status: newStatus,
         userId: user.id
       });
@@ -133,10 +144,10 @@ const StaffProfiles = () => {
     toast.loading("Saving user...");
     try {
       if (modalMode === "edit") {
-        await axios.put(`${BASE_URL}/api/user/update/${formData.id}`, formData);
+        await apiClient.put(`/api/user/update/${formData.id}`, formData);
         toast.success("User updated successfully");
       } else {
-        await axios.post(`${BASE_URL}/api/user/create`, formData);
+        await apiClient.post(`/api/user/create`, formData);
         toast.success("User created successfully");
       }
       fetchStaff();
@@ -159,7 +170,7 @@ const StaffProfiles = () => {
     if (!userToDelete) return;
     toast.loading("Deleting user...");
     try {
-      await axios.delete(`${BASE_URL}/api/user/delete/${userToDelete.id}`);
+      await apiClient.delete(`/api/user/delete/${userToDelete.id}`);
       fetchStaff();
       toast.success("User deleted successfully");
     } catch (error) {
@@ -187,13 +198,18 @@ const StaffProfiles = () => {
         statusFilter === "all" ||
         member.status?.toLowerCase() === statusFilter.toLowerCase();
 
-      return matchesSearch && matchesStatus;
+      const matchesRole =
+        roleFilter === "all" ||
+        String(member.roleId) === String(roleFilter) ||
+        member.Role?.id === Number(roleFilter);
+
+      return matchesSearch && matchesStatus && matchesRole;
     }
   );
 
-  const activeCount = (Array.isArray(staff) ? staff : []).filter(s => s.status === 'active').length;
-  const suspendedCount = (Array.isArray(staff) ? staff : []).filter(s => s.status === 'suspended').length;
-  const totalCount = (Array.isArray(staff) ? staff : []).length;
+  const activeCount = orgStats.active;
+  const suspendedCount = orgStats.suspended;
+  const totalCount = orgStats.total;
 
   if(loading) return <Loader/>
 

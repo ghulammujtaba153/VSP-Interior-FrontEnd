@@ -15,7 +15,7 @@ import {
   Box,
 } from "@mui/material";
 import { toast } from "react-toastify";
-import axios from "axios";
+import apiClient from "@/lib/axios";
 import { BASE_URL } from "@/configs/url";
 
 const NoticeModal = ({ open, onClose, notice, refresh }) => {
@@ -74,12 +74,12 @@ const NoticeModal = ({ open, onClose, notice, refresh }) => {
     try {
       if (notice) {
         // Update existing notice - do NOT set Content-Type header manually
-        await axios.put(`${BASE_URL}/api/notices/update/${notice.id}`, form);
+        await apiClient.put(`/api/notices/update/${notice.id}`, form);
         toast.dismiss();
         toast.success("Notice updated successfully");
       } else {
         // Create new notice - let browser/axios set multipart boundary
-        await axios.post(`${BASE_URL}/api/notices/create`, form);
+        await apiClient.post(`/api/notices/create`, form);
         toast.dismiss();
         toast.success("Notice added successfully");
       }

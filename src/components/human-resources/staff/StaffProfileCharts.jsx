@@ -3,34 +3,39 @@
 import React from 'react';
 import { Card, CardContent, Grid, useTheme, Typography, Box } from '@mui/material';
 import { Chart } from 'react-google-charts';
+import { getTimesheetHours, getOvertimeHours } from '@/lib/hrUtils';
 
-const StaffProfileCharts = ({ timesheets = [], leaves = [], payroll = [] }) => {
+const StaffProfileCharts = ({
+  timesheets = [],
+  leaves = [],
+  payroll = [],
+  leaveEntitled = 20,
+}) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
 
-  // Explicit theme colors
   const textColor = isDark ? '#fff' : 'rgba(0, 0, 0, 0.87)';
   const secondaryColor = isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)';
   const dividerColor = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)';
 
-  // 📊 1. Monthly Payroll Trend (Last 12 Months)
   const payrollMonths = payroll.reduce((acc, curr) => {
-    if (curr.status !== 'paid') return acc;
-    const date = new Date(curr.paidDate || curr.createdAt);
+    const amount = Number(curr.netPay ?? curr.netSalary ?? 0);
+    if (amount <= 0) return acc;
+    const date = new Date(curr.paymentDate || curr.paidDate || curr.createdAt);
     const label = date.toLocaleString('default', { month: 'short', year: '2-digit' });
-    acc[label] = (acc[label] || 0) + Number(curr.netSalary || 0);
+    acc[label] = (acc[label] || 0) + amount;
     return acc;
   }, {});
 
   const payrollData = [
-    ['Month', 'Net Salary', { role: 'style' }],
+    ['Month', 'Net Pay (NZD)', { role: 'style' }],
     ...Object.entries(payrollMonths).map(([m, val]) => [m, val, theme.palette.primary.main]).slice(-6)
   ];
 
   if (payrollData.length === 1) payrollData.push(['No Data', 0, theme.palette.grey[400]]);
 
   const payrollOptions = {
-    title: 'Recent Payroll Payouts (AUD)',
+    title: 'Recent Payroll Payouts (NZD)',
     backgroundColor: 'transparent',
     legend: { position: 'none' },
     titleTextStyle: { color: textColor, fontSize: 16, bold: true },
@@ -39,20 +44,25 @@ const StaffProfileCharts = ({ timesheets = [], leaves = [], payroll = [] }) => {
     chartArea: { width: '80%', height: '70' },
   };
 
-  // 📊 2. Work vs Overtime Distribution
-  const totalWork = timesheets.reduce((acc, ts) => acc + (Number(ts.netHours) || 0), 0);
-  const totalOver = timesheets.reduce((acc, ts) => {
-     // Helper for overwork decimal conversion
-     const parts = (ts.overWork || "00:00:00").split(':');
-     const dec = (parseInt(parts[0], 10) || 0) + ((parseInt(parts[1], 10) || 0) / 60);
-     return acc + dec;
-  }, 0);
+  let totalHours = 0;
+  let totalOver = 0;
+  for (const ts of timesheets) {
+    const hours = getTimesheetHours(ts);
+    const over = getOvertimeHours(ts);
+    totalHours += hours;
+    totalOver += over > 0 ? over : 0;
+  }
+  const totalWork = Math.max(0, totalHours - totalOver);
 
   const workDistributionData = [
     ['Category', 'Hours'],
     ['Standard Hours', totalWork],
     ['Overtime Hours', totalOver],
   ];
+
+  if (totalWork === 0 && totalOver === 0) {
+    workDistributionData.push(['No logged hours', 1]);
+  }
 
   const workOptions = {
     title: 'Work vs Overtime (All-Time)',
@@ -67,11 +77,10 @@ const StaffProfileCharts = ({ timesheets = [], leaves = [], payroll = [] }) => {
     chartArea: { width: '90%', height: '80%' },
   };
 
-  // 📊 3. Monthly Attendance Trend (Line Chart)
   const attendanceMonths = timesheets.reduce((acc, ts) => {
     const date = new Date(ts.date);
     const label = date.toLocaleString('default', { month: 'short', year: '2-digit' });
-    acc[label] = (acc[label] || 0) + (Number(ts.netHours) || 0);
+    acc[label] = (acc[label] || 0) + getTimesheetHours(ts);
     return acc;
   }, {});
 
@@ -94,17 +103,15 @@ const StaffProfileCharts = ({ timesheets = [], leaves = [], payroll = [] }) => {
     chartArea: { width: '80%', height: '70' },
   };
 
-  // 📊 4. Leave Balance Utilization (Pie Chart)
-  const LEAVE_LIMIT = 20; // Consistent with main page
   const approvedDays = leaves
-    .filter(l => l.status.toLowerCase() === "approved")
+    .filter(l => l.status?.toLowerCase() === "approved")
     .reduce((acc, l) => {
       const s = new Date(l.startDate);
       const e = new Date(l.endDate);
       const diff = Math.floor((e - s) / (1000 * 60 * 60 * 24)) + 1;
       return acc + (isNaN(diff) ? 0 : diff);
     }, 0);
-  const remaining = Math.max(0, LEAVE_LIMIT - approvedDays);
+  const remaining = Math.max(0, leaveEntitled - approvedDays);
 
   const leaveBalanceData = [
     ['Status', 'Days'],

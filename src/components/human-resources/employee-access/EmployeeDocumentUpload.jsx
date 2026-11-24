@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -9,32 +9,21 @@ import {
   Button,
   Box,
   LinearProgress,
-  TextField,
   Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
 } from "@mui/material";
-import axios from "axios";
-import { BASE_URL } from "@/configs/url";
+import apiClient from "@/lib/axios";
 import { toast } from "react-toastify";
 
 const EmployeeDocumentUpload = ({ open, onClose, request = null, employeeId, onUploaded }) => {
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [status, setStatus] = useState("uploaded"); // schema status
-  const [documentId, setDocumentId] = useState(""); // optional: link to a master document if exists
 
-  console.log("employee id", employeeId, request)
   useEffect(() => {
     if (!open) {
       setFile(null);
       setProgress(0);
       setUploading(false);
-      setStatus("uploaded");
-      setDocumentId("");
     }
   }, [open]);
 
@@ -57,16 +46,13 @@ const EmployeeDocumentUpload = ({ open, onClose, request = null, employeeId, onU
     form.append("file", file);
     form.append("employeeId", employeeId);
     form.append("requestId", request.id);
-    if (documentId) form.append("documentId", documentId);
-    form.append("status", status);
 
     setUploading(true);
     setProgress(0);
     toast.loading("Uploading document...");
 
     try {
-      // Do not set Content-Type header; let browser set the multipart boundary
-      const res = await axios.post(`${BASE_URL}/api/employee-document/upload`, form, {
+      const res = await apiClient.post(`/api/employee-document/upload`, form, {
         onUploadProgress: (e) => {
           if (e.total) {
             setProgress(Math.round((e.loaded * 100) / e.total));
@@ -75,13 +61,13 @@ const EmployeeDocumentUpload = ({ open, onClose, request = null, employeeId, onU
       });
 
       toast.dismiss();
-      toast.success("Document uploaded");
+      toast.success("Document submitted for HR review");
       onUploaded?.(res.data);
       onClose?.();
     } catch (error) {
       toast.dismiss();
       console.error(error);
-      toast.error("Upload failed");
+      toast.error(error.response?.data?.error || "Upload failed");
     } finally {
       setUploading(false);
       setProgress(0);
@@ -94,8 +80,14 @@ const EmployeeDocumentUpload = ({ open, onClose, request = null, employeeId, onU
       <DialogContent>
         {request ? (
           <Box mb={2}>
-            <Typography variant="subtitle2">Request:</Typography>
-            <Typography>{request.documentName} — {request.documentType}</Typography>
+            <Typography variant="subtitle2">Request from HR</Typography>
+            <Typography fontWeight={600}>{request.documentName}</Typography>
+            <Typography variant="body2" color="text.secondary">{request.documentType}</Typography>
+            {request.rejectionReason && (
+              <Typography variant="body2" color="error.main" sx={{ mt: 1 }}>
+                Previous rejection: {request.rejectionReason}
+              </Typography>
+            )}
           </Box>
         ) : (
           <Typography color="text.secondary" mb={2}>
@@ -107,32 +99,12 @@ const EmployeeDocumentUpload = ({ open, onClose, request = null, employeeId, onU
           <input
             id="employee-doc-file"
             type="file"
-            accept="application/pdf,image/*"
+            accept="application/pdf,image/jpeg,image/png,image/webp"
             onChange={handleFileChange}
           />
-
-          {/* optional fields */}
-          <FormControl fullWidth size="small">
-            <InputLabel id="status-label">Status</InputLabel>
-            <Select
-              labelId="status-label"
-              label="Status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-            >
-              <MenuItem value="uploaded">Uploaded</MenuItem>
-              <MenuItem value="approved">Approved</MenuItem>
-              <MenuItem value="rejected">Rejected</MenuItem>
-            </Select>
-          </FormControl>
-
-          <TextField
-            label="Document Id (optional)"
-            size="small"
-            value={documentId}
-            onChange={(e) => setDocumentId(e.target.value)}
-          />
-
+          <Typography variant="caption" color="text.secondary">
+            PDF or images up to 10MB. Your file will be sent to HR for review.
+          </Typography>
           {uploading && <LinearProgress variant="determinate" value={progress} />}
         </Box>
       </DialogContent>
@@ -145,7 +117,7 @@ const EmployeeDocumentUpload = ({ open, onClose, request = null, employeeId, onU
           disabled={uploading || !file}
           color="primary"
         >
-          {uploading ? `Uploading ${progress}%` : "Upload"}
+          {uploading ? `Uploading ${progress}%` : "Submit for Review"}
         </Button>
       </DialogActions>
     </Dialog>

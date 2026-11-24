@@ -30,14 +30,19 @@ import {
   LibraryBooks as LibraryIcon,
   Build as BuildIcon,
 } from "@mui/icons-material";
+import axios from "axios";
+import { BASE_URL } from "@/configs/url";
+import CatalogPicker from "@/components/tender/catalog/CatalogPicker";
+import { catalogItemToLineFields, CATALOG_LINE_DEFAULTS, fetchPriceAtQty } from "@/lib/catalogUtils";
 
 // Memoized TextField to prevent unnecessary re-renders
-const MemoizedTextField = memo(({ fullWidth, label, value, onChange, size, type }) => (
+const MemoizedTextField = memo(({ fullWidth, label, value, onChange, onBlur, size, type }) => (
   <TextField
     fullWidth={fullWidth}
     label={label}
     value={value}
     onChange={onChange}
+    onBlur={onBlur}
     size={size}
     type={type}
     variant="outlined"
@@ -62,7 +67,16 @@ function TabPanel(props) {
   );
 }
 
-const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
+const CATALOG_SECTIONS = new Set([
+  'hardwareLookUp', 'buyInItems', 'hinges', 'trims', 'cabinetLookUp', 'wallPanelling',
+]);
+
+const catalogTemplateFields = {
+  ...CATALOG_LINE_DEFAULTS,
+};
+
+const CreateProjectStep5 = ({ formData = {}, setFormData, allData = {} }) => {
+  const defaultSupplierId = allData?.step3?.[0]?.supplierId || '';
   const [isInitializing, setIsInitializing] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
 
@@ -340,52 +354,85 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
   }, [setFormData]);
 
   const getArrayTemplate = (section) => {
+    const base = {
+      ...catalogTemplateFields,
+      code: "", description: "", measure: "", quantity: "", mateialRate: "",
+      materialTotal: "", grain: "", notes: "",
+      supplierId: defaultSupplierId || null,
+    };
     const templates = {
       cabinetLookUp: {
-        code: "", description: "", measure: "", quantity: "", carcaseFinish: "",
-        externalFinish: "", mateialRate: "", materialTotal: "", grain: "", notes: ""
+        ...base,
+        carcaseFinish: "", externalFinish: "",
       },
       wallPanelling: {
-        code: "", description: "", measure: "", quantity: "", carcaseFinish: "",
-        externalFinish: "", mateialRate: "", materialTotal: "", grain: "", notes: ""
+        ...base,
+        carcaseFinish: "", externalFinish: "",
       },
-      hardwareLookUp: {
-        code: "", description: "", measure: "", quantity: "", mateialRate: "",
-        materialTotal: "", grain: "", notes: ""
-      },
-      trims: {
-        code: "", description: "", measure: "", quantity: "", mateialRate: "",
-        materialTotal: "", grain: "", notes: ""
-      },
-      splitBattens: {
-        code: "", description: "", measure: "", quantity: "", mateialRate: "",
-        materialTotal: "", grain: "", notes: ""
-      },
-      drawers: {
-        code: "", description: "", measure: "", quantity: "", mateialRate: "",
-        materialTotal: "", grain: "", notes: ""
-      },
-      hinges: {
-        code: "", description: "", measure: "", quantity: "", mateialRate: "",
-        materialTotal: "", grain: "", notes: ""
-      },
+      hardwareLookUp: { ...base },
+      trims: { ...base },
+      splitBattens: { ...base },
+      drawers: { ...base },
+      hinges: { ...base },
       miscItems: {
+        ...catalogTemplateFields,
         description: "", measure: "", quantity: "", mateialRate: "", materialTotal: "",
-        grain: "", notes: ""
+        grain: "", notes: "", supplierId: defaultSupplierId || null,
       },
       buyInItems: {
+        ...catalogTemplateFields,
         description: "", measure: "", quantity: "", mateialRate: "", materialTotal: "",
-        grain: "", notes: ""
-      }
+        grain: "", notes: "", supplierId: defaultSupplierId || null,
+      },
     };
-    return templates[section] || {};
+    return templates[section] || base;
   };
+
+  const applyCatalogToLine = useCallback((section, index, catalogItem) => {
+    const fields = catalogItemToLineFields(catalogItem);
+    setFormData((prev) => {
+      const arr = [...(prev[section] || [])];
+      arr[index] = {
+        ...arr[index],
+        ...fields,
+        supplierId: catalogItem.supplierId || defaultSupplierId || arr[index].supplierId,
+        materialTotal: fields.mateialRate && arr[index].quantity
+          ? String((Number(fields.mateialRate) * Number(arr[index].quantity)).toFixed(2))
+          : arr[index].materialTotal,
+      };
+      return { ...prev, [section]: arr };
+    });
+  }, [setFormData, defaultSupplierId]);
+
+  const handleQuantityBlur = useCallback(async (section, index) => {
+    const row = formData?.[section]?.[index];
+    if (!row || row.sourceType !== 'pricebook' || !row.supplierId || !(row.sku || row.code)) return;
+    try {
+      const data = await fetchPriceAtQty(axios, BASE_URL, row.supplierId, row.sku || row.code, row.quantity || 1);
+      if (!data?.price) return;
+      setFormData((prev) => {
+        const arr = [...(prev[section] || [])];
+        const qty = Number(arr[index].quantity) || 1;
+        arr[index] = {
+          ...arr[index],
+          mateialRate: String(data.price),
+          priceTierApplied: data.tier,
+          materialTotal: String((data.price * qty).toFixed(2)),
+        };
+        return { ...prev, [section]: arr };
+      });
+    } catch {
+      /* keep manual rate */
+    }
+  }, [formData, setFormData]);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
 
-  const renderArraySection = (title, section, fields) => (
+  const renderArraySection = (title, section, fields) => {
+    const useCatalog = CATALOG_SECTIONS.has(section);
+    return (
     <Box sx={{ mb: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h6" sx={{ fontWeight: 600, color: 'primary.main' }}>
@@ -425,17 +472,20 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
                 onClick={() => removeArrayItem(section, index)}
                 color="error"
                 size="small"
-                sx={{ 
-                  '&:hover': { 
-                    backgroundColor: 'error.lighter',
-                    transform: 'scale(1.1)'
-                  },
-                  transition: 'all 0.2s'
-                }}
               >
                 <DeleteIcon />
               </IconButton>
             </Box>
+            {useCatalog && (
+              <Box sx={{ mb: 2 }}>
+                <CatalogPicker
+                  supplierId={item.supplierId || defaultSupplierId}
+                  value={item}
+                  onSelect={(catalogItem) => applyCatalogToLine(section, index, catalogItem)}
+                  label="Search SKU / pricebook / stock"
+                />
+              </Box>
+            )}
             <Grid container spacing={2}>
               {fields.map(field => (
                 <Grid item xs={12} sm={6} md={4} lg={3} key={field}>
@@ -444,6 +494,7 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
                     label={field.charAt(0).toUpperCase() + field.slice(1).replace(/([A-Z])/g, ' $1')}
                     value={item[field] || ''}
                     onChange={(e) => handleInputChange(section, field, e.target.value, index)}
+                    onBlur={field === 'quantity' && useCatalog ? () => handleQuantityBlur(section, index) : undefined}
                     size="small"
                   />
                 </Grid>
@@ -470,6 +521,7 @@ const CreateProjectStep5 = ({ formData = {}, setFormData }) => {
       )}
     </Box>
   );
+  };
 
   const renderNestedSection = (title, section, fields, icon) => (
     <Card sx={{ mb: 3, backgroundImage: "none" }}>

@@ -47,6 +47,8 @@ const CreateEditPO = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const id = searchParams?.get("id");
+  const fromDraft = searchParams?.get("fromDraft");
+  const projectIdParam = searchParams?.get("projectId");
 
   const fetchProjects = async () => {
     try {
@@ -155,6 +157,40 @@ const CreateEditPO = () => {
     
     loadData();
   }, [id]);
+
+  useEffect(() => {
+    if (id || !fromDraft || loading) return;
+    try {
+      const raw = sessionStorage.getItem("poDraft");
+      if (!raw) return;
+      const draft = JSON.parse(raw);
+      const firstSupplier = draft.suppliers?.[0];
+      if (!firstSupplier) return;
+
+      setFormData((prev) => ({
+        ...prev,
+        jobId: draft.projectId?.toString() || projectIdParam || prev.jobId,
+        supplierId: String(firstSupplier.supplierId),
+        notes: prev.notes || `PO draft from project #${draft.projectId} (${firstSupplier.supplierName})`,
+      }));
+
+      const items = firstSupplier.lines.map((line, index) => ({
+        id: String(index + 1),
+        itemId: line.inventoryId ? String(line.inventoryId) : "",
+        description: line.description || line.sku || "",
+        category: line.section || "",
+        quantity: line.orderQty || line.quantity || 0,
+        unit: line.unit || "",
+        unitPrice: line.unitPrice || 0,
+        subtotal: line.subtotal || (line.orderQty || 0) * (line.unitPrice || 0),
+      }));
+      if (items.length) setLineItems(items);
+      sessionStorage.removeItem("poDraft");
+      toast.info(`Loaded ${items.length} line(s) for ${firstSupplier.supplierName}`);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [fromDraft, loading, id, projectIdParam]);
 
   const [lineItems, setLineItems] = useState([
     {

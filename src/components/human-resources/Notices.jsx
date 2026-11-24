@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Loader from "../loader/Loader";
 import NoticeModal from "./NoticeModal";
-import axios from "axios";
+import apiClient from "@/lib/axios";
 import { BASE_URL } from "@/configs/url";
 import { toast } from "react-toastify";
 import {
@@ -59,7 +59,7 @@ const Notices = () => {
   const fetchNotices = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${BASE_URL}/api/notices/get`);
+      const res = await apiClient.get(`/api/notices/get`);
       const notices = res.data?.data || res.data || [];
       setData(notices);
       setPage(0);
@@ -89,7 +89,7 @@ const Notices = () => {
     if (!window.confirm("Are you sure you want to delete this notice?")) return;
     toast.loading("Deleting notice...");
     try {
-      await axios.delete(`${BASE_URL}/api/notices/delete/${noticeId}`);
+      await apiClient.delete(`/api/notices/delete/${noticeId}`);
       toast.dismiss();
       toast.success("Notice deleted");
       // close modal if deleted item was open

@@ -14,9 +14,8 @@ import {
   Select,
   Box,
 } from "@mui/material";
-import axios from "axios";
+import apiClient from "@/lib/axios";
 import { toast } from "react-toastify";
-import { BASE_URL } from "@/configs/url";
 
 const DocumentRequestModal = ({ open, onClose, data = null, employeeId, onSaved }) => {
   const isEdit = Boolean(data);
@@ -25,7 +24,6 @@ const DocumentRequestModal = ({ open, onClose, data = null, employeeId, onSaved 
     documentType: "",
     documentName: "",
     reason: "",
-    status: "pending",
   });
 
   useEffect(() => {
@@ -34,14 +32,12 @@ const DocumentRequestModal = ({ open, onClose, data = null, employeeId, onSaved 
         documentType: data.documentType || "",
         documentName: data.documentName || "",
         reason: data.reason || "",
-        status: data.status || "pending",
       });
     } else {
       setForm({
         documentType: "",
         documentName: "",
         reason: "",
-        status: "pending",
       });
     }
   }, [data, isEdit, open]);
@@ -56,12 +52,12 @@ const DocumentRequestModal = ({ open, onClose, data = null, employeeId, onSaved 
     setLoading(true);
     try {
       if (isEdit) {
-        await axios.put(`${BASE_URL}/api/employee-document/update/${data.id}`, {
+        await apiClient.put(`/api/employee-document/update/${data.id}`, {
           ...form,
         });
         toast.success("Request updated");
       } else {
-        await axios.post(`${BASE_URL}/api/employee-document/create`, {
+        await apiClient.post(`/api/employee-document/create`, {
           ...form,
           employeeId,
         });
@@ -117,18 +113,6 @@ const DocumentRequestModal = ({ open, onClose, data = null, employeeId, onSaved 
             value={form.reason}
             onChange={handleChange}
           />
-
-          {/* status is editable only when editing (admin use). When creating keep pending */}
-          {isEdit && (
-            <FormControl fullWidth margin="dense">
-              <InputLabel id="status-label">Status</InputLabel>
-              <Select labelId="status-label" label="Status" name="status" value={form.status} onChange={handleChange}>
-                <MenuItem value="pending">Pending</MenuItem>
-                <MenuItem value="approved">Approved</MenuItem>
-                <MenuItem value="rejected">Rejected</MenuItem>
-              </Select>
-            </FormControl>
-          )}
         </Box>
       </DialogContent>
       <DialogActions>

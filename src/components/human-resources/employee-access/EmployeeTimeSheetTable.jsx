@@ -31,7 +31,7 @@ import {
   TrendingUp,
   Search
 } from "@mui/icons-material";
-import axios from "axios";
+import apiClient from "@/lib/axios";
 import { toast } from "react-toastify";
 import Loader from "../../loader/Loader";
 import { BASE_URL } from "@/configs/url";
@@ -41,19 +41,43 @@ import EmployeeTimeSheetModal from "./EmployeeTimeSheetModal";
 
 const EmployeeTimeSheetTable = () => {
   const [data, setData] = useState([]);
+  const [heatmapData, setHeatmapData] = useState([]);
+  const [todayEntry, setTodayEntry] = useState(null);
+  const [stats, setStats] = useState({ total: 0, approvedHours: 0, overworkDays: 0 });
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [selected, setSelected] = useState(null);
   const {user} = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm), 400);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedSearch]);
+
   const fetchData = async () => {
+    if (!user?.id) return;
     setLoading(true);
     try {
-      const res = await axios.get(`${BASE_URL}/api/employee-timesheet/get/employee/${user.id}`);
-      setData(res.data.data || res.data || []);
+      const params = new URLSearchParams({
+        page: String(page + 1),
+        limit: String(rowsPerPage),
+        search: debouncedSearch,
+      });
+      const res = await apiClient.get(`/api/employee-timesheet/get/employee/${user.id}?${params}`);
+      setData(res.data.data || []);
+      setTotal(res.data.total || 0);
+      setTodayEntry(res.data.todayEntry || null);
+      setStats(res.data.stats || { total: 0, approvedHours: 0, overworkDays: 0 });
+      setHeatmapData(res.data.heatmapDates || res.data.data || []);
     } catch (error) {
       toast.error("Failed to fetch employee timesheets");
     } finally {
@@ -63,7 +87,7 @@ const EmployeeTimeSheetTable = () => {
 
   useEffect(() => {
     fetchData();
-  }, [user.id]);
+  }, [user?.id, page, rowsPerPage, debouncedSearch]);
 
   const getTodayDate = () => {
     const d = new Date();
@@ -73,25 +97,11 @@ const EmployeeTimeSheetTable = () => {
     return `${year}-${month}-${day}`;
   };
 
-  const todayEntry = (data || []).find(item => item.date === getTodayDate());
-  const hasCheckedIn = !!todayEntry;
-  const hasCheckedOut = !!todayEntry?.endTime;
+  const todayEntryResolved = todayEntry || (data || []).find(item => item.date === getTodayDate());
+  const hasCheckedIn = !!todayEntryResolved;
+  const hasCheckedOut = !!todayEntryResolved?.endTime;
 
-  const sortedData = React.useMemo(() => {
-    return [...(data || [])].sort((a, b) => {
-      const dateA = new Date(a.date);
-      const dateB = new Date(b.date);
-      if (dateB - dateA !== 0) return dateB - dateA;
-      return (b.id || 0) - (a.id || 0);
-    });
-  }, [data]);
-
-  const filteredData = sortedData.filter(item => 
-    item.date?.includes(searchTerm) || 
-    item.status?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const paginatedData = filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  const paginatedData = data;
 
   // Helper for Net Hours (same logic as main dashboard)
   const calculateNetHours = (start, end) => {
@@ -105,13 +115,7 @@ const EmployeeTimeSheetTable = () => {
     } catch (err) { return 0; }
   };
 
-  const stats = {
-    total: data.length,
-    approvedHours: data
-      .filter(d => d.status === 'approved')
-      .reduce((acc, d) => acc + calculateNetHours(d.startTime, d.endTime), 0),
-    overworkDays: data.filter(d => d.overWork && d.overWork !== "00:00:00").length,
-  };
+  const statsDisplay = stats;
 
   if (loading) return <Loader />;
 
@@ -148,7 +152,7 @@ const EmployeeTimeSheetTable = () => {
               color="warning"
               startIcon={<Timer />}
               onClick={() => {
-                setSelected(todayEntry);
+                setSelected(todayEntryResolved);
                 setModalOpen(true);
               }}
               sx={{ borderRadius: 2, px: 4, height: 56, fontSize: '1.1rem', fontWeight: 600 }}
@@ -168,7 +172,7 @@ const EmployeeTimeSheetTable = () => {
 
       {/* 🟢 Personal Activity Heatmap */}
       <Box mb={4}>
-        <TimeSheetHeatMap data={data} />
+        <TimeSheetHeatMap data={heatmapData} />
       </Box>
 
       <Stack direction={{ xs: "column", md: "row" }} spacing={2} mb={4}>
@@ -177,7 +181,7 @@ const EmployeeTimeSheetTable = () => {
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
                 <Typography variant="body2" color="text.secondary" fontWeight={500}>Total Submissions</Typography>
-                <Typography variant="h5" color="primary.main" fontWeight={700}>{stats.total}</Typography>
+                <Typography variant="h5" color="primary.main" fontWeight={700}>{statsDisplay.total}</Typography>
               </Box>
               <AssignmentTurnedIn fontSize="large" color="primary" sx={{ opacity: 0.8 }} />
             </Stack>
@@ -188,7 +192,7 @@ const EmployeeTimeSheetTable = () => {
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
                 <Typography variant="body2" color="text.secondary" fontWeight={500}>Total Approved Hours</Typography>
-                <Typography variant="h5" color="success.main" fontWeight={700}>{stats.approvedHours.toFixed(1)}h</Typography>
+                <Typography variant="h5" color="success.main" fontWeight={700}>{statsDisplay.approvedHours.toFixed(1)}h</Typography>
               </Box>
               <Timer fontSize="large" color="success" sx={{ opacity: 0.8 }} />
             </Stack>
@@ -199,7 +203,7 @@ const EmployeeTimeSheetTable = () => {
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
                 <Typography variant="body2" color="text.secondary" fontWeight={500}>Overtime Logs</Typography>
-                <Typography variant="h5" color="warning.main" fontWeight={700}>{stats.overworkDays} Days</Typography>
+                <Typography variant="h5" color="warning.main" fontWeight={700}>{statsDisplay.overworkDays} Days</Typography>
               </Box>
               <TrendingUp fontSize="large" color="warning" sx={{ opacity: 0.8 }} />
             </Stack>
@@ -343,11 +347,12 @@ const EmployeeTimeSheetTable = () => {
 
       <TablePagination
         component="div"
-        count={filteredData.length}
+        count={total}
         page={page}
         onPageChange={(e, p) => setPage(p)}
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+        rowsPerPageOptions={[5, 10, 25]}
       />
     </CardContent>
   </Card>

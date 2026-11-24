@@ -50,7 +50,7 @@ const SupplierPage = () => {
             >
                 <Tab label="Price List" />
             </Tabs>
-            {tabIndex === 0 && <PriceBookPage supplierId={id} />}
+            {tabIndex === 0 && <PriceBookPage supplierId={id} embedded />}
             
 
         </Box>

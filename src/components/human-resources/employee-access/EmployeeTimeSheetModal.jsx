@@ -12,7 +12,7 @@ import {
   Divider,
   Stack,
 } from "@mui/material";
-import axios from "axios";
+import apiClient from "@/lib/axios";
 import { toast } from "react-toastify";
 import { useAuth } from "@/context/authContext";
 import { BASE_URL } from "@/configs/url";
@@ -122,14 +122,14 @@ const EmployeeTimeSheetModal = ({ open, onClose, fetchData, editData }) => {
       };
 
       if (edit) {
-        await axios.put(
-          `${BASE_URL}/api/employee-timesheet/update/${editData.id}`,
+        await apiClient.put(
+          `/api/employee-timesheet/update/${editData.id}`,
           payload
         );
         toast.dismiss();
         toast.success(isCheckOut ? "Checked out successfully" : "Record updated successfully");
       } else {
-        await axios.post(`${BASE_URL}/api/employee-timesheet/create`, payload);
+        await apiClient.post(`/api/employee-timesheet/create`, payload);
         toast.dismiss();
         toast.success("Checked in successfully");
       }

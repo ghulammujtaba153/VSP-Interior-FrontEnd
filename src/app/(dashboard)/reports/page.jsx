@@ -36,6 +36,7 @@ import ResourceUtilizationReport from "@/components/report/ResourceUtilizationRe
 import { InventoryTurnoverReport } from "@/components/report/InventoryTurnoverReport";
 import SupplierPerformanceReport from "@/components/report/SupplierPerformanceReport";
 import ProjectBasedReport from "@/components/report/ProjectBasedReport";
+import HrReportsSection from "@/components/report/HrReportsSection";
 
 const ReportsDashboard = () => {
   const [selectedProject, setSelectedProject] = useState("all");
@@ -66,6 +67,7 @@ const ReportsDashboard = () => {
           <Tab label="Inventory Turnover" icon={<Inventory />} iconPosition="start" />
           <Tab label="Supplier Performance" icon={<TrendingDown />} iconPosition="start" />
           <Tab label="Project Based Report" icon={<TrendingDown />} iconPosition="start" />
+          <Tab label="HR Reports" icon={<People />} iconPosition="start" />
         </Tabs>
 
         {/* Tab Content */}
@@ -90,6 +92,9 @@ const ReportsDashboard = () => {
           )}
           {tabValue === 6 && (
             <ProjectBasedReport period={selectedPeriod} project={selectedProject} />
+          )}
+          {tabValue === 7 && (
+            <HrReportsSection />
           )}
         </Box>
       </Container>

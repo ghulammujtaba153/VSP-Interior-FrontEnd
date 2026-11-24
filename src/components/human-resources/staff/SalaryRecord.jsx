@@ -1,9 +1,8 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import axios from "axios";
-import { toast } from "react-toastify";
-import { BASE_URL } from "@/configs/url";
+import apiClient from "@/lib/axios";
+import { openAuthenticatedFile } from "@/lib/openSecureFile";
 
 import {
   Box,
@@ -33,6 +32,7 @@ import {
   CircularProgress,
   Tooltip,
 } from "@mui/material";
+import { formatNzd } from "@/lib/hrUtils";
 import {
   AttachMoney,
   TrendingUp,
@@ -84,92 +84,26 @@ const StatCard = ({ label, value, icon, color }) => (
 );
 
 // ─── Main Component ──────────────────────────────────────────────────────────
-const SalaryRecord = ({ employeeId, baseSalary: employeeSalary, records = [], loading = false, onRefresh }) => {
+const SalaryRecord = ({ records = [], loading = false }) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState(null); // null = create, object = edit
-  const [form, setForm] = useState(defaultForm);
-  const [saving, setSaving] = useState(false);
 
-  const fmt = (n) =>
-    Number(n).toLocaleString("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 });
+  const normalizedRecords = (records || []).map((r) => ({
+    ...r,
+    month: r.month || r.payrollRun?.month || '—',
+    year: r.year || r.payrollRun?.year || '—',
+    baseSalary: r.basePay ?? r.baseSalary ?? 0,
+    overtimeSalary: r.overtimePay ?? r.overtimeSalary ?? 0,
+    bonus: r.allowances ?? r.bonus ?? 0,
+    deduction: (Number(r.payeTax || 0) + Number(r.kiwiSaverEmployee || 0) + Number(r.otherDeductions || 0)) || r.deduction || 0,
+    netSalary: r.netPay ?? r.netSalary ?? 0,
+    status: r.status || r.payrollRun?.status || 'draft',
+  }));
 
-  // ── Modal helpers ─────────────────────────────────────────────────────────
-  const openCreate = () => {
-    setEditing(null);
-    setForm({ ...defaultForm, baseSalary: employeeSalary || "" });
-    setModalOpen(true);
-  };
+  const fmt = (n) => formatNzd(n, { maximumFractionDigits: 0 });
 
-  const openEdit = (row) => {
-    setEditing(row);
-    setForm({
-      month: row.month,
-      year: row.year,
-      baseSalary: row.baseSalary,
-      overtimeSalary: row.overtimeSalary || "",
-      bonus: row.bonus || "",
-      deduction: row.deduction || "",
-      status: row.status,
-      paymentDate: row.paymentDate ? row.paymentDate.split("T")[0] : "",
-      paymentMethod: row.paymentMethod || "",
-      notes: row.notes || "",
-    });
-    setModalOpen(true);
-  };
-
-  const handleChange = (e) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const handleSave = async () => {
-    if (!form.baseSalary) {
-      toast.error("Base salary is required");
-      return;
-    }
-    setSaving(true);
-    try {
-      if (editing) {
-        await axios.put(`${BASE_URL}/api/payroll/update/${editing.id}`, form);
-        toast.success("Payroll record updated");
-      } else {
-        await axios.post(`${BASE_URL}/api/payroll/create`, {
-          ...form,
-          userId: employeeId,
-        });
-        toast.success("Payroll record created");
-      }
-      setModalOpen(false);
-      if (onRefresh) onRefresh();
-    } catch (err) {
-      const msg = err?.response?.data?.error || "Save failed";
-      toast.error(msg);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this payroll record?")) return;
-    toast.loading("Deleting...");
-    try {
-      await axios.delete(`${BASE_URL}/api/payroll/delete/${id}`);
-      toast.dismiss();
-      toast.success("Deleted");
-      if (onRefresh) onRefresh();
-    } catch {
-      toast.dismiss();
-      toast.error("Delete failed");
-    }
-  };
-
-  // ── Computed net salary preview for form ──────────────────────────────────
-  const previewNet =
-    Number(form.baseSalary || 0) +
-    Number(form.overtimeSalary || 0) +
-    Number(form.bonus || 0) -
-    Number(form.deduction || 0);
+  const totalPaid = normalizedRecords.reduce((sum, r) => sum + Number(r.netSalary || 0), 0);
+  const avgNet = normalizedRecords.length ? totalPaid / normalizedRecords.length : 0;
 
   return (
     <>
@@ -178,16 +112,18 @@ const SalaryRecord = ({ employeeId, baseSalary: employeeSalary, records = [], lo
         <CardContent>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
             <Typography variant="h6" fontWeight="bold">
-              Salary Records
+              Payslip History (NZ payroll runs)
             </Typography>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={openCreate}
-              size="small"
-            >
-              Add Record
-            </Button>
+            {normalizedRecords[0]?.id && (
+              <Button
+                variant="outlined"
+                startIcon={<PaymentIcon />}
+                onClick={() => openAuthenticatedFile(`/api/hr/payslips/${normalizedRecords[0].id}/pdf`)}
+                size="small"
+              >
+                Latest Payslip
+              </Button>
+            )}
           </Box>
           <Divider sx={{ mb: 2 }} />
 
@@ -215,7 +151,7 @@ const SalaryRecord = ({ employeeId, baseSalary: employeeSalary, records = [], lo
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {records
+                    {normalizedRecords
                       .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                       .map((row, idx) => (
                         <TableRow key={row.id} hover>
@@ -246,22 +182,15 @@ const SalaryRecord = ({ employeeId, baseSalary: employeeSalary, records = [], lo
                           </TableCell>
                           <TableCell>{row.paymentMethod || "—"}</TableCell>
                           <TableCell align="center">
-                            <Box display="flex" justifyContent="center" gap={0.5}>
-                              <Tooltip title="Edit">
-                                <IconButton size="small" color="primary" onClick={() => openEdit(row)}>
-                                  <EditIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Delete">
-                                <IconButton size="small" color="error" onClick={() => handleDelete(row.id)}>
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            </Box>
+                            <Tooltip title="View payslip">
+                              <IconButton size="small" color="primary" onClick={() => openAuthenticatedFile(`/api/hr/payslips/${row.id}/pdf`)}>
+                                <PaymentIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
                           </TableCell>
                         </TableRow>
                       ))}
-                    {records.length === 0 && (
+                    {normalizedRecords.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={11} align="center" sx={{ py: 4, color: "text.secondary" }}>
                           No salary records found
@@ -273,7 +202,7 @@ const SalaryRecord = ({ employeeId, baseSalary: employeeSalary, records = [], lo
               </TableContainer>
               <TablePagination
                 component="div"
-                count={records.length}
+                count={normalizedRecords.length}
                 page={page}
                 onPageChange={(_, p) => setPage(p)}
                 rowsPerPage={rowsPerPage}
@@ -286,177 +215,6 @@ const SalaryRecord = ({ employeeId, baseSalary: employeeSalary, records = [], lo
           )}
         </CardContent>
       </Card>
-
-      {/* ── Add / Edit Modal ─────────────────────────────────────────── */}
-      <Dialog open={modalOpen} onClose={() => setModalOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="h6" fontWeight="bold">
-              {editing ? "Edit Payroll Record" : "New Payroll Record"}
-            </Typography>
-            <IconButton onClick={() => setModalOpen(false)} size="small">
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </DialogTitle>
-
-        <DialogContent dividers>
-          <Grid container spacing={2}>
-            {/* Month / Year row */}
-            <Grid item xs={6}>
-              <TextField
-                select
-                fullWidth
-                size="small"
-                label="Month"
-                name="month"
-                value={form.month}
-                onChange={handleChange}
-              >
-                {MONTHS.map((m) => (
-                  <MenuItem key={m} value={m}>{m}</MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                select
-                fullWidth
-                size="small"
-                label="Year"
-                name="year"
-                value={form.year}
-                onChange={handleChange}
-              >
-                {YEARS.map((y) => (
-                  <MenuItem key={y} value={y}>{y}</MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-
-            {/* Salary fields */}
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Base Salary *"
-                name="baseSalary"
-                type="number"
-                value={form.baseSalary}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Overtime Salary"
-                name="overtimeSalary"
-                type="number"
-                value={form.overtimeSalary}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Bonus"
-                name="bonus"
-                type="number"
-                value={form.bonus}
-                onChange={handleChange}
-              />
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Deduction"
-                name="deduction"
-                type="number"
-                value={form.deduction}
-                onChange={handleChange}
-              />
-            </Grid>
-
-            {/* Net preview */}
-            <Grid item xs={12}>
-              <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <Typography variant="body2" color="text.secondary">Net Salary Preview</Typography>
-                <Typography variant="h6" fontWeight={700} color="success.main">
-                  {fmt(previewNet)}
-                </Typography>
-              </Paper>
-            </Grid>
-
-            {/* Status / Payment */}
-            <Grid item xs={6}>
-              <TextField
-                select
-                fullWidth
-                size="small"
-                label="Status"
-                name="status"
-                value={form.status}
-                onChange={handleChange}
-              >
-                <MenuItem value="pending">Pending</MenuItem>
-                <MenuItem value="paid">Paid</MenuItem>
-              </TextField>
-            </Grid>
-            <Grid item xs={6}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Payment Method"
-                name="paymentMethod"
-                value={form.paymentMethod}
-                onChange={handleChange}
-                placeholder="e.g. Bank Transfer"
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Payment Date"
-                name="paymentDate"
-                type="date"
-                value={form.paymentDate}
-                onChange={handleChange}
-                InputLabelProps={{ shrink: true }}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Notes"
-                name="notes"
-                multiline
-                rows={2}
-                value={form.notes}
-                onChange={handleChange}
-              />
-            </Grid>
-          </Grid>
-        </DialogContent>
-
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={() => setModalOpen(false)} disabled={saving}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleSave}
-            disabled={saving}
-            startIcon={saving ? <CircularProgress size={16} color="inherit" /> : null}
-          >
-            {saving ? "Saving..." : editing ? "Update" : "Create"}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </>
   );
 };

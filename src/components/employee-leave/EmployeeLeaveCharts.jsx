@@ -4,7 +4,7 @@ import React from 'react';
 import { Card, CardContent, Grid, useTheme, Typography, Box } from '@mui/material';
 import { Chart } from 'react-google-charts';
 
-const EmployeeLeaveCharts = ({ data = [] }) => {
+const EmployeeLeaveCharts = ({ data = [], entitled = 20, remaining }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
 
@@ -13,10 +13,6 @@ const EmployeeLeaveCharts = ({ data = [] }) => {
   const secondaryColor = isDark ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)';
   const dividerColor = isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)';
 
-  // Static limit for now (can be passed from props)
-  const LIMIT = 20;
-
-  // 📈 1. Leave Balance Utilization (Used vs Remaining)
   const usedDays = data
     .filter(l => l.status?.toLowerCase() === 'approved')
     .reduce((acc, l) => {
@@ -25,12 +21,12 @@ const EmployeeLeaveCharts = ({ data = [] }) => {
       const diff = Math.floor((e - s) / (1000 * 60 * 60 * 24)) + 1;
       return acc + (isNaN(diff) ? 0 : diff);
     }, 0);
-  const remaining = Math.max(0, LIMIT - usedDays);
+  const remainingDays = remaining !== undefined ? remaining : Math.max(0, entitled - usedDays);
 
   const balanceData = [
     ['Status', 'Days'],
     ['Used', usedDays],
-    ['Remaining', remaining],
+    ['Remaining', remainingDays],
   ];
 
   const balanceOptions = {

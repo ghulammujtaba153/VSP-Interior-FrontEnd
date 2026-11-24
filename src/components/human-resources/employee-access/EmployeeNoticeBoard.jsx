@@ -11,10 +11,6 @@ import {
   Button,
   Chip,
   TextField,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -22,6 +18,9 @@ import {
   Pagination,
   Stack,
   Divider,
+  IconButton,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material"
 import {
   Visibility as VisibilityIcon,
@@ -32,26 +31,28 @@ import {
   Policy,
   Warning
 } from "@mui/icons-material"
-import axios from "axios"
-import { BASE_URL } from "@/configs/url"
+import apiClient from "@/lib/axios"
 import Loader from "@/components/loader/Loader"
+import { openSecureUpload } from "@/lib/openSecureFile"
+import { toast } from "react-toastify"
+
+const ACK_KEY = (id) => `notice_ack_${id}`
 
 const EmployeeNoticeBoard = () => {
   const [notices, setNotices] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
   const [page, setPage] = useState(1)
   const perPage = 6
 
   const [viewOpen, setViewOpen] = useState(false)
   const [activeNotice, setActiveNotice] = useState(null)
+  const [acknowledged, setAcknowledged] = useState(false)
 
-  // Fetch notices
   const fetchNotices = async () => {
     setLoading(true)
     try {
-      const res = await axios.get(`${BASE_URL}/api/notices/get?status=active`)
+      const res = await apiClient.get(`/api/notices/get?status=active`)
       const data = res.data?.data || res.data || []
       setNotices(Array.isArray(data) ? data : [])
     } catch (err) {
@@ -66,32 +67,46 @@ const EmployeeNoticeBoard = () => {
     fetchNotices()
   }, [])
 
-  // Filtered + paginated list
   const filtered = useMemo(() => {
     const result = notices.filter((n) => {
-      if (statusFilter !== "all" && n.status.toLowerCase() !== statusFilter) return false
       if (!search) return true
       const q = search.toLowerCase()
       return (n.title || "").toLowerCase().includes(q)
     })
     return result.slice((page - 1) * perPage, page * perPage)
-  }, [notices, page, perPage, search, statusFilter])
+  }, [notices, page, perPage, search])
 
-  // Handlers
+  const isAcknowledged = (id) => {
+    if (typeof window === "undefined") return false
+    return localStorage.getItem(ACK_KEY(id)) === "true"
+  }
+
   const handleView = (notice) => {
     setActiveNotice(notice)
+    setAcknowledged(isAcknowledged(notice.id))
     setViewOpen(true)
   }
 
   const handleClose = () => {
     setViewOpen(false)
     setActiveNotice(null)
+    setAcknowledged(false)
   }
 
-  const handleDownload = (notice) => {
+  const handleDownload = async (notice) => {
     if (!notice.fileUrl) return
-    const url = `${BASE_URL}${notice.fileUrl}`
-    window.open(url, "_blank")
+    try {
+      await openSecureUpload(notice.fileUrl)
+    } catch {
+      toast.error("Could not download attachment")
+    }
+  }
+
+  const handleAcknowledge = () => {
+    if (!activeNotice) return
+    localStorage.setItem(ACK_KEY(activeNotice.id), "true")
+    setAcknowledged(true)
+    toast.success("Notice acknowledged")
   }
 
   const handlePageChange = (event, value) => {
@@ -99,10 +114,12 @@ const EmployeeNoticeBoard = () => {
   }
 
   const getCategoryChip = (cat) => {
-    const c = cat?.toLowerCase();
-    if (c === 'urgent') return <Chip icon={<Warning />} label="URGENT" size="small" color="error" variant="soft" />;
-    if (c === 'policy') return <Chip icon={<Policy />} label="POLICY" size="small" color="info" variant="soft" />;
-    if (c === 'news') return <Chip icon={<Campaign />} label="NEWS" size="small" color="success" variant="soft" />;
+    const c = (cat || '').toLowerCase();
+    if (c === 'emergency') return <Chip icon={<Warning />} label="URGENT" size="small" color="error" variant="soft" />;
+    if (c === 'hr_policy') return <Chip icon={<Policy />} label="POLICY" size="small" color="info" variant="soft" />;
+    if (c === 'announcement') return <Chip icon={<Campaign />} label="ANNOUNCEMENT" size="small" color="success" variant="soft" />;
+    if (c === 'holiday') return <Chip icon={<Info />} label="HOLIDAY" size="small" color="warning" variant="soft" />;
+    if (c === 'event') return <Chip icon={<Campaign />} label="EVENT" size="small" color="primary" variant="soft" />;
     return <Chip icon={<Info />} label={cat || "GENERAL"} size="small" variant="soft" />;
   };
 
@@ -130,13 +147,18 @@ const EmployeeNoticeBoard = () => {
           filtered.map((notice) => (
             <Grid item xs={12} sm={6} md={4} key={notice.id}>
               <Card sx={{ height: "100%", borderRadius: 3, boxShadow: 3, position: 'relative', overflow: 'hidden' }}>
-                <Box sx={{ height: 4, bgcolor: notice.category === 'Urgent' ? 'error.main' : 'primary.main' }} />
+                <Box sx={{ height: 4, bgcolor: notice.category === 'emergency' ? 'error.main' : 'primary.main' }} />
                 <CardContent sx={{ pt: 3 }}>
                   <Stack direction="row" justifyContent="space-between" mb={1}>
                     {getCategoryChip(notice.category)}
-                    <Typography variant="caption" color="text.secondary">
-                      {new Date(notice.createdAt).toLocaleDateString()}
-                    </Typography>
+                    <Stack direction="row" spacing={0.5} alignItems="center">
+                      {isAcknowledged(notice.id) && (
+                        <Chip label="Acknowledged" size="small" color="success" variant="outlined" />
+                      )}
+                      <Typography variant="caption" color="text.secondary">
+                        {new Date(notice.createdAt).toLocaleDateString()}
+                      </Typography>
+                    </Stack>
                   </Stack>
                   <Typography variant="h6" fontWeight="bold" gutterBottom>{notice.title}</Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ minHeight: 60, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
@@ -165,7 +187,6 @@ const EmployeeNoticeBoard = () => {
         )}
       </Grid>
 
-      {/* Pagination */}
       {notices.length > perPage && (
         <Box mt={3} display="flex" justifyContent="center">
           <Pagination
@@ -177,7 +198,6 @@ const EmployeeNoticeBoard = () => {
         </Box>
       )}
 
-      {/* View Dialog */}
       <Dialog open={viewOpen} onClose={handleClose} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         <DialogTitle sx={{ fontWeight: 'bold' }}>{activeNotice?.title}</DialogTitle>
         <DialogContent dividers>
@@ -185,10 +205,22 @@ const EmployeeNoticeBoard = () => {
           <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>{activeNotice?.content}</Typography>
           {activeNotice?.fileUrl && (
             <Box mt={4} p={2} sx={{ bgcolor: 'action.hover', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Typography variant="body2" fontWeight="medium">Attachment: {activeNotice.title}.pdf</Typography>
+              <Typography variant="body2" fontWeight="medium">Attachment available</Typography>
               <Button variant="contained" size="small" startIcon={<DownloadIcon />} onClick={() => handleDownload(activeNotice)}>Download</Button>
             </Box>
           )}
+          <Box mt={3}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={acknowledged}
+                  onChange={handleAcknowledge}
+                  disabled={acknowledged}
+                />
+              }
+              label="I have read and understood this notice"
+            />
+          </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={handleClose} variant="outlined" sx={{ borderRadius: 2 }}>Close</Button>

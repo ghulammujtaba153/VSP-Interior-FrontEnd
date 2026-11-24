@@ -278,9 +278,33 @@ const CreateProject = () => {
             Next
           </Button>
         ) : (
-          <Button variant="contained" color="success" onClick={handleSubmit}>
-            {mode === 'edit' ? 'Update' : 'Submit'}
-          </Button>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            {mode === 'edit' && id && (
+              <Button
+                variant="outlined"
+                color="secondary"
+                onClick={async () => {
+                  try {
+                    const res = await axios.get(`${BASE_URL}/api/project-setup/po-draft/${id}`)
+                    const draft = res.data
+                    if (!draft.totalLines) {
+                      toast.info('No buy lines needed — stock covers catalog items or none linked')
+                      return
+                    }
+                    sessionStorage.setItem('poDraft', JSON.stringify(draft))
+                    router.push(`/purchasing/form?projectId=${id}&fromDraft=1`)
+                  } catch {
+                    toast.error('Failed to build PO draft')
+                  }
+                }}
+              >
+                Generate PO draft
+              </Button>
+            )}
+            <Button variant="contained" color="success" onClick={handleSubmit}>
+              {mode === 'edit' ? 'Update' : 'Submit'}
+            </Button>
+          </Box>
         )}
       </Box>
     </Container>
