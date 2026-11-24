@@ -38,6 +38,7 @@ import { useImageVariant } from '@core/hooks/useImageVariant'
 import { useSettings } from '@core/hooks/useSettings'
 import { BASE_URL } from '@/configs/url'
 import { useAuth } from '@/context/authContext'
+import { getPostLoginPath } from '@/lib/getPostLoginPath'
 
 
 // Styled Components
@@ -98,11 +99,15 @@ const LoginV2 = ({ mode }) => {
     try {
       const res = await axios.post(`${BASE_URL}/api/user/login`, { email, password })
 
-      console.log(res.data)
-      setAuth(res.data.token)
+      const token = res.data.token
+      setAuth(token)
       toast.dismiss()
       setSuccess(true)
-      router.push('/home')
+
+      const userRes = await axios.get(`${BASE_URL}/api/user/get-user-by-token`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      router.push(getPostLoginPath(userRes.data))
     } catch (error) {
       setError(true)
       toast.dismiss()

@@ -19,10 +19,8 @@ import { useTheme } from '@mui/material/styles';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import axios from 'axios';
-
 import Loader from '@/components/loader/Loader';
-import { BASE_URL } from '@/configs/url';
+import apiClient from '@/lib/axios';
 import ViewPermissions from './ViewPermissions';
 import PermissionModal from './PermissionModal';
 
@@ -38,7 +36,7 @@ const PermissionsTable = () => {
   const fetch = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${BASE_URL}/api/permission/get`);
+      const res = await apiClient.get('/api/permission/get');
 
       setData(res.data);
     } catch (error) {
@@ -54,7 +52,7 @@ const PermissionsTable = () => {
 
   // Capitalize name: "john more" → "John More"
   const capitalizeName = (name) => {
-    if (!name) return 'N/A';
+    if (!name) return 'Unknown Resource';
     return String(name)
       .split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
@@ -64,9 +62,9 @@ const PermissionsTable = () => {
   const handleSave = async (permission) => {
     try {
       if (isEditMode && selectedPermission?.id) {
-        await axios.put(`${BASE_URL}/api/permission/update/${selectedPermission.id}`, permission);
+        await apiClient.put(`/api/permission/update/${selectedPermission.id}`, permission);
       } else {
-        await axios.post(`${BASE_URL}/api/permission/create`, permission);
+        await apiClient.post('/api/permission/create', permission);
       }
 
       setOpenModal(false);

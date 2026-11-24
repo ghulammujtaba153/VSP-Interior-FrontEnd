@@ -1,13 +1,13 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import axios from 'axios'
+import apiClient from '@/lib/axios'
 import Loader from '@/components/loader/Loader'
-import { BASE_URL } from '@/configs/url'
+import PermissionRoute from '@/components/PermissionRoute'
 import FullCalendar from '@fullcalendar/react'
 import dayGridPlugin from '@fullcalendar/daygrid'
 import interactionPlugin from '@fullcalendar/interaction'
-import { Paper, Typography, Divider, Popover, Box } from '@mui/material'
+import { Paper, Typography, Popover, Box } from '@mui/material'
 import Link from 'next/link'
 
 const LeaveCalendar = () => {
@@ -18,11 +18,21 @@ const LeaveCalendar = () => {
 
   const fetchData = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/api/employee-leave/get?page=1&limit=50&search=`)
+      let page = 1
+      let allLeaves = []
+      let totalPages = 1
 
-      const leaveEvents = res.data.employeeLeaves.map(leave => {
+      while (page <= totalPages) {
+        const res = await apiClient.get(`/api/employee-leave/get?page=${page}&limit=100&search=`)
+        const leaves = res.data.employeeLeaves || res.data.data || []
+        allLeaves = allLeaves.concat(leaves)
+        totalPages = res.data.totalPages || res.data.pagination?.totalPages || 1
+        page += 1
+      }
+
+      const leaveEvents = allLeaves.map(leave => {
         let color
-        switch (leave.status.toLowerCase()) {
+        switch ((leave.status || '').toLowerCase()) {
           case 'approved':
             color = '#4caf50'
             break
@@ -53,16 +63,14 @@ const LeaveCalendar = () => {
             leaveType: leave.leaveType,
             reason: leave.reason,
             status: leave.status,
-            createdAt: leave.createdAt,
-            updatedAt: leave.updatedAt
           }
         }
       })
 
       setEvents(leaveEvents)
-      setLoading(false)
-    } catch (error) {
-      console.error('Error fetching leave data:', error)
+    } catch (err) {
+      console.error(err)
+    } finally {
       setLoading(false)
     }
   }
@@ -71,9 +79,9 @@ const LeaveCalendar = () => {
     fetchData()
   }, [])
 
-  const handleEventClick = clickInfo => {
-    setSelectedEvent(clickInfo.event)
-    setAnchorEl(clickInfo.el)
+  const handleEventClick = (info) => {
+    setSelectedEvent(info.event)
+    setAnchorEl(info.el)
   }
 
   const handleClose = () => {
@@ -84,85 +92,47 @@ const LeaveCalendar = () => {
   if (loading) return <Loader />
 
   return (
-    <Box component={Paper} className='p-6'>
-      <Link href='/human-resource' className='text-primary hover:underline mb-4 inline-block'> &larr; Back to HR & Reports</Link>
-      <h2 className='text-xl font-bold mb-4'>Employee Leave Calendar</h2>
+    <PermissionRoute resource="human resource">
+      <Box sx={{ p: 4 }}>
+        <Link href="/human-resource" style={{ textDecoration: 'none' }}>
+          <Typography variant="body2" color="primary" sx={{ mb: 2 }}>
+            &larr; Back to HR
+          </Typography>
+        </Link>
 
-      <FullCalendar
-        plugins={[dayGridPlugin, interactionPlugin]}
-        initialView='dayGridMonth'
-        events={events}
-        height='80vh'
-        headerToolbar={{
-          left: 'prev,next today',
-          center: 'title',
-          right: 'dayGridMonth,dayGridWeek,dayGridDay'
-        }}
-        eventClick={handleEventClick}
-        eventDidMount={info => {
-          // Hand cursor
-          info.el.style.cursor = 'pointer'
+        <Typography variant="h5" fontWeight="bold" mb={2}>
+          Leave Calendar
+        </Typography>
 
-          // Add hover effect
-          info.el.addEventListener('mouseenter', () => {
-            info.el.style.boxShadow = '0px 4px 10px rgba(0,0,0,0.2)'
-            info.el.style.transform = 'scale(1.02)'
-            info.el.style.transition = 'all 0.2s ease-in-out'
-          })
+        <Paper sx={{ p: 2 }}>
+          <FullCalendar
+            plugins={[dayGridPlugin, interactionPlugin]}
+            initialView="dayGridMonth"
+            events={events}
+            eventClick={handleEventClick}
+            height="auto"
+          />
+        </Paper>
 
-          info.el.addEventListener('mouseleave', () => {
-            info.el.style.boxShadow = 'none'
-            info.el.style.transform = 'scale(1)'
-          })
-        }}
-      />
-
-      {/* MUI Popover */}
-      <Popover
-        open={Boolean(anchorEl)}
-        anchorEl={anchorEl}
-        onClose={handleClose}
-        anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'center'
-        }}
-        transformOrigin={{
-          vertical: 'bottom',
-          horizontal: 'center'
-        }}
-      >
-        {selectedEvent && (
-          <Paper sx={{ p: 2, maxWidth: 300 }}>
-            <Typography variant='h6' gutterBottom>
-              {selectedEvent.extendedProps.employee?.name || 'Employee'}
+        <Popover
+          open={Boolean(anchorEl)}
+          anchorEl={anchorEl}
+          onClose={handleClose}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        >
+          <Box sx={{ p: 2, maxWidth: 280 }}>
+            <Typography variant="subtitle1" fontWeight={700}>
+              {selectedEvent?.title}
             </Typography>
-            <Divider sx={{ mb: 1 }} />
-            <Typography variant='body2'>
-              <b>Type:</b> {selectedEvent.extendedProps.leaveType}
-            </Typography>
-            <Typography variant='body2'>
-              <b>Status:</b> {selectedEvent.extendedProps.status}
-            </Typography>
-            <Typography variant='body2'>
-              <b>Reason:</b> {selectedEvent.extendedProps.reason || 'N/A'}
-            </Typography>
-            <Typography variant='body2'>
-              <b>Start:</b> {selectedEvent.startStr}
-            </Typography>
-            <Typography variant='body2'>
-              <b>End:</b> {selectedEvent.endStr}
-            </Typography>
-            <Divider sx={{ my: 1 }} />
-            <Typography variant='caption' color='text.secondary' display='block'>
-              <b>Created:</b> {new Date(selectedEvent.extendedProps.createdAt).toLocaleString()}
-            </Typography>
-            <Typography variant='caption' color='text.secondary' display='block'>
-              <b>Updated:</b> {new Date(selectedEvent.extendedProps.updatedAt).toLocaleString()}
-            </Typography>
-          </Paper>
-        )}
-      </Popover>
-    </Box>
+            <Typography variant="body2">Status: {selectedEvent?.extendedProps?.status}</Typography>
+            <Typography variant="body2">Type: {selectedEvent?.extendedProps?.leaveType}</Typography>
+            {selectedEvent?.extendedProps?.reason && (
+              <Typography variant="body2">Reason: {selectedEvent.extendedProps.reason}</Typography>
+            )}
+          </Box>
+        </Popover>
+      </Box>
+    </PermissionRoute>
   )
 }
 

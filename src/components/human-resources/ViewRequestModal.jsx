@@ -1,10 +1,9 @@
 "use client"
 
-import { BASE_URL } from '@/configs/url';
-import { useAuth } from '@/context/authContext';
-import axios from 'axios';
+import apiClient from "@/lib/axios";
 import React, { useState } from 'react'
 import { toast } from 'react-toastify';
+import PermissionWrapper from "@/components/PermissionWrapper";
 import {
   Dialog,
   DialogTitle,
@@ -16,8 +15,7 @@ import {
   Stack
 } from "@mui/material";
 
-const ViewRequestModal = ({ fetch, user, selectedRequest, setOpen, open }) => {
-  const { user: authUser } = useAuth();
+const ViewRequestModal = ({ fetch, selectedRequest, setOpen, open }) => {
   const [loading, setLoading] = useState(false);
 
   if (!selectedRequest) return null;
@@ -25,11 +23,10 @@ const ViewRequestModal = ({ fetch, user, selectedRequest, setOpen, open }) => {
   const handleStatusChange = async (newStatus) => {
     setLoading(true);
     try {
-      await axios.put(`${BASE_URL}/api/employee-leave/update/${selectedRequest.id}`, {
-        status: newStatus,
-        employeeId: authUser?.id || user?.id
+      await apiClient.put(`/api/employee-leave/update/${selectedRequest.id}`, {
+        status: newStatus.toLowerCase(),
       });
-      toast.success("Status updated successfully");
+      toast.success(`Leave ${newStatus.toLowerCase()}`);
       fetch();
       setOpen(false);
     } catch (error) {
@@ -38,6 +35,8 @@ const ViewRequestModal = ({ fetch, user, selectedRequest, setOpen, open }) => {
       setLoading(false);
     }
   };
+
+  const statusLower = (selectedRequest.status || '').toLowerCase();
 
   return (
     <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
@@ -64,22 +63,26 @@ const ViewRequestModal = ({ fetch, user, selectedRequest, setOpen, open }) => {
       </DialogContent>
       <DialogActions>
         <Stack direction="row" spacing={2}>
-          <Button
-            variant="contained"
-            color="success"
-            disabled={selectedRequest.status === "Approved" || loading}
-            onClick={() => handleStatusChange("Approved")}
-          >
-            Approve
-          </Button>
-          <Button
-            variant="contained"
-            color="error"
-            disabled={selectedRequest.status === "Rejected" || loading}
-            onClick={() => handleStatusChange("Rejected")}
-          >
-            Reject
-          </Button>
+          <PermissionWrapper resource="human resource" action="canEdit">
+            <Button
+              variant="contained"
+              color="success"
+              disabled={statusLower === "approved" || loading}
+              onClick={() => handleStatusChange("approved")}
+            >
+              Approve
+            </Button>
+          </PermissionWrapper>
+          <PermissionWrapper resource="human resource" action="canEdit">
+            <Button
+              variant="contained"
+              color="error"
+              disabled={statusLower === "rejected" || loading}
+              onClick={() => handleStatusChange("rejected")}
+            >
+              Reject
+            </Button>
+          </PermissionWrapper>
           <Button onClick={() => setOpen(false)} color="inherit">
             Close
           </Button>

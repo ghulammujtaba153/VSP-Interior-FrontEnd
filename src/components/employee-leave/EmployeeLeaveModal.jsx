@@ -11,7 +11,7 @@ import {
   MenuItem,
   Alert,
 } from "@mui/material";
-import axios from "axios";
+import apiClient from "@/lib/axios";
 import { BASE_URL } from "@/configs/url";
 import { useAuth } from "@/context/authContext";
 import { toast } from 'react-toastify';
@@ -66,14 +66,14 @@ const EmployeeLeaveModal = ({ open, handleClose, onLeaveAdded, editLeave }) => {
     toast.loading("Please wait...");
     try {
       if (editLeave) {
-        await axios.put(`${BASE_URL}/api/employee-leave/update/${editLeave.id}`, {
+        await apiClient.put(`/api/employee-leave/update/${editLeave.id}`, {
           ...form,
           employeeId: user.id,
         });
         toast.dismiss();
         toast.success("Leave updated successfully");
       } else {
-        await axios.post(`${BASE_URL}/api/employee-leave/create`, {
+        await apiClient.post(`/api/employee-leave/create`, {
           ...form,
           employeeId: user.id,
         });

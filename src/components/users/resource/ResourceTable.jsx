@@ -13,11 +13,9 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { DataGrid } from '@mui/x-data-grid';
-import axios from 'axios';
-
 import ResourceModal from './ResourceModel';
 import ConfirmationDialog from '../../ConfirmationDialog';
-import { BASE_URL } from '@/configs/url';
+import apiClient from '@/lib/axios';
 import Loader from '@/components/loader/Loader';
 import PermissionWrapper from '@/components/PermissionWrapper';
 import { useAuth } from '@/context/authContext';
@@ -59,12 +57,12 @@ const ResourceTable = () => {
   const handleSave = async (resource) => {
     try {
       if (mode === 'create') {
-        await axios.post(`${BASE_URL}/api/resource/create`, {
+        await apiClient.post('/api/resource/create', {
           resource,
           userId: user.id
         });
       } else {
-        await axios.put(`${BASE_URL}/api/resource/update/${resource.id}`, {
+        await apiClient.put(`/api/resource/update/${resource.id}`, {
           resource,
           userId: user.id
         });
@@ -78,7 +76,7 @@ const ResourceTable = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${BASE_URL}/api/resource/get`);
+      const res = await apiClient.get('/api/resource/get');
       setResources(res.data);
     } catch (error) {
       console.error("Error fetching resources", error);
@@ -98,7 +96,7 @@ const ResourceTable = () => {
 
   const confirmDeleteResource = async () => {
     try {
-      await axios.post(`${BASE_URL}/api/resource/delete`, {
+      await apiClient.post('/api/resource/delete', {
         id: resourceToDelete.id,
         userId: user.id 
       });

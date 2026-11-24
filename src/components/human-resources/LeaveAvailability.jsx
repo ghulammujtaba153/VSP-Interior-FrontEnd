@@ -34,11 +34,12 @@ import {
   History,
 } from "@mui/icons-material";
 import Loader from "../loader/Loader";
-import axios from "axios";
+import apiClient from "@/lib/axios";
 import { BASE_URL } from "@/configs/url";
 import ViewRequestModal from "./ViewRequestModal";
 import { useAuth } from "@/context/authContext";
 import Link from "next/link";
+import PermissionWrapper from "@/components/PermissionWrapper";
 
 import LeaveCharts from "./LeaveCharts";
 
@@ -55,12 +56,14 @@ const LeaveAvailability = () => {
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
   const [availableStaff, setAvailableStaff] = useState(0);
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const fetch = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(
-        `${BASE_URL}/api/employee-leave/get?page=${page + 1}&limit=${limit}&search=${searchTerm}`
+      const statusQuery = statusFilter !== "all" ? `&status=${statusFilter}` : "";
+      const res = await apiClient.get(
+        `/api/employee-leave/get?page=${page + 1}&limit=${limit}&search=${searchTerm}${statusQuery}`
       );
       setData(res.data.employeeLeaves || []);
       setAvailableStaff(res.data.availableStaff || 0);
@@ -74,7 +77,7 @@ const LeaveAvailability = () => {
 
   useEffect(() => {
     fetch();
-  }, [page, limit, searchTerm]);
+  }, [page, limit, searchTerm, statusFilter]);
 
   if (loading) return <Loader />;
 
@@ -138,7 +141,7 @@ const LeaveAvailability = () => {
 
   const handleAction = async (id, status) => {
     try {
-      await axios.put(`${BASE_URL}/api/employee-leave/update/${id}`, { status });
+      await apiClient.put(`/api/employee-leave/update/${id}`, { status });
       fetch();
     } catch (error) {
       console.error("Error updating leave status:", error);
@@ -238,6 +241,20 @@ const LeaveAvailability = () => {
               />
             </Grid>
             <Grid item xs={12} md={3}>
+              <Button
+                fullWidth
+                variant={statusFilter === "pending" ? "contained" : "outlined"}
+                color="warning"
+                onClick={() => {
+                  setStatusFilter(statusFilter === "pending" ? "all" : "pending");
+                  setPage(0);
+                }}
+                sx={{ height: 40 }}
+              >
+                Pending only
+              </Button>
+            </Grid>
+            <Grid item xs={12} md={3}>
               <Link href="/human-resource/calendar" style={{ textDecoration: 'none' }}>
                 <Button fullWidth variant="outlined" startIcon={<CalendarToday />} sx={{ height: 40 }}>
                   View Planner
@@ -262,7 +279,28 @@ const LeaveAvailability = () => {
               <TableBody>
                 {data.map((request) => (
                   <TableRow key={request.id} hover>
-                    <TableCell>{request.employeeName || request.employee?.name || "-"}</TableCell><TableCell>{getLeaveTypeChip(request.leaveType || request.type)}</TableCell><TableCell>{request.startDate ? new Date(request.startDate).toLocaleDateString() : "-"}</TableCell><TableCell>{request.endDate ? new Date(request.endDate).toLocaleDateString() : "-"}</TableCell><TableCell>{request.days ?? (request.startDate && request.endDate ? Math.floor((new Date(request.endDate) - new Date(request.startDate)) / (1000 * 60 * 60 * 24)) + 1 : "-")}</TableCell><TableCell>{getStatusChip(request.status)}</TableCell><TableCell>{request.reason}</TableCell><TableCell align="center"><Box display="flex" justifyContent="center" gap={1}><Button size="small" variant="contained" color="success" onClick={(e) => { e.stopPropagation(); handleAction(request.id, "approved"); }}>Approve</Button><Button size="small" variant="contained" color="error" onClick={(e) => { e.stopPropagation(); handleAction(request.id, "rejected"); }}>Reject</Button></Box></TableCell>
+                    <TableCell>{request.employeeName || request.employee?.name || "-"}</TableCell>
+                    <TableCell>{getLeaveTypeChip(request.leaveType || request.type)}</TableCell>
+                    <TableCell>{request.startDate ? new Date(request.startDate).toLocaleDateString() : "-"}</TableCell>
+                    <TableCell>{request.endDate ? new Date(request.endDate).toLocaleDateString() : "-"}</TableCell>
+                    <TableCell>{request.days ?? (request.startDate && request.endDate ? Math.floor((new Date(request.endDate) - new Date(request.startDate)) / (1000 * 60 * 60 * 24)) + 1 : "-")}</TableCell>
+                    <TableCell>{getStatusChip(request.status)}</TableCell>
+                    <TableCell>{request.reason}</TableCell>
+                    <TableCell align="center">
+                      <Box display="flex" justifyContent="center" gap={1}>
+                        <Button size="small" variant="outlined" onClick={() => handleView(request)}>View</Button>
+                        {request.status?.toLowerCase() === 'pending' && (
+                          <>
+                            <PermissionWrapper resource="human resource" action="canEdit">
+                              <Button size="small" variant="contained" color="success" onClick={(e) => { e.stopPropagation(); handleAction(request.id, "approved"); }}>Approve</Button>
+                            </PermissionWrapper>
+                            <PermissionWrapper resource="human resource" action="canEdit">
+                              <Button size="small" variant="contained" color="error" onClick={(e) => { e.stopPropagation(); handleAction(request.id, "rejected"); }}>Reject</Button>
+                            </PermissionWrapper>
+                          </>
+                        )}
+                      </Box>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

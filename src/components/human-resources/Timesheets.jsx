@@ -21,6 +21,10 @@ import {
   TablePagination,
   Grid,
   Avatar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import {
   Search,
@@ -36,11 +40,14 @@ import {
   TrendingUp,
 } from "@mui/icons-material";
 import Loader from "../loader/Loader";
-import axios from "axios";
+import apiClient from "@/lib/axios";
 import { BASE_URL } from "@/configs/url";
 import { toast } from "react-toastify";
+import Link from "next/link";
 import TimeSheetHeatMap from "./TimeSheetHeatMap";
 import TimeSheetCharts from "./TimeSheetCharts";
+import EmployeePicker from "./EmployeePicker";
+import PermissionWrapper from "@/components/PermissionWrapper";
 
 const Timesheets = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -54,8 +61,19 @@ const Timesheets = () => {
     return `${year}-${month}-${day}`;
   };
 
-  const [startDate, setStartDate] = useState(getTodayDate());
+  const getDefaultStartDate = () => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const [startDate, setStartDate] = useState(getDefaultStartDate());
   const [endDate, setEndDate] = useState(getTodayDate());
+  const [payPeriods, setPayPeriods] = useState([]);
+  const [selectedPayPeriodId, setSelectedPayPeriodId] = useState("");
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -71,6 +89,16 @@ const Timesheets = () => {
     pending: 0,
     approvedTotal: 0,
     avgWorkload: 0
+  });
+
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newTimesheet, setNewTimesheet] = useState({
+    employeeId: "",
+    date: getTodayDate(),
+    startTime: "09:00",
+    endTime: "17:00",
+    breakMinutes: 30,
+    status: "draft",
   });
 
   // Stats for the "Rect" section (Now decoupled from filters) - UNUSED anymore, using globalStats
@@ -97,10 +125,11 @@ const Timesheets = () => {
         startDate,
         endDate,
         page: page + 1,
-        limit: rowsPerPage
+        limit: rowsPerPage,
+        ...(selectedPayPeriodId ? { payPeriodId: selectedPayPeriodId } : {}),
       }).toString();
 
-      const res = await axios.get(`${BASE_URL}/api/employee-timesheet/get?${query}`);
+      const res = await apiClient.get(`/api/employee-timesheet/get?${query}`);
       const timesheets = res.data.data || res.data.timesheets || [];
       setData(timesheets);
       setTotalCount(res.data.total || timesheets.length);
@@ -111,11 +140,49 @@ const Timesheets = () => {
     }
   };
 
-  // ✅ Fetch global stats (unfiltered)
+  const handleExport = async () => {
+    try {
+      const res = await apiClient.get(
+        `/api/employee-timesheet/get?limit=5000&startDate=${startDate}&endDate=${endDate}&status=${statusFilter !== "all" ? statusFilter : ""}`
+      );
+      const rows = res.data.data || [];
+      const header = "Employee ID,Date,Start,End,Status,Break (min)\n";
+      const body = rows
+        .map((r) => `${r.employeeId},${r.date},${r.startTime},${r.endTime},${r.status},${r.breakMinutes || 0}`)
+        .join("\n");
+      const blob = new Blob([header + body], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `timesheets-${startDate}-${endDate}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+      toast.success("Export downloaded");
+    } catch (error) {
+      toast.error("Export failed");
+    }
+  };
+
+  const handleCreateTimesheet = async () => {
+    if (!newTimesheet.employeeId) {
+      toast.error("Employee ID is required");
+      return;
+    }
+    try {
+      await apiClient.post("/api/employee-timesheet/create", newTimesheet);
+      toast.success("Timesheet created");
+      setCreateOpen(false);
+      fetchData();
+      fetchGlobalStats();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to create timesheet");
+    }
+  };
+
   const fetchGlobalStats = async () => {
     try {
       // Get records for charts (up to 1000 for visualization)
-      const res = await axios.get(`${BASE_URL}/api/employee-timesheet/get?limit=1000`);
+      const res = await apiClient.get(`/api/employee-timesheet/get?limit=1000`);
       const allRecords = res.data.data || [];
       const statsObj = res.data.stats || {};
       
@@ -135,11 +202,31 @@ const Timesheets = () => {
 
   useEffect(() => {
     fetchGlobalStats();
+    const loadPayPeriods = async () => {
+      try {
+        const res = await apiClient.get('/api/hr/pay-periods');
+        setPayPeriods(res.data.data || []);
+      } catch {
+        /* HR admin only */
+      }
+    };
+    loadPayPeriods();
   }, []);
+
+  const handlePayPeriodChange = (periodId) => {
+    setSelectedPayPeriodId(periodId);
+    if (!periodId) return;
+    const period = payPeriods.find((p) => String(p.id) === String(periodId));
+    if (period) {
+      setStartDate(period.startDate);
+      setEndDate(period.endDate);
+      setPage(0);
+    }
+  };
 
   useEffect(() => {
     fetchData();
-  }, [page, rowsPerPage, statusFilter, startDate, endDate]);
+  }, [page, rowsPerPage, statusFilter, startDate, endDate, selectedPayPeriodId]);
 
   // Debounce search
   useEffect(() => {
@@ -154,9 +241,11 @@ const Timesheets = () => {
   const handleStatusUpdate = async (id, newStatus) => {
     toast.loading("loading...")
     try {
-      await axios.put(`${BASE_URL}/api/employee-timesheet/update/${id}`, {
-        status: newStatus,
-      });
+      if (newStatus === 'approved' || newStatus === 'rejected') {
+        await apiClient.post(`/api/employee-timesheet/${id}/approve`, { status: newStatus });
+      } else {
+        await apiClient.put(`/api/employee-timesheet/update/${id}`, { status: newStatus });
+      }
       toast.dismiss()
       toast.success(`Timesheet ${newStatus} successfully`);
       fetchData(); // refresh after update
@@ -268,10 +357,19 @@ const Timesheets = () => {
             variant="outlined"
             startIcon={<Download />}
             sx={{ borderColor: "divider" }}
+            onClick={handleExport}
           >
             Export
           </Button>
-          <Button variant="contained" startIcon={<Add />} color="primary">
+          <Button
+            component={Link}
+            href="/human-resource?tab=salary"
+            variant="outlined"
+            startIcon={<CalendarMonth />}
+          >
+            Payroll
+          </Button>
+          <Button variant="contained" startIcon={<Add />} color="primary" onClick={() => setCreateOpen(true)}>
             New Timesheet
           </Button>
         </Stack>
@@ -353,6 +451,38 @@ const Timesheets = () => {
                   startAdornment: <Search sx={{ mr: 1, color: "text.secondary" }} />,
                 }}
               />
+            </Grid>
+            <Grid item xs={12} md={2}>
+              <Button
+                fullWidth
+                variant={statusFilter === "pending" ? "contained" : "outlined"}
+                color="warning"
+                size="small"
+                onClick={() => {
+                  setStatusFilter(statusFilter === "pending" ? "all" : "pending");
+                  setPage(0);
+                }}
+                sx={{ height: 40 }}
+              >
+                Pending only
+              </Button>
+            </Grid>
+            <Grid item xs={12} md={2}>
+              <TextField
+                select
+                fullWidth
+                size="small"
+                value={selectedPayPeriodId}
+                onChange={(e) => handlePayPeriodChange(e.target.value)}
+                label="Pay Period"
+              >
+                <MenuItem value="">All periods</MenuItem>
+                {payPeriods.map((p) => (
+                  <MenuItem key={p.id} value={String(p.id)}>
+                    {p.startDate} — {p.endDate} ({p.status})
+                  </MenuItem>
+                ))}
+              </TextField>
             </Grid>
             <Grid item xs={12} md={2}>
               <TextField
@@ -445,26 +575,30 @@ const Timesheets = () => {
                       {/* ✅ Actions */}
                       <TableCell align="center">
                         <Stack direction="row" spacing={1} justifyContent="center">
-                          <Button
-                            size="small"
-                            variant="contained"
-                            color="success"
-                            disabled={ts.status?.toLowerCase() === "approved"}
-                            onClick={() => handleStatusUpdate(ts.id, "approved")}
-                            sx={{ minWidth: 80 }}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            size="small"
-                            variant="contained"
-                            color="error"
-                            disabled={ts.status?.toLowerCase() === "rejected"}
-                            onClick={() => handleStatusUpdate(ts.id, "rejected")}
-                            sx={{ minWidth: 80 }}
-                          >
-                            Reject
-                          </Button>
+                          <PermissionWrapper resource="human resource" action="canEdit">
+                            <Button
+                              size="small"
+                              variant="contained"
+                              color="success"
+                              disabled={ts.status?.toLowerCase() === "approved"}
+                              onClick={() => handleStatusUpdate(ts.id, "approved")}
+                              sx={{ minWidth: 80 }}
+                            >
+                              Approve
+                            </Button>
+                          </PermissionWrapper>
+                          <PermissionWrapper resource="human resource" action="canEdit">
+                            <Button
+                              size="small"
+                              variant="contained"
+                              color="error"
+                              disabled={ts.status?.toLowerCase() === "rejected"}
+                              onClick={() => handleStatusUpdate(ts.id, "rejected")}
+                              sx={{ minWidth: 80 }}
+                            >
+                              Reject
+                            </Button>
+                          </PermissionWrapper>
                         </Stack>
                       </TableCell>
                     </TableRow>
@@ -510,6 +644,27 @@ const Timesheets = () => {
           </Typography>
         </Box>
       )}
+
+      <Dialog open={createOpen} onClose={() => setCreateOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>New Timesheet</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <EmployeePicker
+              label="Employee"
+              value={newTimesheet.employeeId}
+              onChange={(e) => setNewTimesheet({ ...newTimesheet, employeeId: e.target.value })}
+            />
+            <TextField type="date" label="Date" InputLabelProps={{ shrink: true }} value={newTimesheet.date} onChange={(e) => setNewTimesheet({ ...newTimesheet, date: e.target.value })} />
+            <TextField label="Start Time" value={newTimesheet.startTime} onChange={(e) => setNewTimesheet({ ...newTimesheet, startTime: e.target.value })} />
+            <TextField label="End Time" value={newTimesheet.endTime} onChange={(e) => setNewTimesheet({ ...newTimesheet, endTime: e.target.value })} />
+            <TextField type="number" label="Break (minutes)" value={newTimesheet.breakMinutes} onChange={(e) => setNewTimesheet({ ...newTimesheet, breakMinutes: e.target.value })} />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCreateOpen(false)}>Cancel</Button>
+          <Button variant="contained" onClick={handleCreateTimesheet}>Create</Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

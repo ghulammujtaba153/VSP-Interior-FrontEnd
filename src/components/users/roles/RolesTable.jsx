@@ -17,13 +17,11 @@ import DeleteIcon from '@mui/icons-material/Delete';
 
 import { toast } from 'react-toastify';
 
-import axios from 'axios';
-
 import RoleViewModal from './RoleViewModal';
 import RoleModal from './RoleModal';
 import ConfirmationDialog from '../../ConfirmationDialog';
 
-import { BASE_URL } from '@/configs/url';
+import apiClient from '@/lib/axios';
 import Loader from '@/components/loader/Loader';
 import Link from '@/components/Link';
 import PermissionWrapper from '@/components/PermissionWrapper';
@@ -54,7 +52,7 @@ const RolesTable = () => {
 
   const fetchRoles = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/api/role/get`)
+      const res = await apiClient.get('/api/role/get')
 
       setRoles(res.data)
       console.log("roles", res.data)
@@ -94,12 +92,12 @@ const RolesTable = () => {
       formData.userId = user.id;
       if (mode === 'edit') {
         console.log('Update Role:', formData);
-        await axios.put(`${BASE_URL}/api/role/update/${selectedRole.id}`, formData);
+        await apiClient.put(`/api/role/update/${selectedRole.id}`, formData);
         toast.dismiss();
         toast.success("Role updated successfully");
       } else {
         console.log('Create Role:', formData);
-        await axios.post(`${BASE_URL}/api/role/create`, formData);
+        await apiClient.post('/api/role/create', formData);
         toast.dismiss();
         toast.success("Role created successfully");
       }
@@ -122,7 +120,7 @@ const RolesTable = () => {
   const confirmDeleteRole = async () => {
     try {
       toast.loading("Deleting...");
-      await axios.delete(`${BASE_URL}/api/role/delete/${roleToDelete.id}`, {
+      await apiClient.delete(`/api/role/delete/${roleToDelete.id}`, {
         data: { userId: user.id }
       });
       toast.dismiss();

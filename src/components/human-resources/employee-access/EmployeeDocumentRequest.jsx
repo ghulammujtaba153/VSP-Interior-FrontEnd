@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { BASE_URL } from "@/configs/url";
+import apiClient from "@/lib/axios";
 import { toast } from "react-toastify";
 import {
   Box,
@@ -18,32 +17,30 @@ import {
   Paper,
   TablePagination,
   IconButton,
-  Button,
   Chip,
   Tooltip,
   CircularProgress,
   Stack,
   TextField,
   Divider,
-  Grid,
-  Avatar,
 } from "@mui/material";
 import { 
   UploadFile as UploadFileIcon, 
-  Edit as EditIcon, 
-  Delete as DeleteIcon,
   Description,
-  QueryBuilder,
-  TaskAlt,
   Search,
   Schedule as AccessTime,
   CheckCircle,
-  AccountTree as CalendarToday
+  Download as DownloadIcon,
 } from "@mui/icons-material";
-import DocumentRequestModal from "@/components/human-resources/staff/DocumentRequestModal";
 import EmployeeDocumentUpload from "./EmployeeDocumentUpload";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/context/authContext";
+import { openSecureUpload } from "@/lib/openSecureFile";
+import {
+  getLatestDocument,
+  docRequestStatusColor,
+  docRequestStatusLabel,
+} from "@/lib/hrUtils";
 
 const EmployeeDocumentRequest = () => {
   // useAuth can return null/undefined while auth is initializing — guard it
@@ -56,29 +53,43 @@ const EmployeeDocumentRequest = () => {
   const employeeId = routeEmployeeId || user?.id || null;
 
   const [docRequests, setDocRequests] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [summary, setSummary] = useState({ total: 0, pending: 0, approved: 0 });
   const [loading, setLoading] = useState(true);
 
   // pagination
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm), 400);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedSearch]);
 
   // modals
-  const [requestModalOpen, setRequestModalOpen] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState(null);
-
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadRequest, setUploadRequest] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
 
   // fetch document requests for the resolved employeeId
   const fetchDocRequests = async (empId) => {
     if (!empId) return;
     setLoading(true);
     try {
-      const res = await axios.get(`${BASE_URL}/api/employee-document/employee/${empId}`);
-      // normalize response shape
-      const items = res.data?.data || res.data?.items || res.data || [];
-      setDocRequests(items);
+      const params = new URLSearchParams({
+        page: String(page + 1),
+        limit: String(rowsPerPage),
+        search: debouncedSearch,
+      });
+      const res = await apiClient.get(`/api/employee-document/employee/${empId}?${params}`);
+      setDocRequests(res.data?.data || []);
+      setTotal(res.data?.total || 0);
+      setSummary(res.data?.summary || { total: 0, pending: 0, approved: 0 });
     } catch (error) {
       console.error(error);
       toast.error("Failed to fetch document requests");
@@ -97,27 +108,7 @@ const EmployeeDocumentRequest = () => {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [employeeId]);
-
-  const handleEdit = (r) => {
-    setSelectedRequest(r);
-    setRequestModalOpen(true);
-  };
-
-  const handleDelete = async (reqId) => {
-    if (!window.confirm("Delete this request?")) return;
-    toast.loading("Deleting...");
-    try {
-      await axios.delete(`${BASE_URL}/api/employee-document/delete/${reqId}`);
-      toast.dismiss();
-      toast.success("Deleted");
-      fetchDocRequests(employeeId);
-    } catch (error) {
-      toast.dismiss();
-      console.error(error);
-      toast.error("Delete failed");
-    }
-  };
+  }, [employeeId, page, rowsPerPage, debouncedSearch]);
 
   const handleOpenUpload = (r) => {
     setUploadRequest(r);
@@ -130,24 +121,23 @@ const EmployeeDocumentRequest = () => {
     fetchDocRequests(employeeId);
   };
 
-  const handleRequestSaved = () => {
-    setRequestModalOpen(false);
-    setSelectedRequest(null);
-    fetchDocRequests(employeeId);
+  const handleDownload = async (request) => {
+    const doc = getLatestDocument(request);
+    if (!doc?.documentUrl) return;
+    try {
+      await openSecureUpload(doc.documentUrl);
+    } catch {
+      toast.error("Could not download document");
+    }
   };
 
-  const filtered = (docRequests || []).filter(r => 
-    r.documentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.documentType?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const canUpload = (r) => ["pending", "rejected"].includes(r.status);
+  const canDownload = (r) => ["uploaded", "approved"].includes(r.status) && getLatestDocument(r);
 
-  const paginated = filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+  const filtered = docRequests;
+  const paginated = filtered;
 
-  const stats = {
-    total: docRequests.length,
-    pending: docRequests.filter(r => r.status === 'pending').length,
-    approved: docRequests.filter(r => r.status === 'approved').length,
-  };
+  const stats = summary;
 
   if (loading || !employeeId) return <Box display="flex" justifyContent="center" py={10}><CircularProgress /></Box>;
 
@@ -169,7 +159,7 @@ const EmployeeDocumentRequest = () => {
           <CardContent>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography variant="body2" color="text.secondary">Pending Actions</Typography>
+                <Typography variant="body2" color="text.secondary">Awaiting Upload</Typography>
                 <Typography variant="h5" color="warning.main" fontWeight={600}>{stats.pending}</Typography>
               </Box>
               <AccessTime fontSize="large" color="warning" />
@@ -192,7 +182,12 @@ const EmployeeDocumentRequest = () => {
       <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
         <CardContent>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-            <Typography variant="h6" fontWeight="bold">My Document Requests</Typography>
+            <Box>
+              <Typography variant="h6" fontWeight="bold">Assigned Documents</Typography>
+              <Typography variant="body2" color="text.secondary">
+                HR-assigned requests — upload the documents requested below
+              </Typography>
+            </Box>
             <TextField
               size="small"
               placeholder="Search documents..."
@@ -213,11 +208,56 @@ const EmployeeDocumentRequest = () => {
               </TableHead>
               <TableBody>
                 {paginated.length === 0 ? (
-                  <TableRow><TableCell colSpan={7} align="center">No document requests found</TableCell></TableRow>
+                  <TableRow>
+                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                      <Typography color="text.secondary">
+                        No document requests from HR yet. Contact HR if you need to submit a document.
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   paginated.map((r, idx) => (
                     <TableRow key={r.id} hover>
-                      <TableCell>{page * rowsPerPage + idx + 1}</TableCell><TableCell>{r.documentType}</TableCell><TableCell>{r.documentName}</TableCell><TableCell sx={{ whiteSpace: "pre-line", maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.reason}</TableCell><TableCell><Chip label={r.status} color={r.status === "approved" ? "success" : r.status === "pending" ? "warning" : "error"} size="small" /></TableCell><TableCell>{r.createdAt ? new Date(r.createdAt).toLocaleString() : "-"}</TableCell><TableCell align="center">{r.status === "pending" && <Tooltip title="Upload Document"><IconButton size="small" color="primary" onClick={() => handleOpenUpload(r)}><UploadFileIcon fontSize="small" /></IconButton></Tooltip>}</TableCell>
+                      <TableCell>{page * rowsPerPage + idx + 1}</TableCell>
+                      <TableCell>{r.documentType}</TableCell>
+                      <TableCell>{r.documentName}</TableCell>
+                      <TableCell sx={{ whiteSpace: "pre-line", maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.reason}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={docRequestStatusLabel(r.status)}
+                          color={docRequestStatusColor(r.status)}
+                          size="small"
+                        />
+                        {r.status === "rejected" && r.rejectionReason && (
+                          <Typography variant="caption" display="block" color="error.main" sx={{ mt: 0.5 }}>
+                            {r.rejectionReason}
+                          </Typography>
+                        )}
+                        {r.status === "uploaded" && (
+                          <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 0.5 }}>
+                            HR is reviewing your submission
+                          </Typography>
+                        )}
+                      </TableCell>
+                      <TableCell>{r.createdAt ? new Date(r.createdAt).toLocaleString() : "-"}</TableCell>
+                      <TableCell align="center">
+                        <Stack direction="row" spacing={0.5} justifyContent="center">
+                          {canUpload(r) && (
+                            <Tooltip title={r.status === "rejected" ? "Re-upload document" : "Upload document"}>
+                              <IconButton size="small" color="primary" onClick={() => handleOpenUpload(r)}>
+                                <UploadFileIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          {canDownload(r) && (
+                            <Tooltip title="Download submitted file">
+                              <IconButton size="small" color="success" onClick={() => handleDownload(r)}>
+                                <DownloadIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </Stack>
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -227,27 +267,16 @@ const EmployeeDocumentRequest = () => {
 
           <TablePagination
             component="div"
-            count={filtered.length}
+            count={total}
             page={page}
             onPageChange={(e, p) => setPage(p)}
             rowsPerPage={rowsPerPage}
             onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+            rowsPerPageOptions={[5, 10, 25]}
             sx={{ mt: 1 }}
           />
         </CardContent>
       </Card>
-
-      {/* Modals */}
-      <DocumentRequestModal
-        open={requestModalOpen}
-        onClose={() => {
-          setRequestModalOpen(false);
-          setSelectedRequest(null);
-        }}
-        data={selectedRequest}
-        employeeId={employeeId}
-        onSaved={handleRequestSaved}
-      />
 
       <EmployeeDocumentUpload
         open={uploadOpen}

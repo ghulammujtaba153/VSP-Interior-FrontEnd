@@ -2,13 +2,22 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import axios from "axios";
+import apiClient from "@/lib/axios";
 import { toast } from "react-toastify";
-import { BASE_URL } from "@/configs/url";
+import { formatNzd } from "@/lib/hrUtils";
+import { openSecureUpload } from "@/lib/openSecureFile";
 import Loader from "@/components/loader/Loader";
 import DocumentRequestModal from "@/components/human-resources/staff/DocumentRequestModal";
+import DocumentRejectDialog from "@/components/human-resources/staff/DocumentRejectDialog";
 import SalaryRecord from "@/components/human-resources/staff/SalaryRecord";
+import {
+  getRequestDocuments,
+  docRequestStatusColor,
+  docRequestStatusLabel,
+} from "@/lib/hrUtils";
 import StaffProfileCharts from "@/components/human-resources/staff/StaffProfileCharts";
+import EmploymentProfileForm from "@/components/human-resources/EmploymentProfileForm";
+import PermissionRoute from "@/components/PermissionRoute";
 
 
 // MUI imports
@@ -40,6 +49,8 @@ import { Person, WorkHistory, EventNote, CheckCircle, AttachMoney, AccountBalanc
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
+import ThumbUpIcon from "@mui/icons-material/ThumbUp";
+import ThumbDownIcon from "@mui/icons-material/ThumbDown";
 import Link from "next/link";
 
 const StaffProfilePage = () => {
@@ -61,6 +72,9 @@ const StaffProfilePage = () => {
   const [docLoading, setDocLoading] = useState(false);
   const [docModalOpen, setDocModalOpen] = useState(false);
   const [selectedDocRequest, setSelectedDocRequest] = useState(null);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectTarget, setRejectTarget] = useState(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
 
   // Filter states
   const [timesheetFilter, setTimesheetFilter] = useState("all");
@@ -69,10 +83,11 @@ const StaffProfilePage = () => {
 
   const [payrollRecords, setPayrollRecords] = useState([]);
   const [payrollLoading, setPayrollLoading] = useState(false);
+  const [leaveBalances, setLeaveBalances] = useState([]);
 
   const fetch = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/api/user/staff/${id}`);
+      const res = await apiClient.get(`/api/user/staff/${id}`);
       setData(res.data);
     } catch (error) {
       toast.error("Error fetching staff details");
@@ -84,7 +99,7 @@ const StaffProfilePage = () => {
   const fetchDocRequests = async () => {
     setDocLoading(true);
     try {
-      const res = await axios.get(`${BASE_URL}/api/employee-document/employee/${id}`);
+      const res = await apiClient.get(`/api/employee-document/employee/${id}?page=1&limit=500`);
       
       const items = res.data?.data || res.data?.items || res.data || [];
       setDocRequests(items);
@@ -96,11 +111,20 @@ const StaffProfilePage = () => {
     }
   };
 
+  const fetchLeaveBalances = async () => {
+    try {
+      const res = await apiClient.get(`/api/hr/leave-balances/${id}`);
+      setLeaveBalances(res.data?.data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const fetchPayroll = async () => {
     setPayrollLoading(true);
     try {
-      const res = await axios.get(`${BASE_URL}/api/payroll/get?userId=${id}`);
-      setPayrollRecords(Array.isArray(res.data) ? res.data : res.data?.data || []);
+      const res = await apiClient.get(`/api/hr/payslips/user/${id}?page=1&limit=500`);
+      setPayrollRecords(res.data?.data || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -112,6 +136,7 @@ const StaffProfilePage = () => {
     fetch();
     fetchDocRequests();
     fetchPayroll();
+    fetchLeaveBalances();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -125,22 +150,14 @@ const StaffProfilePage = () => {
   const approvedLeaves = EmployeeLeaves?.filter((l) => l.status.toLowerCase() === "approved").length || 0;
 
   // New Upgrade: Calculated Leave Balance (Assuming 20 standard annual leaves)
-  const USED_LEAVES = EmployeeLeaves
-    .filter(l => l.status.toLowerCase() === "approved")
-    .reduce((acc, l) => {
-      const s = new Date(l.startDate);
-      const e = new Date(l.endDate);
-      const days = Math.floor((e - s) / (1000 * 60 * 60 * 24)) + 1;
-      return acc + days;
-    }, 0);
-  const LEAVE_LIMIT = 20; // This should ideally come from backend settings
-  const remainingLeaves = Math.max(0, LEAVE_LIMIT - USED_LEAVES);
+  const annualBalance = leaveBalances.find((b) => b.leaveType === 'annual') || leaveBalances[0];
+  const remainingLeaves = Number(annualBalance?.remaining ?? 0);
+  const usedLeaves = Number(annualBalance?.used ?? 0);
 
   // Payroll Stats
-  const totalPaid = payrollRecords.filter((r) => r.status === "paid").reduce((sum, r) => sum + Number(r.netSalary || 0), 0);
-  const totalPending = payrollRecords.filter((r) => r.status === "pending").reduce((sum, r) => sum + Number(r.netSalary || 0), 0);
-  const avgNet = payrollRecords.length > 0 ? payrollRecords.reduce((sum, r) => sum + Number(r.netSalary || 0), 0) / payrollRecords.length : 0;
-  const fmt = (n) => Number(n || 0).toLocaleString("en-AU", { style: "currency", currency: "AUD", maximumFractionDigits: 0 });
+  const totalPaid = payrollRecords.reduce((sum, r) => sum + Number(r.netPay || 0), 0);
+  const avgNet = payrollRecords.length > 0 ? totalPaid / payrollRecords.length : 0;
+  const fmt = (n) => formatNzd(n, { maximumFractionDigits: 0 });
 
   const openNewDocModal = () => {
     setSelectedDocRequest(null);
@@ -148,15 +165,57 @@ const StaffProfilePage = () => {
   };
 
   const handleEditDoc = (req) => {
+    if (!["pending", "rejected"].includes(req.status)) {
+      toast.info("Only pending or rejected requests can be edited");
+      return;
+    }
     setSelectedDocRequest(req);
     setDocModalOpen(true);
+  };
+
+  const handleApproveDoc = async (req) => {
+    if (!window.confirm(`Approve "${req.documentName}"?`)) return;
+    setReviewLoading(true);
+    try {
+      await apiClient.put(`/api/employee-document/update-status/${req.id}`, { status: "approved" });
+      toast.success("Document approved");
+      fetchDocRequests();
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Failed to approve document");
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  const openRejectDoc = (req) => {
+    setRejectTarget(req);
+    setRejectDialogOpen(true);
+  };
+
+  const handleRejectDoc = async (rejectionReason) => {
+    if (!rejectTarget) return;
+    setReviewLoading(true);
+    try {
+      await apiClient.put(`/api/employee-document/update-status/${rejectTarget.id}`, {
+        status: "rejected",
+        rejectionReason,
+      });
+      toast.success("Document rejected — employee can re-upload");
+      setRejectDialogOpen(false);
+      setRejectTarget(null);
+      fetchDocRequests();
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Failed to reject document");
+    } finally {
+      setReviewLoading(false);
+    }
   };
 
   const handleDeleteDoc = async (reqId) => {
     if (!window.confirm("Delete this request?")) return;
     toast.loading("Deleting...");
     try {
-      await axios.delete(`${BASE_URL}/api/employee-document/delete/${reqId}`);
+      await apiClient.delete(`/api/employee-document/delete/${reqId}`);
       toast.dismiss();
       toast.success("Deleted");
       fetchDocRequests();
@@ -171,11 +230,64 @@ const StaffProfilePage = () => {
   };
 
   // add download handler
-  const handleDownloadDocument = (doc) => {
-    if (!doc || !doc.documentUrl) return;
-    // open file in new tab / trigger browser download
-    const url = `${BASE_URL}${doc.documentUrl}`;
-    window.open(url, "_blank", "noopener,noreferrer");
+  const handleDownloadDocument = async (doc) => {
+    if (!doc?.documentUrl) return;
+    try {
+      await openSecureUpload(doc.documentUrl);
+    } catch {
+      toast.error("Could not download document");
+    }
+  };
+
+  const renderDocActions = (r) => {
+    const docs = getRequestDocuments(r);
+    const canEdit = ["pending", "rejected"].includes(r.status);
+    const canReview = r.status === "uploaded";
+    const canDownload = docs.length > 0;
+
+    return (
+      <Box display="flex" justifyContent="center" gap={0.5} flexWrap="wrap">
+        {canReview && (
+          <>
+            <Tooltip title="Approve">
+              <span>
+                <IconButton size="small" color="success" disabled={reviewLoading} onClick={() => handleApproveDoc(r)}>
+                  <ThumbUpIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title="Reject">
+              <span>
+                <IconButton size="small" color="error" disabled={reviewLoading} onClick={() => openRejectDoc(r)}>
+                  <ThumbDownIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </>
+        )}
+        {canDownload && docs.map((doc) => (
+          <Tooltip key={doc.id} title={`Download${doc.originalFilename ? `: ${doc.originalFilename}` : ""}`}>
+            <IconButton size="small" color="primary" onClick={() => handleDownloadDocument(doc)}>
+              <DownloadIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        ))}
+        {canEdit && (
+          <>
+            <Tooltip title="Edit request">
+              <IconButton size="small" color="primary" onClick={() => handleEditDoc(r)}>
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Delete request">
+              <IconButton size="small" color="error" onClick={() => handleDeleteDoc(r.id)}>
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </>
+        )}
+      </Box>
+    );
   };
 
   // ✅ Time formatting helpers
@@ -229,8 +341,9 @@ const StaffProfilePage = () => {
   );
 
   return (
+    <PermissionRoute resource="human resource">
     <Box sx={{ p: 4 }}>
-      <Link href="/human-resource" style={{ textDecoration: "none" }}>
+      <Link href="/human-resource?tab=staffProfiles" style={{ textDecoration: "none" }}>
         <Typography variant="body2" color="primary" sx={{ mb: 2 }}>
           &larr; Back to Staff List
         </Typography>
@@ -263,6 +376,13 @@ const StaffProfilePage = () => {
         </Grid>
       </Card>
 
+      <EmploymentProfileForm
+        userId={id}
+        initialProfile={data?.employmentProfile}
+        linkedWorker={data?.worker}
+        onSaved={fetch}
+      />
+
       {/* Stats Overview */}
       <Stack direction={{ xs: "column", md: "row" }} spacing={2} mb={4}>
         <Card sx={{ flex: 1, borderRadius: 3, boxShadow: 1 }}>
@@ -281,7 +401,7 @@ const StaffProfilePage = () => {
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
                 <Typography variant="body2" color="text.secondary">Leaves Used</Typography>
-                <Typography variant="h5" color="secondary.main" fontWeight={600}>{USED_LEAVES}</Typography>
+                <Typography variant="h5" color="secondary.main" fontWeight={600}>{usedLeaves}</Typography>
               </Box>
               <EventNote fontSize="large" color="secondary" />
             </Stack>
@@ -342,9 +462,9 @@ const StaffProfilePage = () => {
           <CardContent>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Box>
-                <Typography variant="body2" color="text.secondary">Pending Payroll</Typography>
+                <Typography variant="body2" color="text.secondary">Payslips</Typography>
                 <Typography variant="h5" color="warning.main" fontWeight={600}>
-                  {fmt(totalPending)}
+                  {payrollRecords.length}
                 </Typography>
               </Box>
               <AccountBalanceWallet fontSize="large" color="warning" />
@@ -367,7 +487,12 @@ const StaffProfilePage = () => {
       </Stack>
 
       {/* 📊 Personnel Data Analytics */}
-      <StaffProfileCharts timesheets={EmployeeTimeSheets} leaves={EmployeeLeaves} payroll={payrollRecords} />
+      <StaffProfileCharts
+        timesheets={EmployeeTimeSheets}
+        leaves={EmployeeLeaves}
+        payroll={payrollRecords}
+        leaveEntitled={Number(annualBalance?.entitled ?? usedLeaves + remainingLeaves ?? 20)}
+      />
 
       {/* TimeSheet Table */}
       <Card sx={{ mb: 4, borderRadius: 3, boxShadow: 3 }}>
@@ -498,7 +623,7 @@ const StaffProfilePage = () => {
       </Card>
 
       {/* Salary Records Section */}
-      <SalaryRecord employeeId={id} baseSalary={data?.salary} records={payrollRecords} loading={payrollLoading} onRefresh={fetchPayroll} />
+      <SalaryRecord records={payrollRecords} loading={payrollLoading} />
 
       {/* Document Requests Section */}
       <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
@@ -517,8 +642,9 @@ const StaffProfilePage = () => {
                 label="Status"
               >
                 <MenuItem value="all">All</MenuItem>
-                <MenuItem value="approved">Approved</MenuItem>
                 <MenuItem value="pending">Pending</MenuItem>
+                <MenuItem value="uploaded">Awaiting review</MenuItem>
+                <MenuItem value="approved">Approved</MenuItem>
                 <MenuItem value="rejected">Rejected</MenuItem>
               </TextField>
               <Button variant="contained" color="primary" onClick={openNewDocModal}>
@@ -536,7 +662,26 @@ const StaffProfilePage = () => {
               </TableHead>
               <TableBody>
                 {filteredDocRequests.slice(docPage * docRowsPerPage, docPage * docRowsPerPage + docRowsPerPage).map((r, idx) => (
-                  <TableRow key={r.id}><TableCell>{docPage * docRowsPerPage + idx + 1}</TableCell><TableCell>{r.documentType}</TableCell><TableCell>{r.documentName}</TableCell><TableCell sx={{ whiteSpace: "pre-line" }}>{r.reason}</TableCell><TableCell><Chip label={r.status} color={r.status === "approved" ? "success" : r.status === "pending" ? "warning" : "error"} size="small" /></TableCell><TableCell>{r.createdAt ? new Date(r.createdAt).toLocaleString() : "-"}</TableCell><TableCell align="center"><Box display="flex" justifyContent="center" gap={1}>{/* If documents exist show download buttons, otherwise show edit */}{Array.isArray(r.documents) && r.documents.length > 0 ? (r.documents.map((doc) => (<Tooltip key={doc.id} title="Download Document"><IconButton size="small" color="primary" onClick={() => handleDownloadDocument(doc)}><DownloadIcon /></IconButton></Tooltip>))) : (<><IconButton size="small" color="primary" onClick={() => handleEditDoc(r)}><EditIcon /></IconButton><IconButton size="small" color="error" onClick={() => handleDeleteDoc(r.id)}><DeleteIcon /></IconButton></>)}</Box></TableCell></TableRow>
+                  <TableRow key={r.id}>
+                    <TableCell>{docPage * docRowsPerPage + idx + 1}</TableCell>
+                    <TableCell>{r.documentType}</TableCell>
+                    <TableCell>{r.documentName}</TableCell>
+                    <TableCell sx={{ whiteSpace: "pre-line", maxWidth: 200 }}>{r.reason}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={docRequestStatusLabel(r.status)}
+                        color={docRequestStatusColor(r.status)}
+                        size="small"
+                      />
+                      {r.rejectionReason && (
+                        <Typography variant="caption" display="block" color="error.main" sx={{ mt: 0.5 }}>
+                          {r.rejectionReason}
+                        </Typography>
+                      )}
+                    </TableCell>
+                    <TableCell>{r.createdAt ? new Date(r.createdAt).toLocaleString() : "-"}</TableCell>
+                    <TableCell align="center">{renderDocActions(r)}</TableCell>
+                  </TableRow>
                 ))}
                 {filteredDocRequests.length === 0 && (
                   <TableRow><TableCell colSpan={7} align="center">No document requests</TableCell></TableRow>
@@ -566,7 +711,19 @@ const StaffProfilePage = () => {
         employeeId={id}
         onSaved={handleDocSaved}
       />
+
+      <DocumentRejectDialog
+        open={rejectDialogOpen}
+        onClose={() => {
+          setRejectDialogOpen(false);
+          setRejectTarget(null);
+        }}
+        request={rejectTarget}
+        onConfirm={handleRejectDoc}
+        loading={reviewLoading}
+      />
     </Box>
+    </PermissionRoute>
   );
 };
 

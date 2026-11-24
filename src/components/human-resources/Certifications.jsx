@@ -1,243 +1,191 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import apiClient from "@/lib/axios";
 import {
   Box,
   Button,
+  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
   Typography,
-  Paper,
-  Pagination,
-  Chip,
+  MenuItem,
+  Stack,
 } from "@mui/material";
 import { toast } from "react-toastify";
-import { BASE_URL } from "@/configs/url";
+import EmployeePicker from "./EmployeePicker";
+import PermissionWrapper from "@/components/PermissionWrapper";
+
+const statusColor = (status) => {
+  const s = (status || "").toLowerCase();
+  if (s === "valid") return "success";
+  if (s === "expiring_soon") return "warning";
+  if (s === "expired") return "error";
+  return "default";
+};
 
 const Certifications = () => {
-  const [requests, setRequests] = useState([]);
-  const [page, setPage] = useState(1);
-  const [limit] = useState(5);
-  const [pagination, setPagination] = useState({ totalPages: 1 });
+  const [certs, setCerts] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [form, setForm] = useState({
+    userId: "",
+    name: "",
+    issuer: "",
+    certificateNumber: "",
+    issuedDate: "",
+    expiryDate: "",
+    renewalReminderDays: 30,
+  });
 
-  // Fetch employee document requests
-  const fetchRequests = async () => {
+  const fetchCerts = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(
-        `${BASE_URL}/api/employee-document/get?page=${page}&limit=${limit}`
-      );
-
-      setRequests(response.data.data || []);
-      setPagination(response.data.pagination || { totalPages: 1 });
+      const res = await apiClient.get("/api/hr/certifications");
+      setCerts(res.data.data || []);
     } catch (error) {
-      console.error("Error fetching requests:", error);
-      toast.error("Failed to fetch document requests.");
+      toast.error("Failed to load certifications");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchRequests();
-  }, [page]);
+    fetchCerts();
+  }, []);
 
-  const handleChangePage = (event, value) => {
-    setPage(value);
+  const handleSave = async () => {
+    if (!form.userId || !form.name) {
+      toast.error("Employee and certification name are required");
+      return;
+    }
+    try {
+      await apiClient.post("/api/hr/certifications", {
+        ...form,
+        userId: Number(form.userId),
+      });
+      toast.success("Certification added");
+      setDialogOpen(false);
+      setForm({
+        userId: "",
+        name: "",
+        issuer: "",
+        certificateNumber: "",
+        issuedDate: "",
+        expiryDate: "",
+        renewalReminderDays: 30,
+      });
+      fetchCerts();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to save");
+    }
   };
 
-  // Approve / Reject handlers
-  const handleStatusUpdate = async (id, status) => {
-    toast.loading("Updating status...");
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this certification?")) return;
     try {
-      await axios.put(`${BASE_URL}/api/employee-document/update-status/${id}`, {
-        status,
-      });
-      toast.dismiss();
-      toast.success(`Request ${status}`);
-      fetchRequests();
+      await apiClient.delete(`/api/hr/certifications/${id}`);
+      toast.success("Deleted");
+      fetchCerts();
     } catch (error) {
-      toast.dismiss();
-      console.error("Error updating status:", error);
-      toast.error("Failed to update status.");
+      toast.error("Delete failed");
     }
   };
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="60vh">
+      <Box display="flex" justifyContent="center" alignItems="center" height="40vh">
         <CircularProgress />
       </Box>
     );
   }
 
   return (
-    <Box p={3}>
-      <Typography variant="h5" mb={2} fontWeight="600">
-        Employee Document Requests
-      </Typography>
+    <Box>
+      <Stack direction="row" justifyContent="space-between" mb={2}>
+        <Typography variant="h6" fontWeight={700}>
+          Certifications & Licences
+        </Typography>
+        <PermissionWrapper resource="human resource" action="canCreate">
+          <Button variant="contained" onClick={() => setDialogOpen(true)}>
+            Add Certification
+          </Button>
+        </PermissionWrapper>
+      </Stack>
 
-      <Paper elevation={3}>
-        <TableContainer>
-          <Table>
-            <TableHead>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Employee</TableCell>
+              <TableCell>Name</TableCell>
+              <TableCell>Issuer</TableCell>
+              <TableCell>Number</TableCell>
+              <TableCell>Expiry</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell align="right">Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {certs.length === 0 ? (
               <TableRow>
-                <TableCell>#</TableCell>
-                <TableCell>Employee Name</TableCell>
-                <TableCell>Document Type</TableCell>
-                <TableCell>Reason</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Created At</TableCell>
-                <TableCell align="center">Actions</TableCell>
+                <TableCell colSpan={7} align="center">
+                  No certifications recorded
+                </TableCell>
               </TableRow>
-            </TableHead>
-
-            <TableBody>
-              {requests.length > 0 ? (
-                requests.map((req, index) => (
-                  <TableRow key={req.id} hover>
-                    <TableCell>{(page - 1) * limit + index + 1}</TableCell>
-                    <TableCell>{req.employee?.name || "N/A"}</TableCell>
-                    <TableCell>{req.documentType}</TableCell>
-                    <TableCell sx={{ whiteSpace: "pre-line" }}>{req.reason}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={req.status}
-                        color={
-                          req.status === "approved"
-                            ? "success"
-                            : req.status === "rejected"
-                            ? "error"
-                            : "warning"
-                        }
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {new Date(req.createdAt).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell align="center">
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() => setSelectedRequest(req)}
-                        sx={{ mr: 1 }}
-                      >
-                        View
+            ) : (
+              certs.map((c) => (
+                <TableRow key={c.id}>
+                  <TableCell>{c.user?.name || c.userId}</TableCell>
+                  <TableCell>{c.name}</TableCell>
+                  <TableCell>{c.issuer || "—"}</TableCell>
+                  <TableCell>{c.certificateNumber || "—"}</TableCell>
+                  <TableCell>{c.expiryDate ? new Date(c.expiryDate).toLocaleDateString() : "—"}</TableCell>
+                  <TableCell>
+                    <Chip size="small" label={c.status} color={statusColor(c.status)} />
+                  </TableCell>
+                  <TableCell align="right">
+                    <PermissionWrapper resource="human resource" action="canDelete">
+                      <Button size="small" color="error" onClick={() => handleDelete(c.id)}>
+                        Delete
                       </Button>
-                      {req.status === "pending" && (
-                        <>
-                          <Button
-                            variant="contained"
-                            color="success"
-                            size="small"
-                            sx={{ mr: 1 }}
-                            onClick={() => handleStatusUpdate(req.id, "approved")}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            variant="contained"
-                            color="error"
-                            size="small"
-                            onClick={() => handleStatusUpdate(req.id, "rejected")}
-                          >
-                            Reject
-                          </Button>
-                        </>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 3 }}>
-                    No document requests found
+                    </PermissionWrapper>
                   </TableCell>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
-        {/* Pagination */}
-        <Box display="flex" justifyContent="center" py={2}>
-          <Pagination
-            count={pagination.totalPages}
-            page={page}
-            onChange={handleChangePage}
-            color="primary"
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Add Certification</DialogTitle>
+        <DialogContent>
+          <EmployeePicker
+            label="Employee"
+            value={form.userId}
+            onChange={(e) => setForm({ ...form, userId: e.target.value })}
           />
-        </Box>
-      </Paper>
-
-      {/* View Dialog */}
-      <Dialog
-        open={!!selectedRequest}
-        onClose={() => setSelectedRequest(null)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Document Request Details</DialogTitle>
-        <DialogContent dividers>
-          {selectedRequest && (
-            <Box>
-              <Typography>
-                <strong>Employee:</strong> {selectedRequest.employee?.name}
-              </Typography>
-              <Typography>
-                <strong>Email:</strong> {selectedRequest.employee?.email}
-              </Typography>
-              <Typography>
-                <strong>Document Type:</strong> {selectedRequest.documentType}
-              </Typography>
-              <Typography>
-                <strong>Reason:</strong>
-              </Typography>
-              <Typography
-                sx={{ mb: 2, whiteSpace: "pre-line", color: "text.secondary" }}
-              >
-                {selectedRequest.reason}
-              </Typography>
-
-              {selectedRequest.documents?.length > 0 && (
-                <>
-                  <Typography fontWeight={600} mb={1}>
-                    Uploaded Document(s):
-                  </Typography>
-                  {selectedRequest.documents.map((doc) => (
-                    <Button
-                      key={doc.id}
-                      variant="outlined"
-                      href={`${BASE_URL}${doc.documentUrl}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      sx={{ mb: 1 }}
-                    >
-                      View Document
-                    </Button>
-                  ))}
-                </>
-              )}
-            </Box>
-          )}
+          <TextField fullWidth margin="dense" label="Name" name="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <TextField fullWidth margin="dense" label="Issuer" name="issuer" value={form.issuer} onChange={(e) => setForm({ ...form, issuer: e.target.value })} />
+          <TextField fullWidth margin="dense" label="Certificate #" name="certificateNumber" value={form.certificateNumber} onChange={(e) => setForm({ ...form, certificateNumber: e.target.value })} />
+          <TextField fullWidth margin="dense" type="date" label="Issued" InputLabelProps={{ shrink: true }} value={form.issuedDate} onChange={(e) => setForm({ ...form, issuedDate: e.target.value })} />
+          <TextField fullWidth margin="dense" type="date" label="Expiry" InputLabelProps={{ shrink: true }} value={form.expiryDate} onChange={(e) => setForm({ ...form, expiryDate: e.target.value })} />
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setSelectedRequest(null)} variant="outlined">
-            Close
-          </Button>
+          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+          <Button variant="contained" onClick={handleSave}>Save</Button>
         </DialogActions>
       </Dialog>
     </Box>

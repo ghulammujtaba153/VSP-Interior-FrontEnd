@@ -1,8 +1,8 @@
 'use client'
 
 import Loader from '@/components/loader/Loader'
-import { useParams, useSearchParams } from 'next/navigation'
-import React, { useEffect, useState, useMemo } from 'react'
+import { useSearchParams } from 'next/navigation'
+import React, { useCallback, useEffect, useState } from 'react'
 import { BASE_URL } from '@/configs/url'
 import axios from 'axios'
 import { toast } from 'react-toastify'
@@ -32,183 +32,177 @@ import {
   RadioGroup,
   FormControlLabel,
   FormLabel,
-  useTheme
+  useTheme,
+  Tabs,
+  Tab,
+  Chip,
+  Stack,
 } from '@mui/material'
 import EditIcon from '@mui/icons-material/Edit'
 import DeleteIcon from '@mui/icons-material/Delete'
 import VisibilityIcon from '@mui/icons-material/Visibility'
-import AddIcon from '@mui/icons-material/Add'
+import UploadFileIcon from '@mui/icons-material/UploadFile'
 import * as XLSX from 'xlsx'
 import PermissionWrapper from '@/components/PermissionWrapper'
+import PriceBookTierCell from '@/components/suppliers/priceBook/PriceBookTierCell'
+import PriceBookImportWizard from '@/components/suppliers/priceBook/PriceBookImportWizard'
+import PriceBookImportHistory from '@/components/suppliers/priceBook/PriceBookImportHistory'
+import { formatNzdPrice } from '@/lib/priceBookUtils'
 
-const PriceBookPage = ({ supplierId: propSupplierId }) => {
+const PriceBookPage = ({ supplierId: propSupplierId, embedded = false }) => {
   const theme = useTheme()
   const searchParams = useSearchParams()
   const supplierQueryId = searchParams.get('supplierId')
-  const supplierId = propSupplierId || supplierQueryId
+  const [selectedSupplierId, setSelectedSupplierId] = useState(
+    propSupplierId || supplierQueryId || ''
+  )
+  const supplierId = propSupplierId || selectedSupplierId || supplierQueryId
 
+  const [tabIndex, setTabIndex] = useState(0)
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState([])
+  const [total, setTotal] = useState(0)
   const [suppliers, setSuppliers] = useState([])
   const [loadingSuppliers, setLoadingSuppliers] = useState(true)
+  const [versions, setVersions] = useState([])
+  const [activeVersion, setActiveVersion] = useState('all')
 
-  // Search
   const [searchQuery, setSearchQuery] = useState('')
-
-  // Pagination
+  const [statusFilter, setStatusFilter] = useState('active')
   const [page, setPage] = useState(0)
-  const [rowsPerPage, setRowsPerPage] = useState(10)
+  const [rowsPerPage, setRowsPerPage] = useState(20)
 
-  // Modal
   const [open, setOpen] = useState(false)
   const [selectedRow, setSelectedRow] = useState(null)
   const [formData, setFormData] = useState({
+    sku: '',
     name: '',
+    description: '',
+    category: '',
+    unit: '',
+    basePrice: '',
     variant: '',
-    dynamic: '',
     supplierId: supplierId || '',
-    status: 'Active' // default active, status dropdown removed
+    status: 'active',
   })
 
-  // Version management states
   const [openVersionDialog, setOpenVersionDialog] = useState(false)
   const [versionAction, setVersionAction] = useState('new')
   const [selectedVersion, setSelectedVersion] = useState('v1')
   const [availableVersions, setAvailableVersions] = useState([])
-  const [availableLoading, setAvailableLoading] = useState(false)
-  
-  // Dynamic fields state for modal
-  const [dynamicFields, setDynamicFields] = useState([{ key: '', value: '' }])
 
-  // History modal
   const [historyOpen, setHistoryOpen] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(false)
   const [historyData, setHistoryData] = useState([])
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0)
 
-  // New: versions list & selected version for history filter
-  const [historyVersions, setHistoryVersions] = useState([])
-  const [historyVersionSelected, setHistoryVersionSelected] = useState('All')
-
-  // Fetch suppliers
   const fetchSuppliers = async () => {
     setLoadingSuppliers(true)
     try {
       const response = await axios.get(`${BASE_URL}/api/suppliers/get?limit=1000`)
       setSuppliers(response.data.data || [])
-    } catch (error) {
-      console.error('Failed to fetch suppliers', error)
+    } catch {
       toast.error('Failed to fetch suppliers')
     } finally {
       setLoadingSuppliers(false)
     }
   }
 
-  // Fetch pricebooks
-  const fetchPriceBooks = async () => {
+  const fetchVersions = async (sid) => {
+    if (!sid) {
+      setVersions([])
+      return
+    }
+    try {
+      const res = await axios.get(`${BASE_URL}/api/pricebook/versions/${sid}`)
+      setVersions(res.data.versions || [])
+    } catch {
+      setVersions([])
+    }
+  }
+
+  const fetchPriceBooks = useCallback(async () => {
     setLoading(true)
     try {
-      const endpoint = supplierId 
-        ? `${BASE_URL}/api/pricebook/get/${supplierId}` 
+      const sid = supplierId
+      const endpoint = sid
+        ? `${BASE_URL}/api/pricebook/get/${sid}`
         : `${BASE_URL}/api/pricebook/get/`
-      const response = await axios.get(endpoint)
-      setData(response.data)
-    } catch (error) {
+      const response = await axios.get(endpoint, {
+        params: {
+          page: page + 1,
+          limit: rowsPerPage,
+          search: searchQuery || undefined,
+          version: activeVersion,
+          status: statusFilter,
+        },
+      })
+      setData(response.data.data || [])
+      setTotal(response.data.total || 0)
+    } catch {
       toast.error('Failed to fetch price books')
+      setData([])
+      setTotal(0)
     } finally {
       setLoading(false)
     }
-  }
-
-  // Fetch available versions for a given item name + category
-  const fetchAvailableVersions = async itemName => {
-    setAvailableLoading(true)
-    // if no name, default to v1
-    if (!itemName) {
-      setAvailableVersions([])
-      setAvailableLoading(false)
-      return
-    }
-
-    try {
-      const res = await axios.get(`${BASE_URL}/api/pricebook/history`, {
-        params: { name: itemName }
-      })
-
-      const items = res.data.items || res.data || []
-      const versions = Array.from(new Set(items.map(item => item.version)))
-        .filter(Boolean)
-        .sort((a, b) => parseInt(a.replace('v', '')) - parseInt(b.replace('v', '')))
-
-      setAvailableVersions(versions.length > 0 ? versions : [])
-    } catch (error) {
-      console.error('Failed to fetch versions', error)
-      setAvailableVersions([])
-    } finally {
-      setAvailableLoading(false)
-    }
-  }
+  }, [supplierId, page, rowsPerPage, searchQuery, activeVersion, statusFilter])
 
   useEffect(() => {
-    fetchPriceBooks()
     fetchSuppliers()
   }, [])
 
-  // Removed categoryInfo effect
+  useEffect(() => {
+    if (propSupplierId) setSelectedSupplierId(propSupplierId)
+  }, [propSupplierId])
 
-  const handleDelete = async rowId => {
+  useEffect(() => {
+    fetchPriceBooks()
+    fetchVersions(supplierId)
+  }, [fetchPriceBooks, supplierId])
+
+  const handleDelete = async (rowId) => {
     toast.loading('Please wait...')
     try {
       await axios.delete(`${BASE_URL}/api/pricebook/delete/${rowId}`)
       toast.dismiss()
       toast.success('Item deleted successfully')
       fetchPriceBooks()
-    } catch (error) {
+    } catch {
       toast.dismiss()
       toast.error('Failed to delete item')
     }
   }
 
-  const handleEdit = async row => {
+  const handleEdit = (row) => {
     setSelectedRow(row)
     setFormData({
+      sku: row.sku || row.name,
       name: row.name,
-      variant: row.variant,
-      dynamic: row.dynamic,
-      supplierId: row.supplierId || '',
-      status: 'Active' // ensure status remains active on update
+      description: row.description || '',
+      category: row.category || '',
+      unit: row.unit || '',
+      basePrice: row.basePrice ?? '',
+      variant: row.variant || '',
+      supplierId: row.supplierId || supplierId || '',
+      status: row.status || 'active',
     })
-    // keep version unchanged for updates
-    setSelectedVersion(row.version || 'v1')
-    setVersionAction('existing')
-
-    // open edit dialog directly (no second step)
     setOpen(true)
   }
 
   const handleUpdate = async () => {
-    // Validate required fields (Price is now optional)
     if (!formData.name || !formData.supplierId) {
-      toast.error('Please fill all required fields including Supplier')
+      toast.error('Name and supplier are required')
       return
     }
 
-    // Prepare dynamic JSON from fields
-    const dynamicObject = {}
-    dynamicFields.forEach(field => {
-      if (field.key.trim()) {
-        dynamicObject[field.key.trim()] = field.value
-      }
-    })
-
-    // If editing an existing item - update directly keeping its version
     if (selectedRow) {
       toast.loading('Please wait...')
       try {
         await axios.put(`${BASE_URL}/api/pricebook/update/${selectedRow.id}`, {
           ...formData,
-          dynamic: dynamicObject,
-          version: selectedRow.version, // preserve previous version
-          status: 'Active' // enforce active
+          sku: formData.sku || formData.name,
+          version: selectedRow.version,
         })
         toast.dismiss()
         toast.success('Item updated successfully')
@@ -217,600 +211,550 @@ const PriceBookPage = ({ supplierId: propSupplierId }) => {
         fetchPriceBooks()
       } catch (error) {
         toast.dismiss()
-        const errorMessage = error.response?.data?.error || 'Failed to update item'
-        toast.error(errorMessage)
+        toast.error(error.response?.data?.error || 'Failed to update item')
       }
       return
     }
 
-    // Update formData with the dynamic object for handleVersionConfirm
-    setFormData(prev => ({ ...prev, dynamic: dynamicObject }))
-    
-    // If adding new item -> fetch versions for the entered name and go to version dialog
-    await fetchAvailableVersions(formData.name)
+    await fetchAvailableVersions(formData.sku || formData.name)
     setOpen(false)
     setOpenVersionDialog(true)
+  }
+
+  const fetchAvailableVersions = async (sku) => {
+    if (!sku || !supplierId) {
+      setAvailableVersions([])
+      return
+    }
+    try {
+      const res = await axios.get(`${BASE_URL}/api/pricebook/history`, {
+        params: { sku, supplierId },
+      })
+      const items = res.data.items || res.data || []
+      const vers = [...new Set(items.map((item) => item.version))].filter(Boolean)
+      setAvailableVersions(vers)
+    } catch {
+      setAvailableVersions([])
+    }
   }
 
   const handleVersionConfirm = async () => {
     toast.loading('Please wait...')
     try {
       let version = selectedVersion
-      
       if (versionAction === 'new') {
-        // For new versions, auto-increment version number
-        if (availableVersions.length === 0) {
-          version = 'v1'
-        } else {
-          const maxVersion = Math.max(...availableVersions.map(v => parseInt(v.replace('v', ''))))
-          version = `v${maxVersion + 1}`
-        }
+        version = versions.length
+          ? `v${Math.max(...versions.map((v) => parseInt(String(v).replace('v', ''), 10) || 0)) + 1}`
+          : 'v1'
       }
-      
-      // If updating existing version, find and UPDATE that item
+
       if (versionAction === 'existing') {
         const existingItem = data.find(
-          item => item.name.toLowerCase() === formData.name.toLowerCase() && item.version === selectedVersion
+          (item) => item.sku === (formData.sku || formData.name) && item.version === selectedVersion
         )
-        
         if (!existingItem) {
           toast.dismiss()
-          toast.error(`Item "${formData.name}" with version ${selectedVersion} not found`)
+          toast.error(`SKU not found in ${selectedVersion}`)
           return
         }
-        
-        // Update existing item
         await axios.put(`${BASE_URL}/api/pricebook/update/${existingItem.id}`, {
           ...formData,
+          sku: formData.sku || formData.name,
           supplierId: formData.supplierId,
           version: selectedVersion,
-          status: 'Active'
         })
-        
         toast.dismiss()
         toast.success('Item updated successfully')
       } else {
-        // Creating new version - check for duplicates
-        const duplicate = data.find(
-          item => item.name.toLowerCase() === formData.name.toLowerCase() && item.version === version
-        )
-
-        if (duplicate) {
-          toast.dismiss()
-          toast.error(`Item "${formData.name}" already exists in version ${version}`)
-          return
-        }
-
-        // Create new pricebook item
         await axios.post(`${BASE_URL}/api/pricebook/create`, {
           ...formData,
+          sku: formData.sku || formData.name,
           supplierId: formData.supplierId,
-          version: version,
-          status: 'Active'
+          version,
+          priceTiers: formData.basePrice
+            ? [{ minQty: 1, maxQty: null, price: Number(formData.basePrice) }]
+            : [],
         })
-
         toast.dismiss()
         toast.success('Item added successfully')
       }
-      
+
       setOpenVersionDialog(false)
-      setFormData({ name: '', variant: '', dynamic: '', supplierId: '', status: 'Active' })
+      resetForm()
       fetchPriceBooks()
+      fetchVersions(supplierId)
     } catch (error) {
       toast.dismiss()
-      const errorMessage = error.response?.data?.error || 'Failed to save item'
-      toast.error(errorMessage)
+      toast.error(error.response?.data?.error || 'Failed to save item')
     }
+  }
+
+  const resetForm = () => {
+    setFormData({
+      sku: '',
+      name: '',
+      description: '',
+      category: '',
+      unit: '',
+      basePrice: '',
+      variant: '',
+      supplierId: supplierId || '',
+      status: 'active',
+    })
   }
 
   const handleClose = () => {
     setOpen(false)
     setSelectedRow(null)
-    setFormData({
-      name: '',
-      variant: '',
-      dynamic: '',
-      price: '',
-      supplierId: supplierId || '',
-      status: 'Active'
-    })
-    setDynamicFields([{ key: '', value: '' }])
+    resetForm()
   }
 
   const handleAddNew = () => {
+    if (!supplierId) {
+      toast.error('Select a supplier first')
+      return
+    }
     setSelectedRow(null)
-    setFormData({
-      name: '',
-      variant: '',
-      dynamic: '',
-      price: '',
-      supplierId: supplierId || '',
-      status: 'Active'
-    })
-    setDynamicFields([{ key: 'Unit', value: '' }]) // Start with a 'Unit' field as default
+    resetForm()
     setVersionAction('new')
     setSelectedVersion('v1')
     setOpen(true)
   }
 
-  // Export XLS
-  const handleExport = () => {
-    if (!data || data.length === 0) {
-      toast.error('No data to export')
-      return
-    }
-
-    const exportData = data.map(item => ({
-      ID: item.id,
-      Name: item.name,
-      Variant: item.variant,
-      Dynamic: item.dynamic,
-      Version: item.version,
-      Supplier: item.Suppliers ? item.Suppliers.name : 'N/A',
-      Status: item.status,
-      CreatedAt: item.createdAt,
-      UpdatedAt: item.updatedAt
-    }))
-
-    const worksheet = XLSX.utils.json_to_sheet(exportData)
-    
-    // Set column widths for better readability
-    const columnWidths = []
-    if (exportData.length > 0) {
-      // Get all column names from the first row
-      const columnNames = Object.keys(exportData[0])
-      columnNames.forEach((col, index) => {
-        let maxLength = col.length // Start with header length
-        // Find max length in this column
-        exportData.forEach(row => {
-          const cellValue = String(row[col] || '')
-          if (cellValue.length > maxLength) {
-            maxLength = cellValue.length
-          }
-        })
-        // Set width: min 12, max 50, or content width + 5 for padding
-        columnWidths[index] = { wch: Math.min(Math.max(maxLength + 5, 12), 50) }
+  const handleExport = async () => {
+    try {
+      const sid = supplierId
+      if (!sid) {
+        toast.error('Select a supplier to export')
+        return
+      }
+      const response = await axios.get(`${BASE_URL}/api/pricebook/get/${sid}`, {
+        params: { limit: 5000, version: activeVersion, status: statusFilter },
       })
-    } else {
-      // Default widths if no data
-      const defaultColumns = ['ID', 'Name', 'Description', 'Unit', 'Price', 'Version', 'Supplier', 'Status', 'Category', 'CreatedAt', 'UpdatedAt']
-      defaultColumns.forEach(() => {
-        columnWidths.push({ wch: 15 })
-      })
+      const rows = response.data.data || []
+      if (!rows.length) {
+        toast.error('No data to export')
+        return
+      }
+
+      const exportData = rows.map((item) => ({
+        SKU: item.sku,
+        Name: item.name,
+        Description: item.description,
+        Category: item.category,
+        Unit: item.unit,
+        BasePrice: item.basePrice,
+        Tiers: JSON.stringify(item.priceTiers || []),
+        Version: item.version,
+        Supplier: item.supplier?.name || 'N/A',
+        Status: item.status,
+      }))
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData)
+      const workbook = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'PriceBook')
+      const supplierName = rows[0]?.supplier?.name || 'Supplier'
+      XLSX.writeFile(workbook, `${supplierName} Pricebook.xlsx`)
+    } catch {
+      toast.error('Export failed')
     }
-    
-    worksheet['!cols'] = columnWidths
-    
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'PriceBook')
-    XLSX.writeFile(
-      workbook,
-      `${data[0]?.Suppliers?.name || 'Supplier'} - ${
-        data[0]?.PriceBookCategory?.name || 'Category'
-      } VSP.xlsx`
-    )
   }
 
-  // Filtered rows
-  const filteredData = data.filter(item =>
-    Object.values(item).some(value => value && value.toString().toLowerCase().includes(searchQuery.toLowerCase()))
-  )
-
-  // Paginated rows
-  const paginatedData = filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-
-  // Fetch history (all versions) for a given pricebook name
-  const fetchHistory = async name => {
-    if (!name) return
+  const fetchHistory = async (row) => {
     setHistoryLoading(true)
     try {
       const res = await axios.get(`${BASE_URL}/api/pricebook/history`, {
-        params: { name: name }
+        params: { sku: row.sku || row.name, supplierId: row.supplierId },
       })
-
-      const items = res.data.items || res.data || []
-      setHistoryData(items)
-
-      // compute available versions for this history and set default to 'All'
-      const versions = Array.from(new Set(items.map(item => item.version)))
-        .filter(Boolean)
-        .sort((a, b) => parseInt(a.replace('v', ''), 10) - parseInt(b.replace('v', ''), 10))
-
-      setHistoryVersions(versions)
-      setHistoryVersionSelected('All')
-    } catch (error) {
-      console.error('Failed to fetch history', error)
+      setHistoryData(res.data.items || res.data || [])
+    } catch {
       toast.error('Failed to fetch history')
       setHistoryData([])
-      setHistoryVersions([])
-      setHistoryVersionSelected('All')
     } finally {
       setHistoryLoading(false)
     }
   }
 
-  const handleViewHistory = row => {
-    fetchHistory(row.name)
+  const handleViewHistory = (row) => {
+    fetchHistory(row)
     setHistoryOpen(true)
   }
 
-  // Dynamic fields utility handlers
-  const handleDynamicChange = (index, field, value) => {
-    const updated = [...dynamicFields]
-    updated[index][field] = value
-    setDynamicFields(updated)
+  const handleImportComplete = () => {
+    fetchPriceBooks()
+    fetchVersions(supplierId)
+    setHistoryRefreshKey((k) => k + 1)
+    setTabIndex(0)
   }
 
-  const addDynamicField = () => {
-    setDynamicFields([...dynamicFields, { key: '', value: '' }])
-  }
-
-  const removeDynamicField = (index) => {
-    if (dynamicFields.length > 1) {
-      const updated = dynamicFields.filter((_, i) => i !== index)
-      setDynamicFields(updated)
-    } else {
-      setDynamicFields([{ key: '', value: '' }])
-    }
-  }
-
-  const renderDynamicValue = (val) => {
-    if (!val) return '-'
-    if (typeof val === 'object') {
-      return Object.entries(val)
-        .map(([k, v]) => `${k}: ${v}`)
-        .join(', ')
-    }
-    return String(val)
-  }
-
-  if (loading) return <Loader />
+  const supplierName = suppliers.find((s) => String(s.id) === String(supplierId))?.name
 
   return (
-    <Box className='p-4' component={Paper}>
-      <Box display='flex' justifyContent='space-between' alignItems='center' mb={2}>
-        <Button variant='contained' color='primary' onClick={() => window.history.back()}>
-          Back
-        </Button>
-
-        <Box>
-          <Button variant='contained' color='success' onClick={handleExport} sx={{ mr: 2 }}>
-            Export XLS
-          </Button>
-          <PermissionWrapper resource="suppliers" action="canCreate">
-            <Button variant='contained' color='secondary' onClick={handleAddNew}>
-              Add Item
-            </Button>
-          </PermissionWrapper>
-        </Box>
-      </Box>
-
-      <Typography variant='h6' fontWeight='bold' mb={2}>
-        Price Book
-      </Typography>
-
-      <Box className='my-2' display='flex' alignItems='center'>
-        <TextField
-          label='Search...'
-          variant='outlined'
-          size='small'
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          sx={{ mx: 2, flex: 1, maxWidth: 300 }}
-        />
-      </Box>
-
-      {/* Table */}
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>
-                <b>ID</b>
-              </TableCell>
-              <TableCell>
-                <b>Name</b>
-              </TableCell>
-              <TableCell>
-                <b>Variant</b>
-              </TableCell>
-              <TableCell>
-                <b>Dynamic</b>
-              </TableCell>
-              <TableCell>
-                <b>Version</b>
-              </TableCell>
-              <TableCell>
-                <b>Supplier</b>
-              </TableCell>
-              <TableCell>
-                <b>Status</b>
-              </TableCell>
-              <TableCell align='center'>
-                <b>Actions</b>
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {paginatedData.length > 0 ? (
-              paginatedData.map((row, index) => (
-                <TableRow 
-                  key={row.id}
-                  hover
-                  sx={{
-                    backgroundColor: index % 2 === 0 ? theme.palette.action.hover : 'inherit',
-                    '&:hover': {
-                      backgroundColor: theme.palette.action.selected + ' !important',
-                    }
-                  }}
-                >
-                  <TableCell>{row.id}</TableCell>
-                  <TableCell>{row.name}</TableCell>
-                  <TableCell>{row.variant}</TableCell>
-                  <TableCell title={renderDynamicValue(row.dynamic)} sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {renderDynamicValue(row.dynamic)}
-                  </TableCell>
-                  <TableCell>{row.version}</TableCell>
-                  <TableCell>{row.Supplier?.name || 'N/A'}</TableCell>
-                  <TableCell>{row.status}</TableCell>
-                  <TableCell align='center'>
-                    <PermissionWrapper resource="suppliers" action="canView">
-                    <IconButton color='info' onClick={() => handleViewHistory(row)} title='History'>
-                      <VisibilityIcon />
-                    </IconButton>
-                    </PermissionWrapper>
-                    <PermissionWrapper resource="suppliers" action="canEdit">
-                    <IconButton color='primary' onClick={() => handleEdit(row)}>
-                      <EditIcon />
-                    </IconButton>
-                    </PermissionWrapper>
-                    <PermissionWrapper resource="suppliers" action="canDelete">
-                    <IconButton color='error' onClick={() => handleDelete(row.id)}>
-                      <DeleteIcon />
-                    </IconButton>
-                    </PermissionWrapper>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={9} align='center'>
-                  No data found
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-
-        {/* Pagination */}
-        <TablePagination
-          component='div'
-          count={filteredData.length}
-          page={page}
-          onPageChange={(e, newPage) => setPage(newPage)}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={e => {
-            setRowsPerPage(parseInt(e.target.value, 10))
-            setPage(0)
-          }}
-          rowsPerPageOptions={[5, 10, 20]}
-        />
-      </TableContainer>
-
-      {/* Add/Edit Modal (status removed from form) */}
-      <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>{selectedRow ? 'Edit Price Book Item' : 'Add Price Book Item'}</DialogTitle>
-        <DialogContent>
-          <TextField
-            label='Name'
-            fullWidth
-            margin='dense'
-            value={formData.name}
-            onChange={e => setFormData({ ...formData, name: e.target.value })}
-          />
-          <TextField
-            label='Variant'
-            fullWidth
-            margin='dense'
-            value={formData.variant}
-            onChange={e => setFormData({ ...formData, variant: e.target.value })}
-          />
-          
-          <Box sx={{ mt: 2, mb: 1 }}>
-            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-              Dynamic Fields
-            </Typography>
-            {dynamicFields.map((field, index) => (
-              <Box key={index} display="flex" gap={1} mb={1} alignItems="center">
-                <TextField
-                  label="Field Name"
-                  size="small"
-                  value={field.key}
-                  onChange={(e) => handleDynamicChange(index, 'key', e.target.value)}
-                  placeholder="e.g. Unit, Size"
-                  autoComplete="off"
-                />
-                <TextField
-                  label="Value"
-                  size="small"
-                  value={field.value}
-                  onChange={(e) => handleDynamicChange(index, 'value', e.target.value)}
-                  placeholder="e.g. Piece, 10mm"
-                  autoComplete="off"
-                />
-                <IconButton color="error" size="small" onClick={() => removeDynamicField(index)}>
-                  <DeleteIcon />
-                </IconButton>
-              </Box>
-            ))}
-            <Button 
-              startIcon={<AddIcon />} 
-              size="small" 
-              onClick={addDynamicField}
-              sx={{ mt: 0.5 }}
-            >
-              Add Field
-            </Button>
-          </Box>
-          {!supplierId && (
-            <FormControl fullWidth margin='dense' required>
-              <InputLabel>Supplier</InputLabel>
-              <Select
-                value={formData.supplierId}
-                label='Supplier'
-                onChange={e => setFormData({ ...formData, supplierId: e.target.value })}
-                disabled={loadingSuppliers}
-              >
-                {suppliers.map(supplier => (
-                  <MenuItem key={supplier.id} value={supplier.id}>
-                    {supplier.name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
-          {/* status removed; default 'Active' is used */}
-        </DialogContent>
-
-        <DialogActions>
-          <Button onClick={handleClose} color='inherit'>
-            Cancel
-          </Button>
-          <Button onClick={handleUpdate} color='primary' variant='contained'>
-            {availableLoading ? 'Loading' : 'Next'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Version Selection Dialog (used only for creation) */}
-      <Dialog open={openVersionDialog} onClose={() => setOpenVersionDialog(false)} maxWidth='sm' fullWidth>
-        <DialogTitle>Select Version</DialogTitle>
-        <DialogContent>
-          <Typography variant='body2' color='text.secondary' mb={2}>
-            Choose whether to create a new version or update an existing one.
-          </Typography>
-
-          <FormControl component='fieldset' fullWidth>
-            <FormLabel component='legend'>Version Action</FormLabel>
-            <RadioGroup value={versionAction} onChange={e => setVersionAction(e.target.value)}>
-              <FormControlLabel value='new' control={<Radio />} label='Create New Version (for new tenders)' />
-              <FormControlLabel value='existing' control={<Radio />} label='Update Existing Version' />
-            </RadioGroup>
-          </FormControl>
-
-          {versionAction === 'existing' && (
-            <FormControl fullWidth sx={{ mt: 2 }}>
-              <FormLabel>Select Version to Update</FormLabel>
-              <Select value={selectedVersion} onChange={e => setSelectedVersion(e.target.value)}>
-                {availableVersions.map(version => (
-                  <MenuItem key={version} value={version}>
-                    {version}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
-
-          {versionAction === 'new' && (
-            <Typography variant='body2' color='primary' sx={{ mt: 2 }}>
-              A new version will be created automatically
-            </Typography>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() => {
-              setOpenVersionDialog(false)
-              setOpen(true) // Go back to item form
-            }}
-            color='inherit'
-          >
+    <Box className={embedded ? '' : 'p-4'} component={embedded ? Box : Paper}>
+      {!embedded && (
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} flexWrap="wrap" gap={2}>
+          <Button variant="contained" color="primary" onClick={() => window.history.back()}>
             Back
           </Button>
-          <Button onClick={handleVersionConfirm} color='primary' variant='contained'>
-            Add Item
-          </Button>
-        </DialogActions>
-      </Dialog>
+          <Typography variant="h6" fontWeight="bold">
+            Supplier Price Book
+          </Typography>
+        </Box>
+      )}
 
-      {/* History Dialog with timeline (Created At -> Version End) */}
-      <Dialog open={historyOpen} onClose={() => setHistoryOpen(false)} maxWidth='md' fullWidth>
-        <DialogTitle>Price Book History</DialogTitle>
-        <DialogContent dividers>
-          {historyLoading ? (
-            <Box display='flex' justifyContent='center' alignItems='center' p={4}>
-              <Typography>Loading...</Typography>
+      <Stack direction="row" spacing={2} alignItems="center" mb={2} flexWrap="wrap">
+        {!propSupplierId && (
+          <FormControl size="small" sx={{ minWidth: 260 }} required>
+            <InputLabel>Supplier</InputLabel>
+            <Select
+              label="Supplier"
+              value={selectedSupplierId}
+              onChange={(e) => {
+                setSelectedSupplierId(e.target.value)
+                setPage(0)
+              }}
+              disabled={loadingSuppliers}
+            >
+              <MenuItem value="">
+                <em>All suppliers</em>
+              </MenuItem>
+              {suppliers.map((s) => (
+                <MenuItem key={s.id} value={s.id}>
+                  {s.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        )}
+        {propSupplierId && supplierName && (
+          <Chip label={supplierName} color="primary" variant="outlined" />
+        )}
+        {versions.length > 0 && tabIndex === 0 && (
+          <FormControl size="small" sx={{ minWidth: 120 }}>
+            <InputLabel>Version</InputLabel>
+            <Select
+              label="Version"
+              value={activeVersion}
+              onChange={(e) => {
+                setActiveVersion(e.target.value)
+                setPage(0)
+              }}
+            >
+              <MenuItem value="all">All versions</MenuItem>
+              {versions.map((v) => (
+                <MenuItem key={v} value={v}>
+                  {v}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        )}
+      </Stack>
+
+      <Tabs value={tabIndex} onChange={(_, v) => setTabIndex(v)} sx={{ mb: 2 }}>
+        <Tab label="Price List" />
+        <Tab label="Import" disabled={!supplierId} />
+        <Tab label="Import History" disabled={!supplierId} />
+      </Tabs>
+
+      {tabIndex === 1 && (
+        <PriceBookImportWizard supplierId={supplierId} onImported={handleImportComplete} />
+      )}
+
+      {tabIndex === 2 && (
+        <PriceBookImportHistory supplierId={supplierId} refreshKey={historyRefreshKey} />
+      )}
+
+      {tabIndex === 0 && (
+        <>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2} flexWrap="wrap" gap={1}>
+            <Box display="flex" gap={1} flexWrap="wrap" alignItems="center">
+              <TextField
+                label="Search SKU, name, category…"
+                variant="outlined"
+                size="small"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  setPage(0)
+                }}
+                sx={{ minWidth: 220 }}
+              />
+              <FormControl size="small" sx={{ minWidth: 120 }}>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  label="Status"
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value)
+                    setPage(0)
+                  }}
+                >
+                  <MenuItem value="all">All</MenuItem>
+                  <MenuItem value="active">Active</MenuItem>
+                  <MenuItem value="inactive">Inactive</MenuItem>
+                </Select>
+              </FormControl>
             </Box>
-          ) : historyData.length === 0 ? (
-            <Typography>No history found for this item.</Typography>
-          ) : (
-            <>
-              {/* Version selector to filter history */}
-              <Box display='flex' alignItems='center' gap={2} mb={2}>
-                <Typography variant='body2'>Show:</Typography>
-                <FormControl size='small' sx={{ minWidth: 160 }}>
-                  <Select
-                    value={historyVersionSelected}
-                    onChange={(e) => setHistoryVersionSelected(e.target.value)}
-                  >
-                    <MenuItem value='All'>All Versions</MenuItem>
-                    {historyVersions.map(v => (
-                      <MenuItem key={v} value={v}>{v}</MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Box>
+            <Box>
+              <Button variant="contained" color="success" onClick={handleExport} sx={{ mr: 1 }}>
+                Export XLS
+              </Button>
+              <PermissionWrapper resource="suppliers" action="canCreate">
+                <Button
+                  variant="outlined"
+                  startIcon={<UploadFileIcon />}
+                  onClick={() => setTabIndex(1)}
+                  sx={{ mr: 1 }}
+                  disabled={!supplierId}
+                >
+                  Import
+                </Button>
+                <Button variant="contained" color="secondary" onClick={handleAddNew} disabled={!supplierId}>
+                  Add Item
+                </Button>
+              </PermissionWrapper>
+            </Box>
+          </Box>
 
-              <TableContainer>
-                <Table size='small'>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell><b>Version</b></TableCell>
-                      <TableCell><b>Variant</b></TableCell>
-                      <TableCell><b>Dynamic</b></TableCell>
-                      <TableCell><b>Status</b></TableCell>
-                      <TableCell><b>Created At</b></TableCell>
-                      <TableCell><b>Version End</b></TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {(
-                      historyVersionSelected === 'All'
-                        ? historyData
-                        : historyData.filter(h => h.version === historyVersionSelected)
-                    ).map((h, index) => (
-                      <TableRow 
-                        key={h.id}
+          {loading ? (
+            <Loader />
+          ) : (
+            <TableContainer component={Paper}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell><b>SKU</b></TableCell>
+                    <TableCell><b>Name / Description</b></TableCell>
+                    <TableCell><b>Category</b></TableCell>
+                    <TableCell><b>Unit</b></TableCell>
+                    <TableCell><b>Price / Tiers</b></TableCell>
+                    <TableCell><b>Version</b></TableCell>
+                    {!supplierId && <TableCell><b>Supplier</b></TableCell>}
+                    <TableCell><b>Status</b></TableCell>
+                    <TableCell align="center"><b>Actions</b></TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {data.length > 0 ? (
+                    data.map((row, index) => (
+                      <TableRow
+                        key={row.id}
                         hover
                         sx={{
                           backgroundColor: index % 2 === 0 ? theme.palette.action.hover : 'inherit',
-                          '&:hover': {
-                            backgroundColor: theme.palette.action.selected + ' !important',
-                          }
                         }}
                       >
-                        <TableCell>{h.version}</TableCell>
-                        <TableCell>{h.variant}</TableCell>
-                        <TableCell>{renderDynamicValue(h.dynamic)}</TableCell>
-                        <TableCell>{h.status}</TableCell>
-                        <TableCell>{h.createdAt ? new Date(h.createdAt).toLocaleString() : '-'}</TableCell>
+                        <TableCell>{row.sku || row.name}</TableCell>
+                        <TableCell sx={{ maxWidth: 240 }}>
+                          <Typography variant="body2" fontWeight={500}>{row.name}</Typography>
+                          {row.description && row.description !== row.name && (
+                            <Typography variant="caption" color="text.secondary" display="block">
+                              {row.description}
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell>{row.category || '—'}</TableCell>
+                        <TableCell>{row.unit || '—'}</TableCell>
                         <TableCell>
-                          {h.versionEndDate
-                            ? new Date(h.versionEndDate).toLocaleString()
-                            : 'active'}
+                          <PriceBookTierCell tiers={row.priceTiers} basePrice={row.basePrice} />
+                        </TableCell>
+                        <TableCell>{row.version}</TableCell>
+                        {!supplierId && <TableCell>{row.supplier?.name || 'N/A'}</TableCell>}
+                        <TableCell>
+                          <Chip
+                            size="small"
+                            label={row.status}
+                            color={row.status === 'active' ? 'success' : 'default'}
+                          />
+                        </TableCell>
+                        <TableCell align="center">
+                          <PermissionWrapper resource="suppliers" action="canView">
+                            <IconButton color="info" onClick={() => handleViewHistory(row)} title="History">
+                              <VisibilityIcon />
+                            </IconButton>
+                          </PermissionWrapper>
+                          <PermissionWrapper resource="suppliers" action="canEdit">
+                            <IconButton color="primary" onClick={() => handleEdit(row)}>
+                              <EditIcon />
+                            </IconButton>
+                          </PermissionWrapper>
+                          <PermissionWrapper resource="suppliers" action="canDelete">
+                            <IconButton color="error" onClick={() => handleDelete(row.id)}>
+                              <DeleteIcon />
+                            </IconButton>
+                          </PermissionWrapper>
                         </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={supplierId ? 8 : 9} align="center">
+                        {supplierId ? 'No price list items — import a file or add manually' : 'Select a supplier or search all'}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+              <TablePagination
+                component="div"
+                count={total}
+                page={page}
+                onPageChange={(_, newPage) => setPage(newPage)}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={(e) => {
+                  setRowsPerPage(parseInt(e.target.value, 10))
+                  setPage(0)
+                }}
+                rowsPerPageOptions={[10, 20, 50, 100]}
+              />
+            </TableContainer>
+          )}
+        </>
+      )}
+
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+        <DialogTitle>{selectedRow ? 'Edit Price Book Item' : 'Add Price Book Item'}</DialogTitle>
+        <DialogContent>
+          <TextField
+            label="SKU"
+            fullWidth
+            margin="dense"
+            value={formData.sku}
+            onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+          />
+          <TextField
+            label="Name"
+            fullWidth
+            margin="dense"
+            required
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          />
+          <TextField
+            label="Description"
+            fullWidth
+            margin="dense"
+            multiline
+            rows={2}
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          />
+          <TextField
+            label="Category"
+            fullWidth
+            margin="dense"
+            value={formData.category}
+            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+          />
+          <TextField
+            label="Unit"
+            fullWidth
+            margin="dense"
+            value={formData.unit}
+            onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+          />
+          <TextField
+            label="Base Price (NZD)"
+            fullWidth
+            margin="dense"
+            type="number"
+            value={formData.basePrice}
+            onChange={(e) => setFormData({ ...formData, basePrice: e.target.value })}
+          />
+          <TextField
+            label="Variant"
+            fullWidth
+            margin="dense"
+            value={formData.variant}
+            onChange={(e) => setFormData({ ...formData, variant: e.target.value })}
+          />
+          {!supplierId && (
+            <FormControl fullWidth margin="dense" required>
+              <InputLabel>Supplier</InputLabel>
+              <Select
+                value={formData.supplierId}
+                label="Supplier"
+                onChange={(e) => setFormData({ ...formData, supplierId: e.target.value })}
+              >
+                {suppliers.map((s) => (
+                  <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setHistoryOpen(false)} color='inherit'>
-            Close
+          <Button onClick={handleClose} color="inherit">Cancel</Button>
+          <Button onClick={handleUpdate} color="primary" variant="contained">
+            {selectedRow ? 'Save' : 'Next'}
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openVersionDialog} onClose={() => setOpenVersionDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Select Version</DialogTitle>
+        <DialogContent>
+          <FormControl component="fieldset" fullWidth>
+            <FormLabel>Version Action</FormLabel>
+            <RadioGroup value={versionAction} onChange={(e) => setVersionAction(e.target.value)}>
+              <FormControlLabel value="new" control={<Radio />} label="Create new version" />
+              <FormControlLabel value="existing" control={<Radio />} label="Update existing version" />
+            </RadioGroup>
+          </FormControl>
+          {versionAction === 'existing' && (
+            <FormControl fullWidth sx={{ mt: 2 }}>
+              <InputLabel>Version</InputLabel>
+              <Select value={selectedVersion} label="Version" onChange={(e) => setSelectedVersion(e.target.value)}>
+                {availableVersions.map((v) => (
+                  <MenuItem key={v} value={v}>{v}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => { setOpenVersionDialog(false); setOpen(true) }} color="inherit">Back</Button>
+          <Button onClick={handleVersionConfirm} color="primary" variant="contained">Add Item</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={historyOpen} onClose={() => setHistoryOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>SKU Version History</DialogTitle>
+        <DialogContent dividers>
+          {historyLoading ? (
+            <Loader />
+          ) : historyData.length === 0 ? (
+            <Typography>No history found.</Typography>
+          ) : (
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell><b>Version</b></TableCell>
+                  <TableCell><b>Base Price</b></TableCell>
+                  <TableCell><b>Tiers</b></TableCell>
+                  <TableCell><b>Status</b></TableCell>
+                  <TableCell><b>Created</b></TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {historyData.map((h) => (
+                  <TableRow key={h.id}>
+                    <TableCell>{h.version}</TableCell>
+                    <TableCell>{formatNzdPrice(h.basePrice)}</TableCell>
+                    <TableCell>
+                      <PriceBookTierCell tiers={h.priceTiers} basePrice={h.basePrice} />
+                    </TableCell>
+                    <TableCell>{h.status}</TableCell>
+                    <TableCell>{h.createdAt ? new Date(h.createdAt).toLocaleString() : '—'}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setHistoryOpen(false)} color="inherit">Close</Button>
         </DialogActions>
       </Dialog>
     </Box>
@@ -818,5 +762,3 @@ const PriceBookPage = ({ supplierId: propSupplierId }) => {
 }
 
 export default PriceBookPage
-
-

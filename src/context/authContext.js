@@ -2,10 +2,9 @@
 
 import { createContext, useContext, useEffect, useState } from 'react'
 
-import axios from 'axios'
 import { toast } from 'react-toastify'
 
-import { BASE_URL } from '@/configs/url'
+import apiClient from '@/lib/axios'
 
 
 const AuthContext = createContext(undefined)
@@ -20,23 +19,11 @@ export const AuthProvider = ({ children }) => {
 
   
   const fetchUser = async () => {
-    // const token = localStorage.getItem('token')
-    // if (!token) return
-
-    console.log("fetching user", token)
+    if (!token) return
     setLoading(true)
 
-    console.log("fetching user", token)
-
-    
     try {
-      const res = await axios.get(`${BASE_URL}/api/user/get-user-by-token`, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      })
-
-      console.log("user fetched is here", res.data)
+      const res = await apiClient.get('/api/user/get-user-by-token')
       setUser(res.data)
     } catch (error) {
       console.error('Error fetching user:', error)

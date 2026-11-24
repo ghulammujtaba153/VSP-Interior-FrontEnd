@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import axios from "axios";
 import {
   Box,
   Typography,
@@ -14,7 +13,7 @@ import {
   Checkbox,
   FormGroup,
 } from "@mui/material";
-import { BASE_URL } from "@/configs/url";
+import apiClient from "@/lib/axios";
 import Loader from "@/components/loader/Loader";
 import { toast } from "react-toastify";
 import PermissionWrapper from "@/components/PermissionWrapper";
@@ -48,10 +47,10 @@ const PermissionCard = ({ permission, roleId, onSaved }) => {
     try {
       if (permission.id) {
         // Update existing permission
-        await axios.put(`${BASE_URL}/api/permission/update/${permission.id}`, updatedPermissions);
+        await apiClient.put(`/api/permission/update/${permission.id}`, updatedPermissions);
       } else {
         // Create new permission
-        await axios.post(`${BASE_URL}/api/permission/create-or-update`, {
+        await apiClient.post('/api/permission/create-or-update', {
           roleId: parseInt(roleId),
           resourceId: permission.resourceId,
           ...updatedPermissions,

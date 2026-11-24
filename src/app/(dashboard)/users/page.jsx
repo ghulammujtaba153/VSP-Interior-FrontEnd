@@ -1,12 +1,10 @@
 "use client"
 import React, { useState , useEffect } from 'react'
 
-import axios from 'axios'
-
 import Loader from '@/components/loader/Loader'
-import { BASE_URL } from '@/configs/url'
 import UserTable from '@/components/users/UserTable'
 import ProtectedRoute from '@/components/ProtectedRoute'
+import apiClient from '@/lib/axios'
 
 
 const UsersPage = () => {
@@ -16,7 +14,7 @@ const UsersPage = () => {
 
     const fetchUsers = async () => {
         try {
-            const res = await axios.get(`${BASE_URL}/api/user/get`)
+            const res = await apiClient.get('/api/user/get')
 
             console.log(res.data)
             setUsers(res.data)
