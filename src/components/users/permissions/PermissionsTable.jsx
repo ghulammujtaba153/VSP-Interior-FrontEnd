@@ -52,7 +52,7 @@ const PermissionsTable = () => {
 
   // Capitalize name: "john more" → "John More"
   const capitalizeName = (name) => {
-    if (!name) return 'N/A';
+    if (!name) return 'Unknown Resource';
     return String(name)
       .split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
