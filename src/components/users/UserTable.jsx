@@ -12,13 +12,11 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 
-import axios from 'axios';
-
 import { toast } from 'react-toastify';
 
 import UserModal from './UserModal';
 import ConfirmationDialog from '../ConfirmationDialog';
-import { BASE_URL } from '@/configs/url';
+import apiClient from '@/lib/axios';
 
 import PermissionWrapper from '@/components/PermissionWrapper';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -57,7 +55,7 @@ const UserTable = () => {
     try {
       const sortBy = sortModel[0]?.field || 'id';
       const order = sortModel[0]?.sort || 'asc';
-      const res = await axios.get(`${BASE_URL}/api/user/get?page=${page}&limit=${limit}&sortBy=${sortBy}&order=${order}`);
+      const res = await apiClient.get(`/api/user/get?page=${page}&limit=${limit}&sortBy=${sortBy}&order=${order}`);
       setUsers(res.data.users || []);
       setTotalCount(res.data.total || 0);
       setLoading(false);
@@ -87,7 +85,7 @@ const UserTable = () => {
     if (modalMode === 'edit') {
       try {
         formData.userId = user.id;
-        const res = await axios.put(`${BASE_URL}/api/user/update/${formData.id}`, formData);
+        await apiClient.put(`/api/user/update/${formData.id}`, formData);
         toast.success("User updated successfully");
         fetchUsers();
       } catch (error) {
@@ -98,7 +96,7 @@ const UserTable = () => {
     } else if (modalMode === 'create') {
       try {
         formData.userId = user.id;
-        const res = await axios.post(`${BASE_URL}/api/user/create`, formData);
+        await apiClient.post('/api/user/create', formData);
         toast.success("User created successfully");
         fetchUsers();
       } catch (error) {
@@ -120,7 +118,7 @@ const UserTable = () => {
     toast.loading("Deleting user...");
 
     try {
-      await axios.delete(`${BASE_URL}/api/user/delete/${userToDelete.id}`, {
+      await apiClient.delete(`/api/user/delete/${userToDelete.id}`, {
         data: { userId: user.id }
       });
       fetchUsers();
@@ -143,7 +141,7 @@ const UserTable = () => {
 
   const handleStatusChange = async (id, checked) => {
     try {
-      await axios.put(`${BASE_URL}/api/user/update-status/${id}`, { 
+      await apiClient.put(`/api/user/update-status/${id}`, {
         status: checked ? 'active' : 'suspended', 
         userId: user.id 
       });

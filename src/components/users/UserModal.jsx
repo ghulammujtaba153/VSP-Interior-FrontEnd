@@ -8,10 +8,9 @@ import {
   Button,
   MenuItem
 } from '@mui/material';
-import axios from 'axios';
 import ConfirmationDialog from '../ConfirmationDialog';
 
-import { BASE_URL } from '@/configs/url';
+import apiClient from '@/lib/axios';
 import { useAuth } from '@/context/authContext';
 
 const UserModal = ({ open, mode, userProfile, onClose, onSave }) => {
@@ -38,7 +37,7 @@ const UserModal = ({ open, mode, userProfile, onClose, onSave }) => {
 
   const fetchRoles = async () => {
     try {
-      const roleRes = await axios.get(`${BASE_URL}/api/role/get`);
+      const roleRes = await apiClient.get('/api/role/get');
       setRoles(roleRes.data);
     } catch (error) {
       console.log(error);
